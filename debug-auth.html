@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Auth</title>
+</head>
+<body>
+    <h1>Debug Authentification</h1>
+    <div id="result"></div>
+
+    <script>
+        const result = document.getElementById('result')
+
+        // Vérifier tous les tokens possibles
+        const token1 = localStorage.getItem('vaultestim_token')
+        const token2 = localStorage.getItem('vaultestim_user')
+        const allKeys = Object.keys(localStorage)
+
+        let html = '<h2>LocalStorage Contents:</h2>'
+        html += `<p><strong>vaultestim_token:</strong> ${token1 || 'NULL'}</p>`
+        html += `<p><strong>vaultestim_user:</strong> ${token2 ? 'EXISTS' : 'NULL'}</p>`
+        html += '<h3>All localStorage keys:</h3><ul>'
+
+        allKeys.forEach(key => {
+            const value = localStorage.getItem(key)
+            if (key.includes('vault') || key.includes('token') || key.includes('user')) {
+                html += `<li><strong>${key}:</strong> ${value.substring(0, 100)}...</li>`
+            }
+        })
+
+        html += '</ul>'
+
+        // Tester l'API
+        html += '<h2>Test API:</h2>'
+
+        fetch('https://192.168.50.137:3000/api/collection/discovered', {
+            headers: {
+                'Authorization': `Bearer ${token1}`
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            result.innerHTML = html + `<p style="color: green">✅ API OK: ${JSON.stringify(data).substring(0, 200)}</p>`
+        })
+        .catch(err => {
+            result.innerHTML = html + `<p style="color: red">❌ API Error: ${err.message}</p>`
+        })
+
+        result.innerHTML = html + '<p>⏳ Testing API...</p>'
+    </script>
+</body>
+</html>

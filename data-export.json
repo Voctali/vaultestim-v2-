@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "exported_at": "2025-10-03T23:25:54.157Z",
+    "database_path": "F:\\Logiciels\\Appli Vaultestim\\vaultestim-v2\\backend\\vaultestim.db",
+    "total_tables": 5,
+    "version": "1.0.0",
+    "statistics": {
+      "users": 2,
+      "discovered_cards": 0,
+      "series_database": 0,
+      "custom_blocks": 0,
+      "custom_extensions": 0
+    }
+  },
+  "tables": {
+    "users": [
+      {
+        "id": 1,
+        "email": "maxime-159@hotmail.com",
+        "password": "$2b$10$LCVg3aFGevJrjHuNrxREhe2QZuVQqEtqtzcVZzksgDgOY/FglNoSS",
+        "name": "Oneshot",
+        "role": "user",
+        "isPremium": 0,
+        "cardCount": 0,
+        "level": 1,
+        "createdAt": "2025-10-03 18:32:57",
+        "lastLogin": "2025-10-03 18:34:41"
+      },
+      {
+        "id": 2,
+        "email": "vaultestim@gmail.com",
+        "password": "$2b$10$0ix9n7Q8etZRB1CPICVxyunvHX8vcf0hYTBrugcdvgGANHrGG5N8i",
+        "name": "Voctali",
+        "role": "admin",
+        "isPremium": 1,
+        "cardCount": 0,
+        "level": 1,
+        "createdAt": "2025-10-03 22:58:05",
+        "lastLogin": "2025-10-03 23:01:16"
+      }
+    ],
+    "discovered_cards": [],
+    "series_database": [],
+    "custom_blocks": [],
+    "custom_extensions": []
+  }
+}

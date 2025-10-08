@@ -1,0 +1,73 @@
+MODIFICATIONS À APPLIQUER DANS TCGdxService.js
+
+Ligne 289-306: Remplacer la section d'extraction de prix par:
+
+```javascript
+    // Extraire le meilleur prix disponible (toutes les variantes)
+    let bestPrice = null
+    if (item.tcgplayer?.prices) {
+      const priceVariants = ['holofoil', 'reverseHolofoil', 'normal', '1stEditionHolofoil', '1stEditionNormal', 'unlimitedHolofoil', 'unlimitedNormal']
+
+      // LOG 1: Afficher toutes les variantes disponibles pour chaque carte
+      console.log(`💵 [${item.name}] Variantes de prix disponibles:`, {
+        cardName: item.name,
+        setName: item.set?.name,
+        allVariants: item.tcgplayer.prices,
+        variantsChecked: priceVariants
+      })
+
+      for (const variant of priceVariants) {
+        const variantPrice = item.tcgplayer.prices[variant]
+
+        // LOG 2: Log chaque variante testée
+        console.log(`   🔍 Test variante "${variant}":`, {
+          exists: !!variantPrice,
+          hasMarket: !!variantPrice?.market,
+          marketValue: variantPrice?.market,
+          fullData: variantPrice
+        })
+
+        if (variantPrice?.market) {
+          bestPrice = {
+            amount: variantPrice.market,
+            variant: variant,
+            low: variantPrice.low,
+            mid: variantPrice.mid,
+            high: variantPrice.high
+          }
+
+          // LOG 3: Log spécifique pour 70.86 USD
+          if (variantPrice.market === 70.86) {
+            console.warn(`⚠️ PRIX 70.86 USD DETECTE:`, {
+              cardName: item.name,
+              setName: item.set?.name,
+              setId: item.set?.id,
+              cardNumber: item.number,
+              selectedVariant: variant,
+              selectedPrice: variantPrice.market,
+              allAvailableVariants: Object.keys(item.tcgplayer.prices),
+              allPricesData: item.tcgplayer.prices,
+              fullTcgPlayerData: item.tcgplayer
+            })
+          }
+
+          console.log(`   ✅ Prix sélectionné: ${variantPrice.market} USD (variante: ${variant})`)
+          break
+        }
+      }
+
+      // LOG 4: Si aucun prix trouvé
+      if (!bestPrice) {
+        console.warn(`⚠️ Aucun prix trouvé pour ${item.name} (${item.set?.name}):`, {
+          pricesObject: item.tcgplayer.prices,
+          tcgplayerFull: item.tcgplayer
+        })
+      }
+    } else {
+      // LOG 5: Pas de données tcgplayer du tout
+      console.warn(`⚠️ Pas de données tcgplayer.prices pour ${item.name}:`, {
+        hasTcgplayer: !!item.tcgplayer,
+        tcgplayerData: item.tcgplayer
+      })
+    }
+```

@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Thème sombre avec accents dorés */
+    --background: 0 0% 8%;
+    --foreground: 45 100% 70%;
+    --card: 0 0% 12%;
+    --card-foreground: 45 100% 70%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 45 100% 70%;
+    --primary: 45 100% 60%;
+    --primary-foreground: 0 0% 8%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 45 90% 80%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 45 50% 60%;
+    --accent: 0 0% 16%;
+    --accent-foreground: 45 100% 70%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 45 100% 60%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Cinzel', serif;
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(135deg, hsl(0 0% 8%) 0%, hsl(0 0% 6%) 100%);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    color: hsl(var(--primary));
+    text-shadow: 0 0 10px hsla(45, 100%, 60%, 0.3);
+  }
+
+  /* Correction des inputs - pas de transformation automatique */
+  input, textarea, select {
+    text-transform: none !important;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Effets dorés pour les éléments importants */
+  .golden-glow {
+    color: hsl(var(--primary));
+    text-shadow: 0 0 10px hsla(45, 100%, 60%, 0.5);
+  }
+
+  .golden-border {
+    border: 1px solid hsl(var(--primary));
+    box-shadow: 0 0 10px hsla(45, 100%, 60%, 0.2);
+  }
+
+  .card-hover:hover {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 20px hsla(45, 100%, 60%, 0.3);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+  }
+
+  /* Scrollbar personnalisée */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, hsl(var(--primary)), hsl(45 80% 50%));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, hsl(45 100% 70%), hsl(var(--primary)));
+  }
+}

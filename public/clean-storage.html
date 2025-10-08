@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nettoyage Storage - VaultEstim</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #f1f5f9;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .header h1 {
+      font-size: 2.5rem;
+      color: #fbbf24;
+      margin-bottom: 0.5rem;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .card h2 {
+      color: #fbbf24;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+    button {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1.25rem;
+      font-weight: bold;
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: #1e293b;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      margin-bottom: 1rem;
+    }
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .alert {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+    .success {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.3);
+      color: #22c55e;
+    }
+    .error {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+    .storage-info {
+      font-family: monospace;
+      font-size: 0.9rem;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🧹 Nettoyage du Storage</h1>
+      <p>Libérez de l'espace pour l'authentification Supabase</p>
+    </div>
+
+    <div class="card">
+      <h2>📊 État actuel du storage</h2>
+      <div class="storage-info" id="storageInfo">Chargement...</div>
+
+      <div class="alert">
+        <strong>⚠️ Attention</strong><br>
+        Cette opération va nettoyer le localStorage pour libérer de l'espace.<br>
+        Vos données sont sûres dans IndexedDB et seront migrées vers Supabase.
+      </div>
+
+      <button onclick="analyzeStorage()">🔍 Analyser le Storage</button>
+      <button onclick="cleanStorage()" id="cleanBtn" disabled>🧹 Nettoyer le localStorage</button>
+    </div>
+
+    <div class="card" id="result" style="display:none;">
+      <h2 id="resultTitle">Résultat</h2>
+      <div id="resultContent"></div>
+    </div>
+  </div>
+
+  <script>
+    async function analyzeStorage() {
+      const info = document.getElementById('storageInfo');
+      const cleanBtn = document.getElementById('cleanBtn');
+
+      let html = '<strong>📦 localStorage:</strong><br>';
+      let totalSize = 0;
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const value = localStorage.getItem(key);
+        const size = new Blob([value]).size;
+        totalSize += size;
+
+        html += `  • ${key}: ${(size / 1024).toFixed(2)} KB<br>`;
+      }
+
+      html += `<br><strong>Total: ${(totalSize / 1024 / 1024).toFixed(2)} MB</strong><br>`;
+      html += `<strong>Limite: ~5-10 MB</strong>`;
+
+      info.innerHTML = html;
+      cleanBtn.disabled = false;
+    }
+
+    async function cleanStorage() {
+      const result = document.getElementById('result');
+      const resultTitle = document.getElementById('resultTitle');
+      const resultContent = document.getElementById('resultContent');
+
+      try {
+        // Créer un backup avant nettoyage
+        const backup = {};
+        const keysToBackup = ['vaultestim_user', 'vaultestim_settings'];
+
+        for (const key of keysToBackup) {
+          const value = localStorage.getItem(key);
+          if (value) {
+            backup[key] = value;
+          }
+        }
+
+        // Nettoyer tout le localStorage SAUF les clés essentielles
+        const keysToKeep = ['vaultestim_user', 'vaultestim_settings'];
+        const keysToDelete = [];
+
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!keysToKeep.includes(key)) {
+            keysToDelete.push(key);
+          }
+        }
+
+        // Supprimer les clés non essentielles
+        let deletedSize = 0;
+        keysToDelete.forEach(key => {
+          const value = localStorage.getItem(key);
+          if (value) {
+            deletedSize += new Blob([value]).size;
+          }
+          localStorage.removeItem(key);
+        });
+
+        // Restaurer les clés essentielles
+        for (const key in backup) {
+          localStorage.setItem(key, backup[key]);
+        }
+
+        result.style.display = 'block';
+        resultTitle.textContent = '✅ Nettoyage réussi!';
+        resultTitle.className = 'success';
+        resultContent.innerHTML = `
+          <div class="alert success">
+            <strong>Espace libéré: ${(deletedSize / 1024 / 1024).toFixed(2)} MB</strong><br>
+            <strong>Clés supprimées: ${keysToDelete.length}</strong><br>
+            <strong>Clés conservées: ${keysToKeep.length}</strong><br><br>
+
+            <strong>🎯 Prochaines étapes:</strong><br>
+            1. Retournez sur <a href="/login" style="color:#fbbf24;">la page de connexion</a><br>
+            2. Connectez-vous avec vos identifiants Supabase<br>
+            3. Allez sur <a href="/migrate-supabase" style="color:#fbbf24;">/migrate-supabase</a><br>
+            4. Lancez la migration de vos 8515 cartes!
+          </div>
+        `;
+
+        // Re-analyser après nettoyage
+        setTimeout(() => {
+          analyzeStorage();
+        }, 1000);
+
+      } catch (error) {
+        result.style.display = 'block';
+        resultTitle.textContent = '❌ Erreur';
+        resultTitle.className = 'error';
+        resultContent.innerHTML = `
+          <div class="alert error">
+            <strong>Erreur:</strong> ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // Analyser automatiquement au chargement
+    window.addEventListener('load', () => {
+      analyzeStorage();
+    });
+  </script>
+</body>
+</html>
