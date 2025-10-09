@@ -30,7 +30,8 @@ export default defineConfig({
   server: {
     port: 5174,
     host: true,
-    https: getHttpsConfig(),
+    // HTTPS désactivé temporairement pour le dev local
+    // https: getHttpsConfig(),
     proxy: {
       '/api/pokemontcg': {
         target: 'https://api.pokemontcg.io',

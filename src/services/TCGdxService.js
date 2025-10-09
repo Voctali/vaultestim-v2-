@@ -134,8 +134,8 @@ export class TCGdxService {
       let cards = []
 
       // 1. Essayer d'abord une recherche exacte (pour éviter pidgeot* qui match pidgeotto)
-      // Utiliser la syntaxe sans guillemets pour éviter les problèmes d'encodage
-      const exactUrl = `${this.BASE_URL}/cards?q=name:${translatedQuery}&pageSize=${limit}`
+      // Ajouter des guillemets pour les noms contenant des espaces (ex: "mr. mime")
+      const exactUrl = `${this.BASE_URL}/cards?q=name:"${translatedQuery}"&pageSize=${limit}`
       console.log(`🎯 Tentative recherche exacte: "${translatedQuery}"`)
 
       try {
@@ -148,7 +148,7 @@ export class TCGdxService {
 
       // 2. Si aucun résultat, essayer avec wildcard
       if (cards.length === 0) {
-        const wildcardUrl = `${this.BASE_URL}/cards?q=name:${translatedQuery}*&pageSize=${limit}`
+        const wildcardUrl = `${this.BASE_URL}/cards?q=name:"${translatedQuery}"*&pageSize=${limit}`
         console.log(`🔍 Recherche avec wildcard: "${translatedQuery}*"`)
         const wildcardResult = await this.makeRequestWithRetry(wildcardUrl, 3)
         cards = wildcardResult.data || []
