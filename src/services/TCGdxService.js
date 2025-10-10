@@ -160,14 +160,41 @@ export class TCGdxService {
           card.name.toLowerCase() === translatedQuery.toLowerCase()
         )
 
-        const partialMatches = cards.filter(card =>
-          card.name.toLowerCase() !== translatedQuery.toLowerCase()
-        )
+        // Pour les correspondances partielles, vérifier que c'est un mot complet
+        // "mew" ne doit PAS matcher "mewtwo" (mew n'est pas un mot séparé)
+        // "mew" PEUT matcher "Mew ex", "Mew V", etc. (mew est suivi d'un espace)
+        const validPartialMatches = cards.filter(card => {
+          const cardNameLower = card.name.toLowerCase()
+          const queryLower = translatedQuery.toLowerCase()
 
-        // Si on a des correspondances exactes, les privilégier
+          // Éviter les correspondances exactes (déjà traitées)
+          if (cardNameLower === queryLower) return false
+
+          // Vérifier que le terme recherché est un mot complet
+          // Exemple : "mew ex" ✅, "mewtwo" ❌
+          const startsWithQuery = cardNameLower.startsWith(queryLower)
+          if (!startsWithQuery) return false
+
+          // Vérifier que le caractère suivant est un espace, un tiret ou un caractère spécial
+          // Cela évite "mewtwo" pour la recherche "mew"
+          const charAfterQuery = cardNameLower.charAt(queryLower.length)
+          const isWordBoundary = charAfterQuery === ' ' || charAfterQuery === '-' ||
+                                  charAfterQuery === '(' || charAfterQuery === '.'
+
+          return isWordBoundary
+        })
+
+        // Prioriser les correspondances exactes, sinon accepter les correspondances de mots complets
         if (exactMatches.length > 0) {
           cards = exactMatches
-          console.log(`🎯 Filtré: ${exactMatches.length} correspondances exactes (ignoré ${partialMatches.length} partielles)`)
+          console.log(`🎯 Filtré: ${exactMatches.length} correspondances exactes (ignoré ${cards.length - exactMatches.length} partielles)`)
+        } else if (validPartialMatches.length > 0) {
+          cards = validPartialMatches
+          console.log(`📝 Filtré: ${validPartialMatches.length} correspondances de mots complets`)
+        } else {
+          // Aucune correspondance valide trouvée
+          cards = []
+          console.log(`⚠️ Aucune correspondance valide pour "${translatedQuery}" - ${cards.length} résultats ignorés car non pertinents`)
         }
       }
 

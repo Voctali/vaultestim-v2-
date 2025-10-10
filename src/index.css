@@ -38,6 +38,10 @@
     margin: 0;
     min-height: 100vh;
     background: linear-gradient(135deg, hsl(0 0% 8%) 0%, hsl(0 0% 6%) 100%);
+
+    /* Désactiver le pull-to-refresh sur mobile */
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   h1, h2, h3, h4, h5, h6 {
