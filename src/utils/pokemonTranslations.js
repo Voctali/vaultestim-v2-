@@ -906,7 +906,7 @@ export const POKEMON_TRANSLATIONS = {
   'scovilain': 'scream tail',
   'forgerette': 'brute bonnet',
   'taupikeau': 'flutter mane',
-  'axoloto': 'slither wing',
+  'slitherwing': 'slither wing',
   'manglouton': 'sandy shocks',
   'ferdeter': 'iron treads',
   'coléodôme': 'iron bundle',
