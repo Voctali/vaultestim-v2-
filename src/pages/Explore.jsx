@@ -373,8 +373,8 @@ export function Explore() {
         </div>
       </div>
 
-      {/* Navigation et Actions - Entre titre et recherche */}
-      <div className="flex items-center justify-between">
+      {/* Navigation Breadcrumb */}
+      {(navigationPath.length > 0 || currentView === 'search') && (
         <div className="flex items-center gap-2">
           {/* Breadcrumb Navigation */}
           {navigationPath.length > 0 && (
@@ -420,7 +420,10 @@ export function Explore() {
             </Button>
           )}
         </div>
+      )}
 
+      {/* Bouton Ajouter une carte manuellement */}
+      <div className="flex justify-center">
         <Button
           className="bg-black hover:bg-gray-900 text-white border border-gray-700"
           onClick={() => setShowAddCardModal(true)}
