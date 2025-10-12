@@ -437,6 +437,8 @@ export const POKEMON_TRANSLATIONS = {
   'cheniti': 'burmy',
   'cheniselle': 'wormadam',
   'papilord': 'mothim',
+  'baudrive': 'drifloon',
+  'grodrive': 'drifblim',
   'apitrini': 'combee',
   'apireine': 'vespiquen',
   'pachirisu': 'pachirisu',
