@@ -323,109 +323,54 @@ export function Explore() {
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-3xl font-bold golden-glow flex items-center">
-              {currentView === 'search' ? (
-                <>
-                  <Database className="w-8 h-8 mr-3" />
-                  Résultats de recherche
-                </>
-              ) : currentView === 'blocks' ? (
-                <>
-                  <Package className="w-8 h-8 mr-3" />
-                  Explorer les Blocs
-                </>
-              ) : currentView === 'extensions' ? (
-                <>
-                  <Layers className="w-8 h-8 mr-3" />
-                  Extensions de {selectedBlock?.name}
-                </>
-              ) : currentView === 'cards' ? (
-                <>
-                  <Database className="w-8 h-8 mr-3" />
-                  Cartes de {selectedExtension?.name}
-                </>
-              ) : (
-                <>
-                  <Search className="w-8 h-8 mr-3" />
-                  Explorer
-                </>
-              )}
-            </h1>
-
-            {/* Breadcrumb Navigation */}
-            {navigationPath.length > 0 && (
-              <div className="flex items-center gap-2 text-sm">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBackToBlocks}
-                  className="border-primary/20"
-                >
-                  <Package className="w-4 h-4 mr-2" />
-                  Blocs
-                </Button>
-                {navigationPath.map((item, index) => (
-                  <div key={`nav-${index}-${item.name || 'unnamed'}`} className="flex items-center gap-2">
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    {index === navigationPath.length - 1 ? (
-                      <span className="font-medium">{item.name}</span>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={index === 0 ? handleBackToExtensions : undefined}
-                        className="border-primary/20"
-                      >
-                        {item.name}
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
+      {/* Header - Titre seulement */}
+      <div>
+        <h1 className="text-3xl font-bold golden-glow flex items-center mb-2">
+          {currentView === 'search' ? (
+            <>
+              <Database className="w-8 h-8 mr-3" />
+              Résultats de recherche
+            </>
+          ) : currentView === 'blocks' ? (
+            <>
+              <Package className="w-8 h-8 mr-3" />
+              Explorer les Blocs
+            </>
+          ) : currentView === 'extensions' ? (
+            <>
+              <Layers className="w-8 h-8 mr-3" />
+              Extensions de {selectedBlock?.name}
+            </>
+          ) : currentView === 'cards' ? (
+            <>
+              <Database className="w-8 h-8 mr-3" />
+              Cartes de {selectedExtension?.name}
+            </>
+          ) : (
+            <>
+              <Search className="w-8 h-8 mr-3" />
+              Explorer
+            </>
+          )}
+        </h1>
+        <div className="text-muted-foreground flex items-center gap-4">
+          <span>
+            {currentView === 'search' ? (
+              `Cartes trouvées via l'API Pokémon TCG`
+            ) : currentView === 'blocks' ? (
+              'Découvrez les blocs et leurs extensions'
+            ) : currentView === 'extensions' ? (
+              `Extensions du bloc ${selectedBlock?.name}`
+            ) : currentView === 'cards' ? (
+              `Cartes de l'extension ${selectedExtension?.name}`
+            ) : (
+              'Naviguez dans la hiérarchie Blocs → Extensions → Cartes'
             )}
-
-            {currentView === 'search' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBackFromSearch}
-                className="border-primary/20"
-              >
-                <Package className="w-4 h-4 mr-2" />
-                Retour aux blocs
-              </Button>
-            )}
-          </div>
-          <div className="text-muted-foreground flex items-center gap-4">
-            <span>
-              {currentView === 'search' ? (
-                `Cartes trouvées via l'API Pokémon TCG`
-              ) : currentView === 'blocks' ? (
-                'Découvrez les blocs et leurs extensions'
-              ) : currentView === 'extensions' ? (
-                `Extensions du bloc ${selectedBlock?.name}`
-              ) : currentView === 'cards' ? (
-                `Cartes de l'extension ${selectedExtension?.name}`
-              ) : (
-                'Naviguez dans la hiérarchie Blocs → Extensions → Cartes'
-              )}
-            </span>
-            <Badge variant="secondary" className="bg-primary/20 text-primary">
-              {totalDiscoveredCards} cartes en base
-            </Badge>
-          </div>
+          </span>
+          <Badge variant="secondary" className="bg-primary/20 text-primary">
+            {totalDiscoveredCards} cartes en base
+          </Badge>
         </div>
-        <Button
-          className="bg-black hover:bg-gray-900 text-white border border-gray-700"
-          onClick={() => setShowAddCardModal(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Ajouter une carte manuellement
-        </Button>
       </div>
 
       {/* Search Bar */}
@@ -458,6 +403,63 @@ export function Explore() {
             Annuler
           </Button>
         )}
+      </div>
+
+      {/* Navigation et Actions - Déplacé entre le champ de recherche et le contenu */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {/* Breadcrumb Navigation */}
+          {navigationPath.length > 0 && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBackToBlocks}
+                className="border-primary/20"
+              >
+                <Package className="w-4 h-4 mr-2" />
+                Blocs
+              </Button>
+              {navigationPath.map((item, index) => (
+                <div key={`nav-${index}-${item.name || 'unnamed'}`} className="flex items-center gap-2">
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  {index === navigationPath.length - 1 ? (
+                    <span className="font-medium text-sm">{item.name}</span>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={index === 0 ? handleBackToExtensions : undefined}
+                      className="border-primary/20"
+                    >
+                      {item.name}
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+
+          {currentView === 'search' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBackFromSearch}
+              className="border-primary/20"
+            >
+              <Package className="w-4 h-4 mr-2" />
+              Retour aux blocs
+            </Button>
+          )}
+        </div>
+
+        <Button
+          className="bg-black hover:bg-gray-900 text-white border border-gray-700"
+          onClick={() => setShowAddCardModal(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter une carte manuellement
+        </Button>
       </div>
 
       {/* Content Area */}
