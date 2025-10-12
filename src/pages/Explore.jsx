@@ -373,39 +373,7 @@ export function Explore() {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex gap-3">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher une carte dans l'API Pokemon TCG..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="pl-10 golden-border"
-            style={{ textTransform: 'none' }}
-          />
-        </div>
-        <Button
-          className="bg-blue-500 hover:bg-blue-600 text-white"
-          onClick={handleSearch}
-          disabled={isSearching}
-        >
-          {isSearching ? 'Recherche...' : 'Rechercher'}
-        </Button>
-        {isSearching && (
-          <Button
-            variant="destructive"
-            onClick={handleCancelSearch}
-            className="bg-red-500 hover:bg-red-600 text-white"
-          >
-            <X className="w-4 h-4 mr-2" />
-            Annuler
-          </Button>
-        )}
-      </div>
-
-      {/* Navigation et Actions - Déplacé entre le champ de recherche et le contenu */}
+      {/* Navigation et Actions - Entre titre et recherche */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {/* Breadcrumb Navigation */}
@@ -460,6 +428,38 @@ export function Explore() {
           <Plus className="w-4 h-4 mr-2" />
           Ajouter une carte manuellement
         </Button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="flex gap-3">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher une carte dans l'API Pokemon TCG..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="pl-10 golden-border"
+            style={{ textTransform: 'none' }}
+          />
+        </div>
+        <Button
+          className="bg-blue-500 hover:bg-blue-600 text-white"
+          onClick={handleSearch}
+          disabled={isSearching}
+        >
+          {isSearching ? 'Recherche...' : 'Rechercher'}
+        </Button>
+        {isSearching && (
+          <Button
+            variant="destructive"
+            onClick={handleCancelSearch}
+            className="bg-red-500 hover:bg-red-600 text-white"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Annuler
+          </Button>
+        )}
       </div>
 
       {/* Content Area */}

@@ -459,6 +459,7 @@ export const POKEMON_TRANSLATIONS = {
   'moufouette': 'stunky',
   'moufflair': 'skuntank',
   'archeomire': 'bronzor',
+  'archéomire': 'bronzor',
   'archeodong': 'bronzong',
   'manzaï': 'bonsly',
   'mime jr.': 'mime jr.',
