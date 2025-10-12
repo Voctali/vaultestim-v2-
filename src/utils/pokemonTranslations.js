@@ -915,7 +915,6 @@ export const POKEMON_TRANSLATIONS = {
   'ferdeter': 'iron treads',
   'coléodôme': 'iron bundle',
   'carmadura': 'iron hands',
-  'flotajou': 'iron jugulis',
   'bramboutan': 'iron moth',
   'vert-de-gris': 'iron thorns',
   'frigodo': 'frigibax',
