@@ -85,6 +85,9 @@ L'application utilise une architecture en couches de Context API :
 13. **🗑️ Suppression Complète** - Suppression de blocs/extensions/cartes de la base locale
 14. **🔎 Recherche Intelligente** - Filtrage par limite de mots (Mew vs Mewtwo)
 15. **📱 Pull-to-Refresh Désactivé** - Empêche le rafraîchissement accidentel sur mobile
+16. **🔍 Recherche avec Annulation** - AbortController pour annuler les recherches en cours
+17. **📋 Dictionnaire de Traductions** - Traductions Français→Anglais pour noms Pokémon (archéomire, flotajou, ptiravi, etc.)
+18. **📐 Layout Responsive Explorer** - Bouton "Ajouter carte" et navigation adaptés mobile/desktop
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -106,7 +109,7 @@ L'application utilise une architecture en couches de Context API :
 - Images haute qualité (sprites normaux + shiny)
 
 #### TCGdxService (Pokemon TCG API)
-- `searchCards(query, limit)` - Recherche de cartes avec traduction français→anglais
+- `searchCards(query, limit, signal)` - Recherche de cartes avec traduction français→anglais et AbortSignal
 - `getCardById(cardId)` - Récupération d'une carte spécifique
 - `getSets()` - Liste des extensions disponibles
 - `organizeCardsBySet()` / `organizeCardsByBlock()` - Organisation par extensions/blocs
@@ -116,6 +119,7 @@ L'application utilise une architecture en couches de Context API :
 - **Proxy CORS** : Utilise `/api/pokemontcg` via configuration Vite
 - **Filtrage intelligent** : Recherche par limite de mots (ex: "mew" ne matche PAS "mewtwo")
 - **Correspondances exactes prioritaires** : "Mew", "Mew ex", "Mew V" acceptés, "Mewtwo" rejeté
+- **AbortController** : Support de l'annulation des requêtes via signal
 
 #### SupabaseService (Stockage Cloud)
 - `saveDiscoveredCards()` / `loadDiscoveredCards()` - Gestion des cartes découvertes dans PostgreSQL
@@ -220,7 +224,9 @@ L'application utilise une architecture en couches de Context API :
   - URL: Configurée via `VITE_SUPABASE_URL`
   - Auth: Email/Password avec sessions sécurisées
   - Database: PostgreSQL avec RLS
-- **Traduction** : Français→Anglais automatique pour recherche cartes (dictionnaire centralisé)
+- **Traduction** : Français→Anglais automatique pour recherche cartes (dictionnaire centralisé dans `src/utils/pokemonTranslations.js`)
+  - Exemples récents ajoutés : archéomire→bronzor, archéodong→bronzong, ptiravi→happiny, flotajou→panpour
+  - Attention aux doublons : vérifier qu'une traduction n'existe pas déjà avant d'en ajouter une nouvelle
 
 ## Démarrage Rapide
 ```bash
@@ -313,11 +319,28 @@ L'application sera accessible sur http://localhost:5174
 - **Niveau 2** : Extensions du bloc sélectionné
 - **Niveau 3** : Cartes de l'extension sélectionnée
 - **Breadcrumb** : Navigation avec boutons de retour
+- **Bouton "Ajouter carte"** : Positionnement responsive entre navigation et recherche
+  - Mobile : Vertical (flex-col), bouton pleine largeur
+  - Desktop : Horizontal (md:flex-row), bouton compact
 
 #### **Éditeur de Base de Données**
 - **Vue générale** : Onglets Blocs/Extensions/Cartes
 - **Vue détail** : Navigation dans la hiérarchie
 - **Actions** : Édition, suppression, prévisualisation sur chaque niveau
+
+### 🔍 Système de Recherche Avancé
+
+#### **Annulation de Recherche**
+- **AbortController** : Gestion des requêtes simultanées
+- **Bouton Annuler** : Visible pendant la recherche en cours
+- **Nettoyage automatique** : Annulation lors de nouvelles recherches
+- **Gestion d'erreurs** : Traitement des erreurs AbortError
+
+#### **Traductions Pokémon**
+- **Fichier centralisé** : `src/utils/pokemonTranslations.js`
+- **Format** : `'nom_français': 'nom_anglais'` (tout en minuscules)
+- **Export** : `translatePokemonName(frenchName)` pour conversion automatique
+- **Maintenance** : Vérifier les doublons avec `grep -n "nom" pokemonTranslations.js`
 
 ### 🎨 Améliorations Visuelles
 
@@ -346,6 +369,8 @@ L'application sera accessible sur http://localhost:5174
 - **Recherche intelligente** : Filtrage par limite de mots pour éviter faux positifs (Mew vs Mewtwo)
 - **Multi-device** : Synchronisation Supabase automatique avec cache local pour performance
 - **Mobile** : Pull-to-refresh désactivé pour éviter rafraîchissements accidentels
+- **Traductions Pokémon** : Dictionnaire centralisé dans `src/utils/pokemonTranslations.js` - Éviter les doublons
+- **AbortController** : Annulation des recherches pour éviter race conditions et résultats obsolètes
 
 ## Déploiement
 
