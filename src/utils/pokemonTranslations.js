@@ -901,7 +901,7 @@ export const POKEMON_TRANSLATIONS = {
   'vrombotor': 'revavroom',
   'ferdeter': 'cyclizar',
   'flotillon': 'orthworm',
-  'flotajou': 'tandemaus',
+  'flotajou': 'panpour',
   'flamenroule': 'clodsire',
   'toutombe': 'farigiraf',
   'hurlurave': 'dudunsparce',
