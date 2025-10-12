@@ -373,8 +373,9 @@ export function Explore() {
         </div>
       </div>
 
-      {/* Navigation Breadcrumb */}
-      {(navigationPath.length > 0 || currentView === 'search') && (
+      {/* Navigation et Bouton Ajouter - Responsive : vertical sur mobile, horizontal sur desktop */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        {/* Navigation Breadcrumb */}
         <div className="flex items-center gap-2 flex-wrap">
           {navigationPath.length > 0 && (
             <>
@@ -419,16 +420,16 @@ export function Explore() {
             </Button>
           )}
         </div>
-      )}
 
-      {/* Bouton Ajouter une carte manuellement */}
-      <Button
-        className="bg-black hover:bg-gray-900 text-white border border-gray-700 w-full"
-        onClick={() => setShowAddCardModal(true)}
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        Ajouter une carte manuellement
-      </Button>
+        {/* Bouton Ajouter une carte manuellement */}
+        <Button
+          className="bg-black hover:bg-gray-900 text-white border border-gray-700 w-full md:w-auto"
+          onClick={() => setShowAddCardModal(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter une carte manuellement
+        </Button>
+      </div>
 
       {/* Search Bar */}
       <div className="flex gap-3">
