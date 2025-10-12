@@ -26,11 +26,12 @@ VaultEstim v2 est une application complète de gestion de collections de cartes 
 - **Routage**: React Router DOM v7
 - **Styling**: Tailwind CSS avec système de design shadcn/ui
 - **Composants**: shadcn/ui avec Radix UI primitives
-- **APIs**: Tyradex (Pokémon français) + Pokemon TCG API
+- **APIs**: Pokemon TCG API (avec proxy CORS Vite)
 - **État**: Context API avec hooks personnalisés
-- **Authentification**: Système mock avec localStorage
-- **Stockage**: IndexedDB pour données illimitées (cartes, extensions, images)
-- **Upload d'images**: Système de stockage local avec prévisualisation
+- **Authentification**: Supabase Auth avec gestion de session complète
+- **Base de données**: Supabase PostgreSQL pour stockage cloud multi-device
+- **Stockage local**: Cache pour performance avec synchronisation cloud
+- **Backend**: Supabase Functions (optionnel pour opérations complexes)
 
 ### Structure du Projet
 
@@ -72,16 +73,18 @@ L'application utilise une architecture en couches de Context API :
 1. **🎨 Thème Sombre/Doré** - Interface élégante avec police Cinzel
 2. **🔍 Recherche Pokémon Française** - API PokéAPI avec traductions françaises
 3. **📱 Navigation Sidebar** - Navigation repliable avec indicateurs de statut
-4. **👤 Authentification Mock** - Système de connexion de démonstration
+4. **👤 Authentification Supabase** - Système d'authentification complet avec gestion de session
 5. **📊 Tableau de Bord** - Statistiques utilisateur et progression
 6. **⭐ Système de Niveaux** - 6 niveaux basés sur le nombre de cartes
 7. **👑 Gestion Premium** - Fonctionnalités premium avec badges
 8. **🔧 Interface Admin** - Gestion des utilisateurs premium avec plans tarifaires
-9. **🗃️ Base de Données Locale** - Stockage IndexedDB illimité pour cartes et extensions
+9. **🗃️ Base de Données Supabase** - Stockage cloud illimité pour cartes et extensions
 10. **📷 Upload d'Images** - Système complet de gestion d'images avec prévisualisation
 11. **📦 Gestion des Blocs** - Création, modification, suppression de blocs personnalisés
 12. **🔄 Déplacement d'Extensions** - Transfert permanent d'extensions entre blocs
 13. **🗑️ Suppression Complète** - Suppression de blocs/extensions/cartes de la base locale
+14. **🔎 Recherche Intelligente** - Filtrage par limite de mots (Mew vs Mewtwo)
+15. **📱 Pull-to-Refresh Désactivé** - Empêche le rafraîchissement accidentel sur mobile
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -111,16 +114,20 @@ L'application utilise une architecture en couches de Context API :
 - Support prix de marché (TCGPlayer, CardMarket)
 - Traductions types et raretés en français
 - **Proxy CORS** : Utilise `/api/pokemontcg` via configuration Vite
+- **Filtrage intelligent** : Recherche par limite de mots (ex: "mew" ne matche PAS "mewtwo")
+- **Correspondances exactes prioritaires** : "Mew", "Mew ex", "Mew V" acceptés, "Mewtwo" rejeté
 
-#### IndexedDBService (Stockage Local)
-- `saveDiscoveredCards()` / `loadDiscoveredCards()` - Gestion des cartes découvertes
+#### SupabaseService (Stockage Cloud)
+- `saveDiscoveredCards()` / `loadDiscoveredCards()` - Gestion des cartes découvertes dans PostgreSQL
 - `saveSeriesDatabase()` / `loadSeriesDatabase()` - Gestion des extensions
-- `saveCustomBlock()` / `loadCustomBlocks()` - Gestion des blocs personnalisés
-- `saveCustomExtension()` / `loadCustomExtensions()` - Gestion des déplacements d'extensions
-- `deleteCompleteBlock()` / `deleteCompleteExtension()` - Suppression complète
-- `getStorageStats()` - Statistiques de stockage
-- **Traitement par batch** : Optimisé pour gros volumes de données
-- **Base de données v3** : Stores pour cartes, extensions, blocs, images
+- `addDiscoveredCards()` - Ajout incrémental de cartes (pas de remplacement)
+- `deleteCardById()` - Suppression de cartes spécifiques
+- **Multi-device** : Synchronisation automatique entre appareils
+- **Traitement par batch** : Optimisé pour gros volumes de données (chunking)
+- **Index optimisés** : Recherche rapide par user_id, card_id
+- **Tables principales** :
+  - `discovered_cards` : Toutes les cartes découvertes par utilisateur
+  - `user_profiles` : Profils utilisateurs avec métadonnées
 
 #### ImageUploadService (Gestion d'Images)
 - `uploadImage()` - Upload et stockage d'images dans IndexedDB
@@ -132,16 +139,22 @@ L'application utilise une architecture en couches de Context API :
 - **Base de données dédiée** : VaultEstim_Images avec indexation
 
 ### Système d'Authentification
-- **Authentification** : Mock avec localStorage (clé: `vaultestim_user`)
+- **Authentification** : Supabase Auth avec gestion complète de session
+- **Providers** : Email/Password avec validation
+- **Sessions** : Gestion automatique avec refresh tokens
 - **Rôles** : `user`, `admin` - Protection des routes admin
 - **États** : `isPremium` pour fonctionnalités premium
-- **Hook** : `useAuth()` avec `isAuthenticated`, `isAdmin`, `isPremium`
-- **Connexion demo** : N'importe quel email/mot de passe accepté
+- **Hook** : `useAuth()` avec `isAuthenticated`, `isAdmin`, `isPremium`, `user`, `logout`, `register`
+- **Pages** : Login, Register, ResetPassword avec formulaires Supabase
+- **Sécurité** : Row Level Security (RLS) sur toutes les tables
 
 ### Gestion de l'État Global
-- **useAuth** : Authentification et profil utilisateur
-- **useCollection** : Gestion des cartes de collection
-- **useCardDatabase** : Base de données de cartes avec recherche/filtrés et stockage IndexedDB
+- **useAuth** : Authentification Supabase et profil utilisateur
+- **useCollection** : Gestion des cartes de collection avec localStorage
+- **useCardDatabase** : Base de données de cartes avec recherche/filtres et stockage Supabase
+  - Chargement automatique au login
+  - Synchronisation multi-device
+  - Cache local pour performance
 - **États personnalisés** : customBlocks, customExtensions pour les modifications utilisateur
 
 ### Thème et Design
@@ -150,6 +163,7 @@ L'application utilise une architecture en couches de Context API :
 - **Thème** : Sombre avec accents dorés et lueurs
 - **Composants** : shadcn/ui avec variantes personnalisées
 - **Responsive** : Mobile-first avec breakpoints Tailwind
+- **Mobile** : Pull-to-refresh désactivé (`overscroll-behavior-y: contain`)
 
 ### Constantes et Configuration
 
@@ -177,6 +191,8 @@ L'application utilise une architecture en couches de Context API :
 
 #### Variables d'Environnement
 - `VITE_POKEMON_TCG_API_KEY` : Clé API Pokemon TCG (optionnelle)
+- `VITE_SUPABASE_URL` : URL du projet Supabase
+- `VITE_SUPABASE_ANON_KEY` : Clé anonyme Supabase (publique)
 
 #### Configuration Proxy (vite.config.js)
 - `/api/pokemontcg` → `https://api.pokemontcg.io` pour contourner CORS
@@ -196,9 +212,15 @@ L'application utilise une architecture en couches de Context API :
 - **Routing** : Layout wrapper avec protection d'authentification
 
 ### APIs Externes
-- **Tyradex** : `https://tyradex.vercel.app/api/v1` (Pokémon français)
 - **Pokemon TCG** : `https://api.pokemontcg.io/v2` (cartes TCG)
-- **Traduction** : Français→Anglais automatique pour recherche cartes
+  - Proxy CORS via Vite : `/api/pokemontcg`
+  - Recherche avec filtrage intelligent par limite de mots
+  - Support complet des prix (CardMarket EUR, TCGPlayer USD)
+- **Supabase** : Backend complet (Auth + PostgreSQL + Storage)
+  - URL: Configurée via `VITE_SUPABASE_URL`
+  - Auth: Email/Password avec sessions sécurisées
+  - Database: PostgreSQL avec RLS
+- **Traduction** : Français→Anglais automatique pour recherche cartes (dictionnaire centralisé)
 
 ## Démarrage Rapide
 ```bash
@@ -209,27 +231,25 @@ npm run dev
 
 L'application sera accessible sur http://localhost:5174
 
-**Connexion Demo** : Utilisez n'importe quel email/mot de passe ou cliquez sur "Remplir automatiquement"
+**Connexion** : Créez un compte avec votre email ou utilisez un compte existant. L'authentification est gérée par Supabase.
 
 ## Fonctionnalités Avancées Récentes
 
-### 🗃️ Système de Base de Données Locale (IndexedDB)
+### 🗃️ Système de Base de Données Cloud (Supabase)
 
 #### **Architecture**
-- **VaultEstimDB v3** : Base principale avec 5 stores
-  - `discovered_cards` : Cartes découvertes avec métadonnées
-  - `series_database` : Extensions avec informations complètes
-  - `custom_blocks` : Blocs créés par l'utilisateur
-  - `custom_extensions` : Déplacements d'extensions entre blocs
-  - `search_cache` : Cache des recherches pour performance
-- **VaultEstim_Images** : Base dédiée aux images
-  - `uploaded_images` : Images uploadées avec indexation par entité
+- **Tables PostgreSQL** :
+  - `discovered_cards` : Cartes découvertes par utilisateur avec métadonnées complètes
+  - `user_profiles` : Profils utilisateurs liés à auth.users
+  - Row Level Security (RLS) : Isolation complète des données par utilisateur
 
 #### **Capacités**
-- **Stockage illimité** : Plus de limitations de localStorage
-- **Traitement par batch** : Optimisé pour milliers de cartes
-- **Index performants** : Recherche rapide par nom, type, extension
-- **Migration automatique** : Depuis localStorage vers IndexedDB
+- **Stockage illimité** : Cloud PostgreSQL sans limitations
+- **Multi-device** : Synchronisation automatique entre tous les appareils
+- **Traitement par batch** : Chunking optimisé pour gros volumes (500 cartes/batch)
+- **Index optimisés** : Recherche ultra-rapide par user_id, card_id
+- **Cache local** : Performance instantanée avec fallback sur Supabase
+- **Trigger updated_at** : Mise à jour automatique des timestamps
 
 ### 📷 Système de Gestion d'Images
 
@@ -319,7 +339,30 @@ L'application sera accessible sur http://localhost:5174
 - **Statistiques stockage** : Cartes, extensions, images, tailles
 
 ### 🔧 Résolution de Problèmes Courants
-- **CORS TCG API** : Résolu par proxy Vite
+- **CORS TCG API** : Résolu par proxy Vite (`/api/pokemontcg`)
 - **Persistence modifications** : Type de bloc correctement détecté
 - **Reconstruction données** : useEffect optimisés pour éviter boucles
 - **Performance** : Traitement par batch pour gros volumes
+- **Recherche intelligente** : Filtrage par limite de mots pour éviter faux positifs (Mew vs Mewtwo)
+- **Multi-device** : Synchronisation Supabase automatique avec cache local pour performance
+- **Mobile** : Pull-to-refresh désactivé pour éviter rafraîchissements accidentels
+
+## Déploiement
+
+### Production (Vercel)
+```bash
+# Déploiement automatique via CLI
+vercel --prod
+
+# Ou push vers GitHub (si connecté)
+git push origin master
+```
+
+### Variables d'Environnement Vercel
+Configurer dans le dashboard Vercel :
+- `VITE_SUPABASE_URL` : URL de votre projet Supabase
+- `VITE_SUPABASE_ANON_KEY` : Clé anonyme Supabase
+- `VITE_POKEMON_TCG_API_KEY` : Clé API Pokemon TCG (optionnelle)
+
+### URL de Production
+L'application est déployée sur : `vaultestim-v2-3vnio8r0h-voctalis-projects.vercel.app`

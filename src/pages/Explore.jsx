@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +13,7 @@ import { useCardDatabase } from '@/hooks/useCardDatabase.jsx'
 import { IndexedDBService } from '@/services/IndexedDBService'
 import { ImageUploadService } from '@/services/ImageUploadService'
 import { buildBlocksHierarchy } from '@/services/BlockHierarchyService'
-import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft } from 'lucide-react'
+import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X } from 'lucide-react'
 
 export function Explore() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -32,6 +32,19 @@ export function Explore() {
   const [customExtensions, setCustomExtensions] = useState([])
   const { addToCollection } = useCollection()
   const { searchCards, seriesDatabase, discoveredCards, isLoading, totalDiscoveredCards, getCardsBySet } = useCardDatabase()
+
+  // AbortController pour annuler la recherche
+  const abortControllerRef = useRef(null)
+
+  // Nettoyer l'AbortController quand le composant est démonté
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        console.log('🛑 Recherche annulée - composant démonté')
+      }
+    }
+  }, [])
 
   // Charger les données personnalisées au démarrage
   useEffect(() => {
@@ -242,18 +255,40 @@ export function Explore() {
       return
     }
 
+    // Annuler toute recherche en cours
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      console.log('🛑 Recherche précédente annulée')
+    }
+
+    // Créer un nouveau AbortController pour cette recherche
+    abortControllerRef.current = new AbortController()
+
     try {
       console.log(`🔍 Recherche de cartes: "${searchTerm}"`)
       setCurrentView('search')
 
-      // Rechercher via l'API Pokémon TCG
-      const results = await searchCards(searchTerm)
+      // Rechercher via l'API Pokémon TCG avec le signal d'annulation
+      const results = await searchCards(searchTerm, abortControllerRef.current.signal)
       setSearchResults(results)
 
       console.log(`✅ ${results.length} cartes trouvées`)
     } catch (error) {
-      console.error('❌ Erreur lors de la recherche:', error)
+      // Ne pas afficher d'erreur si c'est une annulation volontaire
+      if (error.name === 'AbortError' || abortControllerRef.current?.signal.aborted) {
+        console.log('🛑 Recherche annulée par l\'utilisateur')
+      } else {
+        console.error('❌ Erreur lors de la recherche:', error)
+      }
       setSearchResults([])
+    }
+  }
+
+  const handleCancelSearch = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      console.log('🛑 Recherche annulée manuellement par l\'utilisateur')
+      abortControllerRef.current = null
     }
   }
 
@@ -399,6 +434,16 @@ export function Explore() {
         >
           {isLoading ? 'Recherche...' : 'Rechercher'}
         </Button>
+        {isLoading && (
+          <Button
+            variant="destructive"
+            onClick={handleCancelSearch}
+            className="bg-red-500 hover:bg-red-600 text-white"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Annuler
+          </Button>
+        )}
       </div>
 
       {/* Content Area */}

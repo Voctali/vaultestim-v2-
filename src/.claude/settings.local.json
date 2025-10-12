@@ -46,7 +46,8 @@
       "Bash(git config:*)",
       "Bash(vercel)",
       "Bash(vercel:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(start http://localhost:5174)"
     ],
     "deny": [],
     "ask": []

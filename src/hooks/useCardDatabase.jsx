@@ -424,7 +424,7 @@ export function CardDatabaseProvider({ children }) {
     setSeriesDatabase([])
   }
 
-  const searchCards = async (query) => {
+  const searchCards = async (query, abortSignal = null) => {
     if (!query.trim()) {
       return []
     }
@@ -433,8 +433,20 @@ export function CardDatabaseProvider({ children }) {
     try {
       console.log(`🔍 Recherche optimisée: "${query}"`)
 
+      // Vérifier si la recherche a été annulée
+      if (abortSignal?.aborted) {
+        console.log('🛑 Recherche annulée par l\'utilisateur')
+        return []
+      }
+
       // 1. Recherche instantanée dans le cache local d'abord
       const localResults = await searchInLocalCache(query)
+
+      // Vérifier à nouveau l'annulation
+      if (abortSignal?.aborted) {
+        console.log('🛑 Recherche annulée par l\'utilisateur')
+        return []
+      }
 
       // Si on a déjà de bons résultats locaux, les retourner MAIS continuer la recherche API
       const highScoreResults = localResults.filter(card => card._searchScore >= 50)
@@ -444,15 +456,26 @@ export function CardDatabaseProvider({ children }) {
         // Lancer la recherche API en arrière-plan pour découvrir de nouvelles cartes
         setTimeout(async () => {
           try {
+            // Vérifier l'annulation avant la recherche en arrière-plan
+            if (abortSignal?.aborted) return
+
             console.log(`🔍 Recherche API en arrière-plan pour découvrir de nouvelles cartes...`)
             const apiResults = await MultiApiService.searchCards(query, 500)
+
+            // Vérifier l'annulation après la recherche
+            if (abortSignal?.aborted) return
+
             if (apiResults && apiResults.length > 0) {
               addDiscoveredCards(apiResults)
               updateSeriesDatabase(apiResults)
               console.log(`🆕 ${apiResults.length} nouvelles cartes découvertes en arrière-plan`)
             }
           } catch (error) {
-            console.warn('⚠️ Recherche arrière-plan échouée:', error.message)
+            if (error.name === 'AbortError') {
+              console.log('🛑 Recherche arrière-plan annulée')
+            } else {
+              console.warn('⚠️ Recherche arrière-plan échouée:', error.message)
+            }
           }
         }, 100)
 
@@ -463,6 +486,12 @@ export function CardDatabaseProvider({ children }) {
       // 2. Recherche directe avec RapidAPI
       console.log(`📡 Recherche avec APIs distantes: "${query}"`)
       const apiResults = await MultiApiService.searchCards(query, 500)
+
+      // Vérifier l'annulation après la recherche API
+      if (abortSignal?.aborted) {
+        console.log('🛑 Recherche annulée par l\'utilisateur')
+        return []
+      }
 
       if (apiResults.length > 0) {
         // Ajouter les cartes trouvées à la base de données locale
@@ -494,6 +523,12 @@ export function CardDatabaseProvider({ children }) {
       console.warn(`⚠️ Aucun résultat trouvé pour: "${query}"`)
       return []
     } catch (error) {
+      // Vérifier si c'est une erreur d'annulation
+      if (error.name === 'AbortError' || abortSignal?.aborted) {
+        console.log('🛑 Recherche annulée par l\'utilisateur')
+        return []
+      }
+
       console.error('❌ Erreur de recherche:', error)
 
       // Fallback vers la base de données locale uniquement
