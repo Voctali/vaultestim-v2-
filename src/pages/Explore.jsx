@@ -455,7 +455,7 @@ export function Explore() {
       {currentView === 'search' ? (
         <CardSearchResults
           cards={searchResults}
-          isLoading={isLoading}
+          isLoading={isSearching}
           searchQuery={searchTerm}
         />
       ) : currentView === 'blocks' ? (
