@@ -463,6 +463,7 @@ export const POKEMON_TRANSLATIONS = {
   'archeodong': 'bronzong',
   'archéodong': 'bronzong',
   'manzaï': 'bonsly',
+  'ptiravi': 'happiny',
   'mime jr.': 'mime jr.',
   'mime jr': 'mime jr.',
   'pijako': 'chatot',
