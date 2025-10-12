@@ -30,6 +30,7 @@ export function Explore() {
   const [blocksData, setBlocksData] = useState([])
   const [customBlocks, setCustomBlocks] = useState([])
   const [customExtensions, setCustomExtensions] = useState([])
+  const [isSearching, setIsSearching] = useState(false) // État local pour afficher le bouton d'annulation
   const { addToCollection } = useCollection()
   const { searchCards, seriesDatabase, discoveredCards, isLoading, totalDiscoveredCards, getCardsBySet } = useCardDatabase()
 
@@ -263,6 +264,7 @@ export function Explore() {
 
     // Créer un nouveau AbortController pour cette recherche
     abortControllerRef.current = new AbortController()
+    setIsSearching(true) // Activer l'état de recherche pour afficher le bouton d'annulation
 
     try {
       console.log(`🔍 Recherche de cartes: "${searchTerm}"`)
@@ -281,6 +283,8 @@ export function Explore() {
         console.error('❌ Erreur lors de la recherche:', error)
       }
       setSearchResults([])
+    } finally {
+      setIsSearching(false) // Désactiver l'état de recherche
     }
   }
 
@@ -289,6 +293,7 @@ export function Explore() {
       abortControllerRef.current.abort()
       console.log('🛑 Recherche annulée manuellement par l\'utilisateur')
       abortControllerRef.current = null
+      setIsSearching(false) // Désactiver immédiatement l'état de recherche
     }
   }
 
@@ -430,11 +435,11 @@ export function Explore() {
         <Button
           className="bg-blue-500 hover:bg-blue-600 text-white"
           onClick={handleSearch}
-          disabled={isLoading}
+          disabled={isSearching}
         >
-          {isLoading ? 'Recherche...' : 'Rechercher'}
+          {isSearching ? 'Recherche...' : 'Rechercher'}
         </Button>
-        {isLoading && (
+        {isSearching && (
           <Button
             variant="destructive"
             onClick={handleCancelSearch}
