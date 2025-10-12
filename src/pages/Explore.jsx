@@ -293,8 +293,17 @@ export function Explore() {
       abortControllerRef.current.abort()
       console.log('🛑 Recherche annulée manuellement par l\'utilisateur')
       abortControllerRef.current = null
-      setIsSearching(false) // Désactiver immédiatement l'état de recherche
     }
+
+    // Réinitialiser complètement la vue
+    setIsSearching(false)
+    setCurrentView('blocks')
+    setSearchTerm('')
+    setSearchResults([])
+    setSelectedBlock(null)
+    setSelectedExtension(null)
+    setNavigationPath([])
+    console.log('🔙 Retour à la vue des blocs')
   }
 
   const handleKeyPress = (e) => {
