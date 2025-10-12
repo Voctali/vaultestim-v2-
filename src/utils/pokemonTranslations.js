@@ -421,6 +421,7 @@ export const POKEMON_TRANSLATIONS = {
   'étourmi': 'starly',
   'étourvol': 'staravia',
   'étourvillon': 'staraptor',
+  'étouraptor': 'staraptor',
   'étourneau': 'staraptor',
   'keunotor': 'bidoof',
   'castorno': 'bibarel',
