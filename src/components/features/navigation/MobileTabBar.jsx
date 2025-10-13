@@ -55,8 +55,8 @@ export function MobileTabBar() {
               >
                 <div
                   className={cn(
-                    "w-6 h-6 rounded-lg flex items-center justify-center mb-1 transition-all",
-                    isActive ? "scale-110" : ""
+                    "w-6 h-6 rounded-lg flex items-center justify-center transition-all",
+                    isActive ? "scale-110 mb-1" : ""
                   )}
                   style={{
                     backgroundColor: isActive ? item.color + '20' : 'transparent',
@@ -65,12 +65,11 @@ export function MobileTabBar() {
                 >
                   <Icon className="w-4 h-4" />
                 </div>
-                <span className={cn(
-                  "text-[10px] font-medium",
-                  isActive ? "text-primary" : ""
-                )}>
-                  {label}
-                </span>
+                {isActive && (
+                  <span className="text-[10px] font-medium text-primary">
+                    {label}
+                  </span>
+                )}
               </Link>
             )
           })}
