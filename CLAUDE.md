@@ -88,6 +88,9 @@ L'application utilise une architecture en couches de Context API :
 16. **🔍 Recherche avec Annulation** - AbortController pour annuler les recherches en cours
 17. **📋 Dictionnaire de Traductions** - Traductions Français→Anglais pour noms Pokémon (archéomire, flotajou, ptiravi, etc.)
 18. **📐 Layout Responsive Explorer** - Bouton "Ajouter carte" et navigation adaptés mobile/desktop
+19. **⚡ Cache Intelligent avec IndexedDB** - Système de cache local avec synchronisation incrémentale
+20. **🔄 Synchronisation Delta** - Chargement instantané depuis cache + sync arrière-plan des nouvelles cartes
+21. **🔐 Gestion de Session Optimisée** - Stockage de session pour éviter la disparition des onglets mobiles
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -123,15 +126,28 @@ L'application utilise une architecture en couches de Context API :
 
 #### SupabaseService (Stockage Cloud)
 - `saveDiscoveredCards()` / `loadDiscoveredCards()` - Gestion des cartes découvertes dans PostgreSQL
+- `loadCardsModifiedSince(timestamp)` - Synchronisation incrémentale (delta sync)
 - `saveSeriesDatabase()` / `loadSeriesDatabase()` - Gestion des extensions
 - `addDiscoveredCards()` - Ajout incrémental de cartes (pas de remplacement)
 - `deleteCardById()` - Suppression de cartes spécifiques
 - **Multi-device** : Synchronisation automatique entre appareils
 - **Traitement par batch** : Optimisé pour gros volumes de données (chunking)
 - **Index optimisés** : Recherche rapide par user_id, card_id
+- **Synchronisation incrémentale** : Récupération uniquement des cartes modifiées depuis un timestamp
 - **Tables principales** :
-  - `discovered_cards` : Toutes les cartes découvertes par utilisateur
+  - `discovered_cards` : Toutes les cartes découvertes par utilisateur avec `_saved_at` timestamp
   - `user_profiles` : Profils utilisateurs avec métadonnées
+
+#### CardCacheService (Cache Local IndexedDB)
+- `getAllCards()` - Chargement rapide de toutes les cartes depuis le cache
+- `saveCards(cards)` - Sauvegarde par batch dans IndexedDB
+- `getLastSyncTimestamp()` / `updateLastSyncTimestamp()` - Gestion timestamps de synchronisation
+- `getCacheStats()` - Statistiques du cache (nombre de cartes, dernière sync)
+- `hasCachedData()` - Vérification de l'existence du cache
+- `clearCache()` - Nettoyage complet du cache
+- **Stockage illimité** : IndexedDB sans limitation de 5-10MB du localStorage
+- **Performance** : Chargement instantané des cartes en local
+- **Base de données dédiée** : VaultEstim_CardCache avec stores séparés (cards, metadata)
 
 #### ImageUploadService (Gestion d'Images)
 - `uploadImage()` - Upload et stockage d'images dans IndexedDB
@@ -354,6 +370,53 @@ L'application sera accessible sur http://localhost:5174
 - **Dates de bloc** : Affichage start/end dates
 - **Statistiques temps réel** : Compteurs mis à jour automatiquement
 
+### ⚡ Système de Cache Intelligent (Nouveau!)
+
+#### **Architecture**
+Le système utilise une approche hybride pour optimiser les performances :
+- **IndexedDB** : Cache local illimité pour stockage des cartes
+- **Supabase** : Source de vérité cloud pour synchronisation multi-device
+- **Delta Sync** : Synchronisation incrémentale pour minimiser les transferts réseau
+
+#### **Flux de Chargement**
+
+**Première Connexion (pas de cache)**
+```
+1. Téléchargement complet depuis Supabase
+2. Sauvegarde dans IndexedDB (cache local)
+3. Enregistrement du timestamp de synchronisation
+4. Interface prête avec toutes les cartes
+```
+
+**Connexions Suivantes (avec cache)**
+```
+1. Chargement instantané depuis IndexedDB (< 1s)
+2. Interface immédiatement utilisable
+3. [Après 2s] Synchronisation arrière-plan :
+   - Vérification timestamp dernière sync
+   - Téléchargement uniquement des nouvelles cartes
+   - Fusion avec le cache existant
+   - Mise à jour interface en temps réel
+```
+
+#### **Avantages**
+- **Performance** : Chargement instantané (pas de requête réseau au démarrage)
+- **Économie de données** : Seules les nouvelles cartes sont téléchargées
+- **Résilience** : Fonctionne hors ligne avec les données en cache
+- **Scalabilité** : Pas de limite de stockage (IndexedDB illimité)
+- **Multi-device** : Synchronisation automatique via Supabase
+
+#### **Fichiers Impliqués**
+- `src/services/CardCacheService.js` : Gestion du cache IndexedDB
+- `src/services/SupabaseService.js` : Méthode `loadCardsModifiedSince()`
+- `src/hooks/useCardDatabase.jsx` : Logique de chargement intelligent
+- `src/services/SupabaseAuthService.js` : Stockage de session pour stabilité
+
+#### **Maintenance**
+- **Nettoyage manuel** : Via `/clean-storage.html` ou bouton sur page login
+- **Auto-nettoyage** : Pas de nettoyage automatique pour éviter perte de données
+- **Debug** : Logs détaillés avec emojis dans la console pour traçabilité
+
 ## Debugging et Maintenance
 
 ### 🔍 Outils de Debug
@@ -371,6 +434,8 @@ L'application sera accessible sur http://localhost:5174
 - **Mobile** : Pull-to-refresh désactivé pour éviter rafraîchissements accidentels
 - **Traductions Pokémon** : Dictionnaire centralisé dans `src/utils/pokemonTranslations.js` - Éviter les doublons
 - **AbortController** : Annulation des recherches pour éviter race conditions et résultats obsolètes
+- **localStorage plein (QuotaExceededError)** : Utiliser `/clean-storage.html` ou lien sur page de login
+- **Cache IndexedDB** : Chargement instantané + synchronisation incrémentale pour performance maximale
 
 ## Déploiement
 
