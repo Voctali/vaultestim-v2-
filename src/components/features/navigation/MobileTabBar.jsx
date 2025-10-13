@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react'
 
 export function MobileTabBar() {
   const [selectedCollectionTab, setSelectedCollectionTab] = useState('all-cards')
-  const { isAuthenticated, isAdmin } = useAuth()
+  const { isAuthenticated, isAdmin, loading } = useAuth()
   const location = useLocation()
 
   // Items pour la tab bar : Dashboard, Collection, Explorer, Scanner, Statistiques
@@ -15,7 +15,13 @@ export function MobileTabBar() {
   // Utiliser useMemo pour éviter les re-calculs excessifs
   const mainItems = useMemo(() => {
     // Debug: Logger l'état d'authentification
-    console.log('🔍 [MobileTabBar] État auth:', { isAuthenticated, isAdmin })
+    console.log('🔍 [MobileTabBar] État auth:', { isAuthenticated, isAdmin, loading })
+
+    // Pendant le chargement, afficher tous les items possibles pour éviter le flash
+    if (loading) {
+      console.log('⏳ [MobileTabBar] Chargement en cours, affichage de tous les items')
+      return NAVIGATION_ITEMS.filter(item => tabBarItemIds.includes(item.id))
+    }
 
     // Récupérer d'abord tous les items de la tab bar
     const allTabBarItems = NAVIGATION_ITEMS.filter(item => tabBarItemIds.includes(item.id))
@@ -46,7 +52,7 @@ export function MobileTabBar() {
     }
 
     return filtered
-  }, [isAuthenticated, isAdmin])
+  }, [isAuthenticated, isAdmin, loading])
 
   const isItemActive = (item) => {
     if (item.subItems) {
