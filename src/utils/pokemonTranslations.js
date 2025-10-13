@@ -621,6 +621,7 @@ export const POKEMON_TRANSLATIONS = {
   'haydaim': 'sawsbuck',
   'emolga': 'emolga',
   'escargaume': 'karrablast',
+  'carabing': 'karrablast',
   'limaspeed': 'escavalier',
   'limonde': 'shelmet',
   'limnodrome': 'accelgor',
