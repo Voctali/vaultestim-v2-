@@ -10,38 +10,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('❌ Variables Supabase manquantes ! Vérifiez votre fichier .env')
 }
 
-// IMPORTANT: Nettoyer localStorage UNE SEULE FOIS (migration vers Supabase)
-// La storageKey doit être protégée du nettoyage !
-const STORAGE_KEY = 'sb-ubphwlmnfjdaiarbihcx-auth-token' // Clé par défaut Supabase
-const CLEANUP_DONE_KEY = 'vaultestim_cleanup_done_v2'
-
-if (!localStorage.getItem(CLEANUP_DONE_KEY)) {
-  console.log('🧹 Nettoyage localStorage (première fois)...')
-  const keysToRemove = []
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    // Supprimer tout SAUF les clés Supabase (sb-*) et le marqueur de nettoyage
-    if (key &&
-        !key.startsWith('sb-') &&
-        !key.includes('supabase') &&
-        key !== CLEANUP_DONE_KEY &&
-        key !== STORAGE_KEY) {
-      keysToRemove.push(key)
-    }
-  }
-  keysToRemove.forEach(key => {
-    try {
-      localStorage.removeItem(key)
-    } catch (e) {
-      console.warn('⚠️ Erreur suppression:', key)
-    }
-  })
-  // Marquer le nettoyage comme fait
-  localStorage.setItem(CLEANUP_DONE_KEY, 'true')
-  console.log(`✅ ${keysToRemove.length} clés supprimées de localStorage`)
-} else {
-  console.log('✅ localStorage déjà nettoyé')
-}
+// IMPORTANT: Ne PAS nettoyer localStorage automatiquement
+// Cela peut causer des DOMException et empêcher la connexion
+// Le nettoyage doit être fait manuellement par l'utilisateur si nécessaire
+console.log('✅ Pas de nettoyage automatique localStorage - Configuration stable')
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
