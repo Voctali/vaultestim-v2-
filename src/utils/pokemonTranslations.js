@@ -654,6 +654,7 @@ export const POKEMON_TRANSLATIONS = {
   'polarhume': 'cubchoo',
   'polagriffe': 'beartic',
   'hexagel': 'cryogonal',
+  'drakkarmin': 'druddigon',
   'pyronille': 'larvesta',
   'pyrax': 'volcarona',
   'cobaltium': 'cobalion',
