@@ -2,30 +2,63 @@ import { Link, useLocation } from 'react-router-dom'
 import { NAVIGATION_ITEMS } from '@/constants/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 
 export function MobileTabBar() {
   const [selectedCollectionTab, setSelectedCollectionTab] = useState('all-cards')
   const { isAuthenticated, isAdmin } = useAuth()
   const location = useLocation()
 
-  // Filtrer les items selon les permissions
-  const filteredNavItems = NAVIGATION_ITEMS.filter(item => {
-    if (item.requiresAuth && !isAuthenticated) return false
-    if (item.requiresAdmin && !isAdmin) return false
-    if (item.isAdminOnly && !isAdmin) return false
-    return true
-  })
-
   // Items pour la tab bar : Dashboard, Collection, Explorer, Scanner, Statistiques
   const tabBarItemIds = ['dashboard', 'collection', 'explore', 'scanner', 'statistics']
-  const mainItems = filteredNavItems.filter(item => tabBarItemIds.includes(item.id))
+
+  // Utiliser useMemo pour éviter les re-calculs excessifs
+  const mainItems = useMemo(() => {
+    // Debug: Logger l'état d'authentification
+    console.log('🔍 [MobileTabBar] État auth:', { isAuthenticated, isAdmin })
+
+    // Récupérer d'abord tous les items de la tab bar
+    const allTabBarItems = NAVIGATION_ITEMS.filter(item => tabBarItemIds.includes(item.id))
+
+    // Filtrer selon les permissions avec des vérifications plus robustes
+    const filtered = allTabBarItems.filter(item => {
+      // Explorer est toujours visible (pas de requiresAuth)
+      if (!item.requiresAuth && !item.requiresAdmin && !item.isAdminOnly) return true
+
+      // Si l'item nécessite l'authentification
+      if (item.requiresAuth && !isAuthenticated) return false
+
+      // Si l'item nécessite d'être admin
+      if (item.requiresAdmin && !isAdmin) return false
+      if (item.isAdminOnly && !isAdmin) return false
+
+      return true
+    })
+
+    // Debug: Logger les items filtrés
+    console.log('🔍 [MobileTabBar] Items visibles:', filtered.map(i => i.id))
+
+    // S'assurer qu'on a toujours au moins Explorer visible
+    if (filtered.length === 0) {
+      console.warn('⚠️ [MobileTabBar] Aucun item filtré, fallback sur Explorer')
+      const exploreItem = NAVIGATION_ITEMS.find(item => item.id === 'explore')
+      return exploreItem ? [exploreItem] : []
+    }
+
+    return filtered
+  }, [isAuthenticated, isAdmin])
 
   const isItemActive = (item) => {
     if (item.subItems) {
       return item.subItems.some(sub => location.pathname === sub.path)
     }
     return location.pathname === item.path
+  }
+
+  // Ne rien rendre si aucun item n'est disponible
+  if (!mainItems || mainItems.length === 0) {
+    console.error('❌ [MobileTabBar] Aucun item à afficher!')
+    return null
   }
 
   return (
