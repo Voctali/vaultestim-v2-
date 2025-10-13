@@ -10,15 +10,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('❌ Variables Supabase manquantes ! Vérifiez votre fichier .env')
 }
 
-// Nettoyer localStorage UNE SEULE FOIS (migration vers Supabase)
+// IMPORTANT: Nettoyer localStorage UNE SEULE FOIS (migration vers Supabase)
+// La storageKey doit être protégée du nettoyage !
+const STORAGE_KEY = 'sb-ubphwlmnfjdaiarbihcx-auth-token' // Clé par défaut Supabase
 const CLEANUP_DONE_KEY = 'vaultestim_cleanup_done_v2'
+
 if (!localStorage.getItem(CLEANUP_DONE_KEY)) {
   console.log('🧹 Nettoyage localStorage (première fois)...')
   const keysToRemove = []
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
-    // Supprimer tout SAUF les clés Supabase et le marqueur de nettoyage
-    if (key && !key.startsWith('sb-') && !key.includes('supabase') && key !== CLEANUP_DONE_KEY) {
+    // Supprimer tout SAUF les clés Supabase (sb-*) et le marqueur de nettoyage
+    if (key &&
+        !key.startsWith('sb-') &&
+        !key.includes('supabase') &&
+        key !== CLEANUP_DONE_KEY &&
+        key !== STORAGE_KEY) {
       keysToRemove.push(key)
     }
   }
@@ -41,8 +48,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    // Utiliser localStorage maintenant qu'il est vidé
-    storageKey: 'vaultestim_supabase_auth'
+    // Utiliser la clé par défaut Supabase pour éviter les conflits
+    // Format: sb-{project-ref}-auth-token
+    storage: localStorage
   },
   db: {
     schema: 'public'
