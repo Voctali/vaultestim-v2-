@@ -567,6 +567,8 @@ export const POKEMON_TRANSLATIONS = {
   'crapustule': 'seismitoad',
   'judokrak': 'throh',
   'karaclée': 'sawk',
+  'kungfouine': 'mienfoo',
+  'shaofouine': 'mienshao',
   'larveyette': 'sewaddle',
   'couverdure': 'swadloon',
   'manternel': 'leavanny',
