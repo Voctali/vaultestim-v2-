@@ -623,6 +623,7 @@ export const POKEMON_TRANSLATIONS = {
   'escargaume': 'karrablast',
   'carabing': 'karrablast',
   'limaspeed': 'escavalier',
+  'lançargot': 'escavalier',
   'limonde': 'shelmet',
   'limnodrome': 'accelgor',
   'trompignon': 'foongus',
