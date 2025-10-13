@@ -61,12 +61,19 @@ export class SupabaseAuthService {
    */
   static async login(email, password) {
     try {
+      console.log('🔐 [Login] Tentative de connexion pour:', email)
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ [Login] Erreur Supabase Auth:', error)
+        throw error
+      }
+
+      console.log('✅ [Login] Authentification Supabase réussie')
 
       // Récupérer le profil utilisateur
       const { data: profile, error: profileError } = await supabase
@@ -76,6 +83,7 @@ export class SupabaseAuthService {
         .single()
 
       if (profileError) {
+        console.warn('⚠️ [Login] Profil non trouvé, création...', profileError.message)
         // Si pas de profil, en créer un
         const { data: newProfile } = await supabase
           .from('user_profiles')
@@ -89,6 +97,7 @@ export class SupabaseAuthService {
           .select()
           .single()
 
+        console.log('✅ [Login] Nouveau profil créé')
         return {
           id: data.user.id,
           email: data.user.email,
@@ -98,7 +107,7 @@ export class SupabaseAuthService {
         }
       }
 
-      console.log('✅ Connexion réussie:', email)
+      console.log('✅ [Login] Connexion réussie:', email)
 
       return {
         id: profile.id,
@@ -108,7 +117,14 @@ export class SupabaseAuthService {
         isPremium: profile.is_premium
       }
     } catch (error) {
-      console.error('❌ Erreur login:', error)
+      // Log détaillé de l'erreur
+      console.error('❌ [Login] Erreur complète:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        details: error
+      })
       throw new Error(error.message || 'Erreur lors de la connexion')
     }
   }
