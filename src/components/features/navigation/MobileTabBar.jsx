@@ -2,12 +2,27 @@ import { Link, useLocation } from 'react-router-dom'
 import { NAVIGATION_ITEMS } from '@/constants/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
 export function MobileTabBar() {
   const [selectedCollectionTab, setSelectedCollectionTab] = useState('all-cards')
   const { isAuthenticated, isAdmin, loading } = useAuth()
   const location = useLocation()
+
+  // Mémoriser l'état d'authentification précédent pour éviter les flashs
+  const [wasAuthenticated, setWasAuthenticated] = useState(() => {
+    // Vérifier si on a une session Supabase au démarrage
+    const hasSupabaseSession = localStorage.getItem('supabase.auth.token') !== null
+    return hasSupabaseSession
+  })
+
+  // Mettre à jour l'état mémorisé une fois que le chargement est terminé
+  useEffect(() => {
+    if (!loading) {
+      console.log('✅ [MobileTabBar] Loading terminé, mise à jour wasAuthenticated:', isAuthenticated)
+      setWasAuthenticated(isAuthenticated)
+    }
+  }, [loading, isAuthenticated])
 
   // Items pour la tab bar : Dashboard, Collection, Explorer, Scanner, Statistiques
   const tabBarItemIds = ['dashboard', 'collection', 'explore', 'scanner', 'statistics']
@@ -15,12 +30,13 @@ export function MobileTabBar() {
   // Utiliser useMemo pour éviter les re-calculs excessifs
   const mainItems = useMemo(() => {
     // Debug: Logger l'état d'authentification
-    console.log('🔍 [MobileTabBar] État auth:', { isAuthenticated, isAdmin, loading })
+    console.log('🔍 [MobileTabBar] État auth:', { isAuthenticated, isAdmin, loading, wasAuthenticated })
 
-    // Pendant le chargement, afficher tous les items possibles pour éviter le flash
+    // Pendant le chargement, utiliser l'état précédent pour déterminer quoi afficher
+    const shouldShowAuthItems = loading ? wasAuthenticated : isAuthenticated
+
     if (loading) {
-      console.log('⏳ [MobileTabBar] Chargement en cours, affichage de tous les items')
-      return NAVIGATION_ITEMS.filter(item => tabBarItemIds.includes(item.id))
+      console.log('⏳ [MobileTabBar] Chargement en cours, utilisation de wasAuthenticated:', wasAuthenticated)
     }
 
     // Récupérer d'abord tous les items de la tab bar
@@ -32,7 +48,7 @@ export function MobileTabBar() {
       if (!item.requiresAuth && !item.requiresAdmin && !item.isAdminOnly) return true
 
       // Si l'item nécessite l'authentification
-      if (item.requiresAuth && !isAuthenticated) return false
+      if (item.requiresAuth && !shouldShowAuthItems) return false
 
       // Si l'item nécessite d'être admin
       if (item.requiresAdmin && !isAdmin) return false
@@ -52,7 +68,7 @@ export function MobileTabBar() {
     }
 
     return filtered
-  }, [isAuthenticated, isAdmin, loading])
+  }, [isAuthenticated, isAdmin, loading, wasAuthenticated])
 
   const isItemActive = (item) => {
     if (item.subItems) {
