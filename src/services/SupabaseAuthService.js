@@ -143,15 +143,26 @@ export class SupabaseAuthService {
    */
   static async getCurrentUser() {
     try {
-      console.log('🔐 [SupabaseAuth] Récupération session depuis sessionStore...')
+      console.log('🔐 [SupabaseAuth] Récupération session...')
 
-      // Utiliser la session stockée localement (plus rapide, pas de requête Supabase)
+      // Vérifier d'abord dans sessionStore (mémoire)
       const { getCurrentSession } = await import('@/lib/sessionStore')
-      const session = getCurrentSession()
+      let session = getCurrentSession()
 
+      // Si pas en mémoire, restaurer depuis Supabase (localStorage)
       if (!session?.user) {
-        console.log('⚠️ [SupabaseAuth] Pas de session stockée')
-        return null
+        console.log('📦 [SupabaseAuth] Pas de session en mémoire, restauration depuis Supabase...')
+        const { data: { session: supabaseSession } } = await supabase.auth.getSession()
+
+        if (supabaseSession) {
+          // Restaurer dans sessionStore
+          setCurrentSession(supabaseSession)
+          session = supabaseSession
+          console.log('✅ [SupabaseAuth] Session restaurée depuis Supabase:', session.user.email)
+        } else {
+          console.log('⚠️ [SupabaseAuth] Aucune session Supabase')
+          return null
+        }
       }
 
       const user = session.user
