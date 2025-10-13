@@ -598,6 +598,7 @@ export const POKEMON_TRANSLATIONS = {
   'aéropteryx': 'archeops',
   'aeropteryx': 'archeops',
   'aéroptérix': 'archeops',
+  'aéroptéryx': 'archeops',
   'aeropterix': 'archeops',
   'miamiasme': 'trubbish',
   'miasmax': 'garbodor',
