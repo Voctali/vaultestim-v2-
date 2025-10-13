@@ -3,18 +3,35 @@ import { NAVIGATION_ITEMS } from '@/constants/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { useState, useMemo, useEffect } from 'react'
+import { supabase } from '@/lib/supabaseClient'
 
 export function MobileTabBar() {
   const [selectedCollectionTab, setSelectedCollectionTab] = useState('all-cards')
   const { isAuthenticated, isAdmin, loading } = useAuth()
   const location = useLocation()
 
-  // Mémoriser l'état d'authentification précédent pour éviter les flashs
-  const [wasAuthenticated, setWasAuthenticated] = useState(() => {
-    // Vérifier si on a une session Supabase au démarrage
-    const hasSupabaseSession = localStorage.getItem('supabase.auth.token') !== null
-    return hasSupabaseSession
-  })
+  // Vérifier IMMÉDIATEMENT avec l'API Supabase au lieu de dépendre du sessionStore
+  const [wasAuthenticated, setWasAuthenticated] = useState(false)
+  const [initialCheckDone, setInitialCheckDone] = useState(false)
+
+  // Vérification initiale au montage du composant
+  useEffect(() => {
+    const checkInitialAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const hasSession = !!session?.user
+        console.log('🔑 [MobileTabBar] Vérification initiale session Supabase:', hasSession)
+        setWasAuthenticated(hasSession)
+        setInitialCheckDone(true)
+      } catch (error) {
+        console.error('❌ [MobileTabBar] Erreur vérification session:', error)
+        setWasAuthenticated(false)
+        setInitialCheckDone(true)
+      }
+    }
+
+    checkInitialAuth()
+  }, [])
 
   // Mettre à jour l'état mémorisé une fois que le chargement est terminé
   useEffect(() => {
@@ -30,7 +47,14 @@ export function MobileTabBar() {
   // Utiliser useMemo pour éviter les re-calculs excessifs
   const mainItems = useMemo(() => {
     // Debug: Logger l'état d'authentification
-    console.log('🔍 [MobileTabBar] État auth:', { isAuthenticated, isAdmin, loading, wasAuthenticated })
+    console.log('🔍 [MobileTabBar] État auth:', { isAuthenticated, isAdmin, loading, wasAuthenticated, initialCheckDone })
+
+    // Si la vérification initiale n'est pas terminée, attendre
+    if (!initialCheckDone) {
+      console.log('⏳ [MobileTabBar] Vérification initiale en cours...')
+      // Retourner tous les items pour éviter le flash
+      return NAVIGATION_ITEMS.filter(item => tabBarItemIds.includes(item.id))
+    }
 
     // Pendant le chargement, utiliser l'état précédent pour déterminer quoi afficher
     const shouldShowAuthItems = loading ? wasAuthenticated : isAuthenticated
@@ -68,7 +92,7 @@ export function MobileTabBar() {
     }
 
     return filtered
-  }, [isAuthenticated, isAdmin, loading, wasAuthenticated])
+  }, [isAuthenticated, isAdmin, loading, wasAuthenticated, initialCheckDone])
 
   const isItemActive = (item) => {
     if (item.subItems) {
