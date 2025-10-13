@@ -137,7 +137,7 @@ export function Login() {
               </Button>
             </div>
 
-            <div className="text-center">
+            <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground mb-2">
                 Pas de compte ?
               </p>
@@ -149,6 +149,18 @@ export function Login() {
               >
                 Créer un compte
               </Button>
+
+              {/* Lien de dépannage */}
+              <div className="pt-2 border-t border-border/50">
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => window.location.href = '/clean-storage.html'}
+                  className="text-xs text-muted-foreground/70 hover:text-red-500"
+                >
+                  Problème de connexion ? Nettoyer le stockage
+                </Button>
+              </div>
             </div>
           </form>
         </CardContent>

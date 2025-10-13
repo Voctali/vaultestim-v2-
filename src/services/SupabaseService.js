@@ -145,6 +145,31 @@ export class SupabaseService {
   }
 
   /**
+   * Charger seulement les cartes modifiées depuis un certain timestamp (sync incrémentale)
+   */
+  static async loadCardsModifiedSince(sinceTimestamp) {
+    try {
+      console.log(`🔄 Chargement cartes modifiées depuis: ${sinceTimestamp}`)
+      const userId = await this.getCurrentUserId()
+
+      const { data, error } = await supabase
+        .from('discovered_cards')
+        .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, _saved_at')
+        .eq('user_id', userId)
+        .gte('_saved_at', sinceTimestamp)
+        .order('_saved_at', { ascending: true })
+
+      if (error) throw error
+
+      console.log(`📦 ${data.length} cartes modifiées depuis ${sinceTimestamp}`)
+      return data
+    } catch (error) {
+      console.error('❌ Erreur loadCardsModifiedSince:', error)
+      return []
+    }
+  }
+
+  /**
    * Charger toutes les cartes découvertes (avec pagination pour > 1000 cartes)
    */
   static async loadDiscoveredCards() {

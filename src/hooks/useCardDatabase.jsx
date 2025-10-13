@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { MultiApiService } from '@/services/MultiApiService'
 import { CacheService } from '@/services/CacheService'
 import { SupabaseService } from '@/services/SupabaseService'
+import { CardCacheService } from '@/services/CardCacheService'
 import { BackendApiService } from '@/services/BackendApiService'
 import { MigrationService } from '@/services/MigrationService'
 import { config } from '@/lib/config'
@@ -371,17 +372,21 @@ export function CardDatabaseProvider({ children }) {
   const loadFromLocalStorage = async () => {
     try {
       setIsLoading(true)
-      console.log('🔄 Chargement depuis Supabase (avec index optimisé)...')
+      console.log('🚀 Démarrage chargement intelligent avec cache...')
 
-      // Charger depuis Supabase avec optimisations
-      const cardsFromBackend = await SupabaseService.loadDiscoveredCards()
+      // 1. Vérifier si on a un cache local
+      const hasCachedData = await CardCacheService.hasCachedData()
+      const lastSyncTimestamp = await CardCacheService.getLastSyncTimestamp()
 
-      if (cardsFromBackend.length > 0) {
-        console.log(`📦 ${cardsFromBackend.length} cartes chargées depuis Supabase`)
+      if (hasCachedData && lastSyncTimestamp) {
+        console.log(`⚡ Cache local trouvé ! Dernière sync: ${lastSyncTimestamp}`)
 
-        // Recalculer les blocs pour toutes les cartes
-        console.log('🔧 Recalcul des blocs pour toutes les cartes...')
-        const recalculatedCards = cardsFromBackend.map(card => {
+        // 1.1 Charger depuis le cache local (instantané)
+        const cachedCards = await CardCacheService.getAllCards()
+        console.log(`📦 ${cachedCards.length} cartes chargées depuis le cache local (instantané)`)
+
+        // Recalculer les blocs
+        const recalculatedCards = cachedCards.map(card => {
           const originalSeries = card.set?.originalSeries || card.set?.series || card.series || 'Pokemon TCG'
           const setName = card.set?.name || ''
           const correctBlock = TCGdxService.getBlockFromSeries(originalSeries, setName)
@@ -396,21 +401,101 @@ export function CardDatabaseProvider({ children }) {
           }
         })
 
-        console.log(`✅ Blocs recalculés pour ${recalculatedCards.length} cartes`)
         setDiscoveredCards(recalculatedCards)
 
         // Reconstruire la base de séries
-        console.log('🔧 Reconstruction de la base de séries...')
         const rebuiltSeries = organizeCardsBySet(recalculatedCards)
         setSeriesDatabase(rebuiltSeries)
-        console.log(`✅ Base de séries reconstruite avec ${rebuiltSeries.length} extensions`)
+        console.log(`✅ Interface prête avec ${recalculatedCards.length} cartes depuis le cache`)
+
+        // 1.2 Synchroniser en arrière-plan (delta sync)
+        setTimeout(async () => {
+          try {
+            console.log('🔄 Synchronisation incrémentale en arrière-plan...')
+            const newCards = await SupabaseService.loadCardsModifiedSince(lastSyncTimestamp)
+
+            if (newCards.length > 0) {
+              console.log(`🆕 ${newCards.length} nouvelles cartes depuis la dernière sync`)
+
+              // Fusionner avec le cache existant
+              const existingIds = new Set(cachedCards.map(c => c.id))
+              const trulyNewCards = newCards.filter(c => !existingIds.has(c.id))
+
+              if (trulyNewCards.length > 0) {
+                // Sauvegarder dans le cache local
+                await CardCacheService.saveCards(trulyNewCards)
+
+                // Mettre à jour l'état React
+                setDiscoveredCards(prev => {
+                  const updated = [...prev, ...trulyNewCards]
+                  const rebuiltSeries = organizeCardsBySet(updated)
+                  setSeriesDatabase(rebuiltSeries)
+                  return updated
+                })
+
+                console.log(`✅ ${trulyNewCards.length} nouvelles cartes ajoutées au cache et à l'interface`)
+              } else {
+                console.log('✅ Cache déjà à jour, aucune nouvelle carte')
+              }
+
+              // Mettre à jour le timestamp
+              await CardCacheService.updateLastSyncTimestamp()
+            } else {
+              console.log('✅ Aucune nouvelle carte, cache à jour')
+            }
+          } catch (syncError) {
+            console.warn('⚠️ Erreur synchronisation arrière-plan:', syncError)
+            // Non bloquant - l'utilisateur a déjà ses données du cache
+          }
+        }, 2000) // Attendre 2s pour ne pas gêner l'affichage initial
+
       } else {
-        console.log('📦 Aucune carte dans Supabase - initialisation vide')
-        setDiscoveredCards([])
-        setSeriesDatabase([])
+        // 2. Pas de cache : téléchargement complet depuis Supabase (première fois)
+        console.log('📡 Pas de cache local, téléchargement complet depuis Supabase...')
+
+        const cardsFromBackend = await SupabaseService.loadDiscoveredCards()
+
+        if (cardsFromBackend.length > 0) {
+          console.log(`📦 ${cardsFromBackend.length} cartes chargées depuis Supabase`)
+
+          // Recalculer les blocs
+          const recalculatedCards = cardsFromBackend.map(card => {
+            const originalSeries = card.set?.originalSeries || card.set?.series || card.series || 'Pokemon TCG'
+            const setName = card.set?.name || ''
+            const correctBlock = TCGdxService.getBlockFromSeries(originalSeries, setName)
+
+            return {
+              ...card,
+              set: {
+                ...card.set,
+                series: correctBlock
+              },
+              series: correctBlock
+            }
+          })
+
+          console.log(`✅ Blocs recalculés pour ${recalculatedCards.length} cartes`)
+          setDiscoveredCards(recalculatedCards)
+
+          // Reconstruire la base de séries
+          const rebuiltSeries = organizeCardsBySet(recalculatedCards)
+          setSeriesDatabase(rebuiltSeries)
+          console.log(`✅ Base de séries reconstruite avec ${rebuiltSeries.length} extensions`)
+
+          // Sauvegarder dans le cache local pour la prochaine fois
+          console.log('💾 Sauvegarde dans le cache local...')
+          await CardCacheService.saveCards(recalculatedCards)
+          await CardCacheService.updateLastSyncTimestamp()
+          console.log('✅ Cache local initialisé pour les prochaines connexions')
+
+        } else {
+          console.log('📦 Aucune carte dans Supabase - initialisation vide')
+          setDiscoveredCards([])
+          setSeriesDatabase([])
+        }
       }
     } catch (error) {
-      console.error('❌ Erreur chargement Supabase:', error)
+      console.error('❌ Erreur chargement:', error)
       console.error('⚠️ Initialisation vide - Les cartes seront chargées via recherches')
       setDiscoveredCards([])
       setSeriesDatabase([])
@@ -753,6 +838,16 @@ export function CardDatabaseProvider({ children }) {
             .catch((error) => {
               console.error('❌ Erreur ajout cartes Supabase:', error)
               console.error('⚠️ Les cartes restent en mémoire locale')
+            })
+
+          // Sauvegarder aussi dans le cache local IndexedDB
+          CardCacheService.saveCards(uniqueNewCards)
+            .then((savedCount) => {
+              console.log(`💾 Cache local: ${savedCount} nouvelles cartes ajoutées`)
+            })
+            .catch((error) => {
+              console.warn('⚠️ Erreur sauvegarde cache local:', error)
+              // Non bloquant - les cartes sont déjà dans Supabase
             })
         }
 

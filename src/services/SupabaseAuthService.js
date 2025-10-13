@@ -3,6 +3,7 @@
  * Remplace ApiAuthService avec authentification multi-appareils
  */
 import { supabase } from '@/lib/supabaseClient'
+import { setCurrentSession } from '@/lib/sessionStore'
 
 export class SupabaseAuthService {
   /**
@@ -43,6 +44,10 @@ export class SupabaseAuthService {
 
       console.log('✅ Utilisateur créé:', email)
 
+      // Stocker la session dans le sessionStore
+      const { data: { session } } = await supabase.auth.getSession()
+      setCurrentSession(session)
+
       return {
         id: authData.user.id,
         email: authData.user.email,
@@ -74,6 +79,10 @@ export class SupabaseAuthService {
       }
 
       console.log('✅ [Login] Authentification Supabase réussie')
+
+      // Stocker la session dans le sessionStore
+      const { data: { session } } = await supabase.auth.getSession()
+      setCurrentSession(session)
 
       // Récupérer le profil utilisateur
       const { data: profile, error: profileError } = await supabase
