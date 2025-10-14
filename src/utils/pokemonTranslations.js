@@ -622,6 +622,7 @@ export const POKEMON_TRANSLATIONS = {
   'vivaldaim': 'deerling',
   'haydaim': 'sawsbuck',
   'emolga': 'emolga',
+  'frison': 'bouffalant',
   'escargaume': 'karrablast',
   'carabing': 'karrablast',
   'limaspeed': 'escavalier',
