@@ -623,6 +623,7 @@ export const POKEMON_TRANSLATIONS = {
   'haydaim': 'sawsbuck',
   'emolga': 'emolga',
   'frison': 'bouffalant',
+  'furaiglon': 'rufflet',
   'escargaume': 'karrablast',
   'carabing': 'karrablast',
   'limaspeed': 'escavalier',
