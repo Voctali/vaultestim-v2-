@@ -958,7 +958,12 @@ export const POKEMON_TRANSLATIONS = {
   'amphinobi': 'fezandipiti',
   'denticrisse': 'ogerpon',
   'terapagos': 'terapagos',
-  'pêchaminus': 'pecharunt'
+  'pêchaminus': 'pecharunt',
+
+  // Cartes Dresseur (Trainer Cards)
+  'aide de nina': 'daisy\'s help',
+  'transfert de léo': 'bill\'s transfer',
+  'transfert de leo': 'bill\'s transfer'
 }
 
 export function translatePokemonName(frenchName) {
