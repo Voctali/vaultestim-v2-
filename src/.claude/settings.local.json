@@ -47,7 +47,16 @@
       "Bash(vercel)",
       "Bash(vercel:*)",
       "Bash(git push:*)",
-      "Bash(start http://localhost:5174)"
+      "Bash(start http://localhost:5174)",
+      "Bash(git log:*)",
+      "WebFetch(domain:www.serebii.net)",
+      "WebFetch(domain:pokemon-encyclopedia.fandom.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "WebFetch(domain:pastebin.com)",
+      "WebFetch(domain:fr.wikipedia.org)",
+      "Bash(start https://supabase.com/dashboard/project/ubphwlmnfjdaiarbihcx/settings/general)"
     ],
     "deny": [],
     "ask": []
