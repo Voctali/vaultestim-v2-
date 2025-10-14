@@ -656,6 +656,7 @@ export const POKEMON_TRANSLATIONS = {
   'hexagel': 'cryogonal',
   'drakkarmin': 'druddigon',
   'gringolem': 'golett',
+  'golemastoc': 'golurk',
   'pyronille': 'larvesta',
   'pyrax': 'volcarona',
   'cobaltium': 'cobalion',
