@@ -963,7 +963,8 @@ export const POKEMON_TRANSLATIONS = {
   // Cartes Dresseur (Trainer Cards)
   'aide de nina': 'daisy\'s help',
   'transfert de léo': 'bill\'s transfer',
-  'transfert de leo': 'bill\'s transfer'
+  'transfert de leo': 'bill\'s transfer',
+  'charisme de giovanni': 'giovanni\'s charisma'
 }
 
 export function translatePokemonName(frenchName) {
