@@ -637,6 +637,7 @@ export const POKEMON_TRANSLATIONS = {
   'viskuse': 'frillish',
   'moyade': 'jellicent',
   'mamanbo': 'alomomola',
+  'aflamanoir': 'heatmor',
   'statitik': 'joltik',
   'mygavolt': 'galvantula',
   'grindur': 'ferroseed',
