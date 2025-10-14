@@ -47,37 +47,49 @@ export class SupabaseCollectionService {
    */
   static async addToCollection(card) {
     try {
+      console.log('🔵 [Supabase Service] Tentative d\'ajout de carte:', card.name)
+      console.log('🔵 [Supabase Service] Données reçues:', card)
+
       const userId = await this.getCurrentUserId()
+      console.log('🔵 [Supabase Service] User ID:', userId)
+
+      const insertData = {
+        user_id: userId,
+        card_id: card.id,
+        name: card.name,
+        series: card.series,
+        extension: card.extension,
+        rarity: card.rarity,
+        image: card.image,
+        images: card.images,
+        quantity: card.quantity || 1,
+        condition: card.condition || 'Non spécifié',
+        purchase_price: card.purchasePrice ? parseFloat(card.purchasePrice) : null,
+        market_price: card.marketPrice ? parseFloat(card.marketPrice) : null,
+        value: card.value ? parseFloat(card.value) : null,
+        date_added: card.dateAdded || new Date().toISOString(),
+        display_date: card.displayDate || new Date().toLocaleDateString('fr-FR'),
+        notes: card.notes || null
+      }
+
+      console.log('🔵 [Supabase Service] Données formatées pour insertion:', insertData)
 
       const { data, error } = await supabase
         .from('user_collection')
-        .insert({
-          user_id: userId,
-          card_id: card.id,
-          name: card.name,
-          series: card.series,
-          extension: card.extension,
-          rarity: card.rarity,
-          image: card.image,
-          images: card.images,
-          quantity: card.quantity || 1,
-          condition: card.condition || 'Non spécifié',
-          purchase_price: card.purchasePrice,
-          market_price: card.marketPrice,
-          value: card.value,
-          date_added: card.dateAdded || new Date().toISOString(),
-          display_date: card.displayDate,
-          notes: card.notes
-        })
+        .insert(insertData)
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ [Supabase Service] Erreur Supabase:', error)
+        throw error
+      }
 
-      console.log(`✅ Carte ajoutée à la collection: ${card.name}`)
+      console.log(`✅ [Supabase Service] Carte ajoutée avec succès: ${card.name}`)
+      console.log('✅ [Supabase Service] Données retournées:', data)
       return data
     } catch (error) {
-      console.error('❌ Erreur addToCollection:', error)
+      console.error('❌ [Supabase Service] Erreur addToCollection:', error)
       throw error
     }
   }

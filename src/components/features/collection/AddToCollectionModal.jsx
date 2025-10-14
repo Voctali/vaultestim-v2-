@@ -37,8 +37,8 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit({ ...card, ...formData })
-    onClose()
+    // Passer uniquement les données du formulaire
+    onSubmit(formData)
     // Reset form
     setFormData({
       quantity: 1,

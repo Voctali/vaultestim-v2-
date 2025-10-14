@@ -26,7 +26,30 @@ export function Collection() {
   // Utiliser la vraie collection
   const collectionCards = collection
 
-  const filteredCards = collectionCards.filter(card => {
+  // Regrouper les cartes identiques par card_id
+  const groupedCards = collectionCards.reduce((acc, card) => {
+    const cardId = card.card_id || card.id
+
+    if (!acc[cardId]) {
+      // Première occurrence de cette carte
+      acc[cardId] = {
+        ...card,
+        totalQuantity: card.quantity || 1,
+        instances: [card] // Garder toutes les instances pour les détails
+      }
+    } else {
+      // Ajouter la quantité à la carte existante
+      acc[cardId].totalQuantity += (card.quantity || 1)
+      acc[cardId].instances.push(card)
+    }
+
+    return acc
+  }, {})
+
+  // Convertir l'objet en tableau
+  const uniqueCards = Object.values(groupedCards)
+
+  const filteredCards = uniqueCards.filter(card => {
     const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesRarity = filters.rarity === 'all' || card.rarity === filters.rarity
     const matchesCondition = filters.condition === 'all' || card.condition === filters.condition
@@ -164,7 +187,7 @@ export function Collection() {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                    x{card.quantity || 1}
+                    x{card.totalQuantity || card.quantity || 1}
                   </div>
                   {/* Action buttons */}
                   <div className="absolute bottom-2 left-2 flex gap-1">

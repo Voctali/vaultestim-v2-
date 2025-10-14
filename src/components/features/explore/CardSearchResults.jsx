@@ -7,7 +7,7 @@ import { CardImage } from '@/components/features/explore/CardImage'
 import { useCollection } from '@/hooks/useCollection.jsx'
 import { TCGdxService } from '@/services/TCGdxService'
 import { formatCardPrice } from '@/utils/priceFormatter'
-import { Heart, List, Plus, Eye } from 'lucide-react'
+import { Heart, List, Plus, Eye, Settings } from 'lucide-react'
 
 export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = true }) {
   const [selectedCard, setSelectedCard] = useState(null)
@@ -19,10 +19,71 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
     setShowAddModal(true)
   }
 
-  const handleQuickAdd = (cardData) => {
-    addToCollection(cardData)
-    setShowAddModal(false)
-    setSelectedCard(null)
+  // Ajout rapide avec valeurs par défaut (état quasi-neuf)
+  const handleQuickAdd = async (card) => {
+    console.log('🚀 [Quick Add] Ajout rapide de:', card.name)
+
+    // Mapper correctement les données de la carte pour Supabase
+    const cardData = {
+      id: card.id,
+      name: card.name,
+      series: card.set?.series || card.series || 'Non spécifié',
+      extension: card.set?.name || card.extension || 'Non spécifié',
+      rarity: card.rarity || 'Non spécifié',
+      image: card.images?.large || card.images?.small || card.image || null,
+      images: card.images || null,
+      quantity: 1,
+      condition: 'near_mint', // État quasi-neuf par défaut
+      version: 'Normale',
+      purchasePrice: null,
+      marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
+      value: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
+      isGraded: false
+    }
+
+    console.log('📦 [Quick Add] Données mappées:', cardData)
+
+    try {
+      await addToCollection(cardData)
+      console.log('✅ [Quick Add] Carte ajoutée avec succès!')
+    } catch (error) {
+      console.error('❌ [Quick Add] Erreur:', error)
+    }
+  }
+
+  // Ajout avec options personnalisées (via modal)
+  const handleCustomAdd = async (formData) => {
+    console.log('🎯 [Custom Add] Ajout personnalisé avec formulaire:', formData)
+    console.log('📋 [Custom Add] Carte sélectionnée:', selectedCard?.name)
+
+    // Mapper correctement les données de la carte + formulaire pour Supabase
+    const cardData = {
+      id: selectedCard.id,
+      name: selectedCard.name,
+      series: selectedCard.set?.series || selectedCard.series || 'Non spécifié',
+      extension: selectedCard.set?.name || selectedCard.extension || 'Non spécifié',
+      rarity: selectedCard.rarity || 'Non spécifié',
+      image: selectedCard.images?.large || selectedCard.images?.small || selectedCard.image || null,
+      images: selectedCard.images || null,
+      quantity: formData.quantity || 1,
+      condition: formData.condition || 'near_mint',
+      version: formData.version || 'Normale',
+      purchasePrice: formData.purchasePrice || null,
+      marketPrice: selectedCard.cardmarket?.prices?.averageSellPrice || selectedCard.tcgplayer?.prices?.holofoil?.market || null,
+      value: selectedCard.cardmarket?.prices?.averageSellPrice || selectedCard.tcgplayer?.prices?.holofoil?.market || null,
+      isGraded: formData.isGraded || false
+    }
+
+    console.log('📦 [Custom Add] Données mappées:', cardData)
+
+    try {
+      await addToCollection(cardData)
+      console.log('✅ [Custom Add] Carte ajoutée avec succès!')
+      setShowAddModal(false)
+      setSelectedCard(null)
+    } catch (error) {
+      console.error('❌ [Custom Add] Erreur:', error)
+    }
   }
 
   const handleToggleFavorite = (card) => {
@@ -130,10 +191,22 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
                       className="w-8 h-8 p-0 bg-green-500 hover:bg-green-600 text-white"
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleAddToCollection(card)
+                        handleQuickAdd(card)
                       }}
+                      title="Ajout rapide (état quasi-neuf)"
                     >
                       <Plus className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="w-8 h-8 p-0 bg-blue-500 hover:bg-blue-600 text-white"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleAddToCollection(card)
+                      }}
+                      title="Options d'ajout personnalisées"
+                    >
+                      <Settings className="w-4 h-4" />
                     </Button>
                   </div>
 
@@ -248,7 +321,7 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
             setShowAddModal(false)
             setSelectedCard(null)
           }}
-          onSubmit={handleQuickAdd}
+          onSubmit={handleCustomAdd}
           card={selectedCard}
         />
       )}

@@ -589,8 +589,9 @@ export function Explore() {
               key={`card-${card.id || cardIndex}`}
               className="golden-border card-hover cursor-pointer group overflow-hidden"
               onClick={() => {
+                console.log('🖼️ [Explore] Clic sur la carte:', card.name)
                 setSelectedCard(card)
-                setShowPreviewModal(true)
+                setShowAddToCollectionModal(true)
               }}
             >
               <CardContent className="p-4">
@@ -610,16 +611,43 @@ export function Explore() {
                     <Database className="w-8 h-8" />
                   </div>
 
-                  {/* Bouton d'ajout à la collection */}
+                  {/* Bouton d'ajout rapide à la collection */}
                   <div className="absolute top-2 right-2">
                     <Button
                       size="sm"
                       className="w-8 h-8 p-0 bg-green-500 hover:bg-green-600 text-white"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation()
-                        setShowAddToCollectionModal(true)
-                        setSelectedCard(card)
+                        console.log('🚀 [Explore Quick Add] Ajout rapide de:', card.name)
+
+                        // Mapper correctement les données de la carte pour ajout rapide
+                        const cardData = {
+                          id: card.id,
+                          name: card.name,
+                          series: card.set?.series || card.series || 'Non spécifié',
+                          extension: card.set?.name || card.extension || 'Non spécifié',
+                          rarity: card.rarity || 'Non spécifié',
+                          image: card.images?.large || card.images?.small || card.image || null,
+                          images: card.images || null,
+                          quantity: 1,
+                          condition: 'near_mint', // État quasi-neuf par défaut
+                          version: 'Normale',
+                          purchasePrice: null,
+                          marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
+                          value: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
+                          isGraded: false
+                        }
+
+                        console.log('📦 [Explore Quick Add] Données mappées:', cardData)
+
+                        try {
+                          await addToCollection(cardData)
+                          console.log('✅ [Explore Quick Add] Carte ajoutée avec succès!')
+                        } catch (error) {
+                          console.error('❌ [Explore Quick Add] Erreur:', error)
+                        }
                       }}
+                      title="Ajout rapide (état quasi-neuf)"
                     >
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -729,6 +757,8 @@ export function Explore() {
           }}
           card={selectedCard}
           onAddToCollection={(card) => {
+            console.log('📸 [Explore] Fermeture CardPreviewModal et ouverture AddToCollectionModal')
+            setShowPreviewModal(false)
             setShowAddToCollectionModal(true)
           }}
         />
@@ -742,10 +772,38 @@ export function Explore() {
             setShowAddToCollectionModal(false)
             setSelectedCard(null)
           }}
-          onSubmit={(cardData) => {
-            addToCollection(cardData)
-            setShowAddToCollectionModal(false)
-            setSelectedCard(null)
+          onSubmit={async (formData) => {
+            console.log('🎯 [Explore Add] Données formulaire reçues:', formData)
+            console.log('📋 [Explore Add] Carte sélectionnée:', selectedCard?.name)
+
+            // Mapper correctement les données de la carte + formulaire pour Supabase
+            const cardData = {
+              id: selectedCard.id,
+              name: selectedCard.name,
+              series: selectedCard.set?.series || selectedCard.series || 'Non spécifié',
+              extension: selectedCard.set?.name || selectedCard.extension || 'Non spécifié',
+              rarity: selectedCard.rarity || 'Non spécifié',
+              image: selectedCard.images?.large || selectedCard.images?.small || selectedCard.image || null,
+              images: selectedCard.images || null,
+              quantity: formData.quantity || 1,
+              condition: formData.condition || 'near_mint',
+              version: formData.version || 'Normale',
+              purchasePrice: formData.purchasePrice || null,
+              marketPrice: selectedCard.cardmarket?.prices?.averageSellPrice || selectedCard.tcgplayer?.prices?.holofoil?.market || null,
+              value: selectedCard.cardmarket?.prices?.averageSellPrice || selectedCard.tcgplayer?.prices?.holofoil?.market || null,
+              isGraded: formData.isGraded || false
+            }
+
+            console.log('📦 [Explore Add] Données mappées:', cardData)
+
+            try {
+              await addToCollection(cardData)
+              console.log('✅ [Explore Add] Carte ajoutée avec succès!')
+              setShowAddToCollectionModal(false)
+              setSelectedCard(null)
+            } catch (error) {
+              console.error('❌ [Explore Add] Erreur:', error)
+            }
           }}
           card={selectedCard}
         />
