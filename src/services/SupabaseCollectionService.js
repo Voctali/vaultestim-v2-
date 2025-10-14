@@ -1,6 +1,7 @@
 /**
  * Service Supabase pour la gestion de la collection utilisateur
  * Remplace la partie collection de BackendApiService
+ * Version: 2.0 - Gestion complète des versions de cartes
  */
 import { supabase } from '@/lib/supabaseClient'
 
