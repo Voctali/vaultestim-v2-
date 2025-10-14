@@ -64,6 +64,10 @@ export class SupabaseCollectionService {
         images: card.images,
         quantity: card.quantity || 1,
         condition: card.condition || 'Non spécifié',
+        version: card.version || 'Normale',
+        is_graded: card.isGraded || false,
+        grade_company: card.gradeCompany || null,
+        grade: card.grade || null,
         purchase_price: card.purchasePrice ? parseFloat(card.purchasePrice) : null,
         market_price: card.marketPrice ? parseFloat(card.marketPrice) : null,
         value: card.value ? parseFloat(card.value) : null,
@@ -99,22 +103,45 @@ export class SupabaseCollectionService {
    */
   static async updateCollectionCard(cardId, updates) {
     try {
+      console.log('🔵 [Supabase Service] Tentative de mise à jour carte:', cardId)
+      console.log('🔵 [Supabase Service] Données de mise à jour reçues:', updates)
+
       const userId = await this.getCurrentUserId()
+
+      // Mapper les propriétés camelCase vers snake_case pour Supabase
+      const mappedUpdates = {}
+
+      if (updates.quantity !== undefined) mappedUpdates.quantity = updates.quantity
+      if (updates.condition !== undefined) mappedUpdates.condition = updates.condition
+      if (updates.version !== undefined) mappedUpdates.version = updates.version
+      if (updates.purchasePrice !== undefined) mappedUpdates.purchase_price = updates.purchasePrice ? parseFloat(updates.purchasePrice) : null
+      if (updates.isGraded !== undefined) mappedUpdates.is_graded = updates.isGraded
+      if (updates.gradeCompany !== undefined) mappedUpdates.grade_company = updates.gradeCompany
+      if (updates.grade !== undefined) mappedUpdates.grade = updates.grade
+      if (updates.notes !== undefined) mappedUpdates.notes = updates.notes
+      if (updates.marketPrice !== undefined) mappedUpdates.market_price = updates.marketPrice ? parseFloat(updates.marketPrice) : null
+      if (updates.value !== undefined) mappedUpdates.value = updates.value ? parseFloat(updates.value) : null
+
+      console.log('🔵 [Supabase Service] Données mappées pour mise à jour:', mappedUpdates)
 
       const { data, error } = await supabase
         .from('user_collection')
-        .update(updates)
+        .update(mappedUpdates)
         .eq('id', cardId)
         .eq('user_id', userId)
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ [Supabase Service] Erreur Supabase:', error)
+        throw error
+      }
 
-      console.log(`✅ Carte mise à jour: ${cardId}`)
+      console.log(`✅ [Supabase Service] Carte mise à jour avec succès: ${cardId}`)
+      console.log('✅ [Supabase Service] Données retournées:', data)
       return data
     } catch (error) {
-      console.error('❌ Erreur updateCollectionCard:', error)
+      console.error('❌ [Supabase Service] Erreur updateCollectionCard:', error)
       throw error
     }
   }
