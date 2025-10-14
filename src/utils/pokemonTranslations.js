@@ -658,6 +658,7 @@ export const POKEMON_TRANSLATIONS = {
   'gringolem': 'golett',
   'golemastoc': 'golurk',
   'scalpion': 'pawniard',
+  'scalproie': 'bisharp',
   'pyronille': 'larvesta',
   'pyrax': 'volcarona',
   'cobaltium': 'cobalion',
