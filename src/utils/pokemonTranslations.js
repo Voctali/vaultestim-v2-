@@ -657,6 +657,7 @@ export const POKEMON_TRANSLATIONS = {
   'drakkarmin': 'druddigon',
   'gringolem': 'golett',
   'golemastoc': 'golurk',
+  'scalpion': 'pawniard',
   'pyronille': 'larvesta',
   'pyrax': 'volcarona',
   'cobaltium': 'cobalion',
