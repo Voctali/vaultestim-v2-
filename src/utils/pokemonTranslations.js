@@ -964,7 +964,13 @@ export const POKEMON_TRANSLATIONS = {
   'aide de nina': 'daisy\'s help',
   'transfert de léo': 'bill\'s transfer',
   'transfert de leo': 'bill\'s transfer',
-  'charisme de giovanni': 'giovanni\'s charisma'
+  'charisme de giovanni': 'giovanni\'s charisma',
+  'bandeau rigide': 'rigid band',
+  'lunettes de protection': 'protective goggles',
+  'piste cyclable': 'cycling road',
+  'gros ballon': 'big air balloon',
+  'vieil ambre ancien': 'antique old amber',
+  'fossile nautile ancien': 'antique helix fossil'
 }
 
 export function translatePokemonName(frenchName) {
