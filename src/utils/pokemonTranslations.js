@@ -779,6 +779,7 @@ export const POKEMON_TRANSLATIONS = {
   'candine': 'steenee',
   'sucreine': 'tsareena',
   'guériaigle': 'braviary',
+  'gueriaigle': 'braviary',
   'météno': 'minior',
   'dodoala': 'komala',
   'boumata': 'turtonator',
