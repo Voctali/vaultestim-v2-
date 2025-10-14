@@ -624,6 +624,7 @@ export const POKEMON_TRANSLATIONS = {
   'emolga': 'emolga',
   'frison': 'bouffalant',
   'furaiglon': 'rufflet',
+  'vostourno': 'vullaby',
   'escargaume': 'karrablast',
   'carabing': 'karrablast',
   'limaspeed': 'escavalier',
