@@ -625,6 +625,7 @@ export const POKEMON_TRANSLATIONS = {
   'frison': 'bouffalant',
   'furaiglon': 'rufflet',
   'vostourno': 'vullaby',
+  'vaututrice': 'mandibuzz',
   'escargaume': 'karrablast',
   'carabing': 'karrablast',
   'limaspeed': 'escavalier',
