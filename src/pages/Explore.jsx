@@ -10,10 +10,11 @@ import { CardSearchResults } from '@/components/features/explore/CardSearchResul
 import { SeriesDetailView } from '@/components/features/explore/SeriesDetailView'
 import { useCollection } from '@/hooks/useCollection.jsx'
 import { useCardDatabase } from '@/hooks/useCardDatabase.jsx'
+import { useToast } from '@/hooks/useToast'
 import { IndexedDBService } from '@/services/IndexedDBService'
 import { ImageUploadService } from '@/services/ImageUploadService'
 import { buildBlocksHierarchy } from '@/services/BlockHierarchyService'
-import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X } from 'lucide-react'
+import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
 export function Explore() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -31,8 +32,9 @@ export function Explore() {
   const [customBlocks, setCustomBlocks] = useState([])
   const [customExtensions, setCustomExtensions] = useState([])
   const [isSearching, setIsSearching] = useState(false) // État local pour afficher le bouton d'annulation
-  const { addToCollection } = useCollection()
+  const { addToCollection, toggleFavorite, toggleWishlist, favorites, wishlist } = useCollection()
   const { searchCards, seriesDatabase, discoveredCards, isLoading, totalDiscoveredCards, getCardsBySet } = useCardDatabase()
+  const { toast } = useToast()
 
   // AbortController pour annuler la recherche
   const abortControllerRef = useRef(null)
@@ -319,6 +321,31 @@ export function Explore() {
     setSelectedBlock(null)
     setSelectedExtension(null)
     setNavigationPath([])
+  }
+
+  const handleToggleFavorite = (card) => {
+    toggleFavorite(card)
+  }
+
+  const handleToggleWishlist = async (card) => {
+    try {
+      const result = await toggleWishlist(card)
+      if (result.action === 'added') {
+        toast({
+          title: 'Ajoutée à la liste de souhaits',
+          description: `${card.name} a été ajoutée à votre liste de souhaits`,
+          variant: 'success'
+        })
+      } else if (result.action === 'removed') {
+        toast({
+          title: 'Retirée de la liste de souhaits',
+          description: `${card.name} a été retirée de votre liste de souhaits`,
+          variant: 'error'
+        })
+      }
+    } catch (error) {
+      console.error('Erreur toggle wishlist:', error)
+    }
   }
 
   return (
@@ -643,13 +670,49 @@ export function Explore() {
                         try {
                           await addToCollection(cardData)
                           console.log('✅ [Explore Quick Add] Carte ajoutée avec succès!')
+                          toast({
+                            title: 'Carte ajoutée !',
+                            description: `${card.name} a été ajoutée à votre collection`,
+                            variant: 'success'
+                          })
                         } catch (error) {
                           console.error('❌ [Explore Quick Add] Erreur:', error)
+                          toast({
+                            title: 'Erreur',
+                            description: 'Impossible d\'ajouter la carte',
+                            variant: 'error'
+                          })
                         }
                       }}
                       title="Ajout rapide (état quasi-neuf)"
                     >
                       <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Icônes favoris et wishlist en bas à gauche */}
+                  <div className="absolute bottom-2 left-2 flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="w-8 h-8 p-0 bg-black/50 text-white hover:bg-black/70"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleToggleFavorite(card)
+                      }}
+                    >
+                      <Heart className={`w-4 h-4 ${favorites.find(fav => fav.id === card.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="w-8 h-8 p-0 bg-black/50 text-white hover:bg-black/70"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleToggleWishlist(card)
+                      }}
+                    >
+                      <List className={`w-4 h-4 ${wishlist.find(wish => wish.id === card.id) ? 'fill-blue-500 text-blue-500' : ''}`} />
                     </Button>
                   </div>
                 </div>
@@ -799,10 +862,20 @@ export function Explore() {
             try {
               await addToCollection(cardData)
               console.log('✅ [Explore Add] Carte ajoutée avec succès!')
+              toast({
+                title: 'Carte ajoutée !',
+                description: `${selectedCard.name} a été ajoutée à votre collection`,
+                variant: 'success'
+              })
               setShowAddToCollectionModal(false)
               setSelectedCard(null)
             } catch (error) {
               console.error('❌ [Explore Add] Erreur:', error)
+              toast({
+                title: 'Erreur',
+                description: 'Impossible d\'ajouter la carte',
+                variant: 'error'
+              })
             }
           }}
           card={selectedCard}
