@@ -372,8 +372,8 @@ export class CacheService {
       }
     }
 
-    // Nettoyer aussi les cache de recherche spécifiques (dracaufeu, charizard, amphinobi, greninja, fezandipiti)
-    const searchCachesToClean = ['dracaufeu', 'charizard', 'amphinobi', 'greninja', 'fezandipiti']
+    // Nettoyer aussi les cache de recherche spécifiques
+    const searchCachesToClean = ['dracaufeu', 'charizard', 'amphinobi', 'greninja', 'fezandipiti', 'lépidonille', 'lepidonille', 'pérégrain', 'peregrain', 'scatterbug', 'spewpa']
     searchCachesToClean.forEach(searchTerm => {
       const cacheKey = `${this.CACHE_KEYS.SEARCH_RESULTS}_${searchTerm}`
       if (localStorage.getItem(cacheKey)) {
