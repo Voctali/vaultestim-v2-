@@ -238,7 +238,7 @@ export class SupabaseCollectionService {
       const { error } = await supabase
         .from('user_favorites')
         .delete()
-        .eq('id', cardId)
+        .eq('card_id', cardId)
         .eq('user_id', userId)
 
       if (error) throw error
@@ -321,7 +321,7 @@ export class SupabaseCollectionService {
       const { error } = await supabase
         .from('user_wishlist')
         .delete()
-        .eq('id', cardId)
+        .eq('card_id', cardId)
         .eq('user_id', userId)
 
       if (error) throw error
