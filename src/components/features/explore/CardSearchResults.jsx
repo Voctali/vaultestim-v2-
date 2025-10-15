@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { AddToCollectionModal } from '@/components/features/collection/AddToCollectionModal'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { useCollection } from '@/hooks/useCollection.jsx'
+import { useToast } from '@/hooks/useToast'
 import { TCGdxService } from '@/services/TCGdxService'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { Heart, List, Plus, Eye, Settings } from 'lucide-react'
@@ -13,6 +14,7 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
   const [selectedCard, setSelectedCard] = useState(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const { addToCollection, toggleFavorite, toggleWishlist, favorites, wishlist } = useCollection()
+  const { toast } = useToast()
 
   const handleAddToCollection = (card) => {
     setSelectedCard(card)
@@ -46,8 +48,18 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
     try {
       await addToCollection(cardData)
       console.log('✅ [Quick Add] Carte ajoutée avec succès!')
+      toast({
+        title: 'Carte ajoutée !',
+        description: `${card.name} a été ajoutée à votre collection`,
+        variant: 'success'
+      })
     } catch (error) {
       console.error('❌ [Quick Add] Erreur:', error)
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter la carte',
+        variant: 'error'
+      })
     }
   }
 
@@ -79,10 +91,20 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
     try {
       await addToCollection(cardData)
       console.log('✅ [Custom Add] Carte ajoutée avec succès!')
+      toast({
+        title: 'Carte ajoutée !',
+        description: `${selectedCard.name} a été ajoutée à votre collection`,
+        variant: 'success'
+      })
       setShowAddModal(false)
       setSelectedCard(null)
     } catch (error) {
       console.error('❌ [Custom Add] Erreur:', error)
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter la carte',
+        variant: 'error'
+      })
     }
   }
 
@@ -90,8 +112,25 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
     toggleFavorite(card)
   }
 
-  const handleToggleWishlist = (card) => {
-    toggleWishlist(card)
+  const handleToggleWishlist = async (card) => {
+    try {
+      const result = await toggleWishlist(card)
+      if (result.action === 'added') {
+        toast({
+          title: 'Ajoutée à la liste de souhaits',
+          description: `${card.name} a été ajoutée à votre liste de souhaits`,
+          variant: 'success'
+        })
+      } else if (result.action === 'removed') {
+        toast({
+          title: 'Retirée de la liste de souhaits',
+          description: `${card.name} a été retirée de votre liste de souhaits`,
+          variant: 'error'
+        })
+      }
+    } catch (error) {
+      console.error('Erreur toggle wishlist:', error)
+    }
   }
 
   if (isLoading) {

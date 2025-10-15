@@ -203,17 +203,6 @@ export function Collection() {
                     >
                       <Heart className={`w-4 h-4 ${favorites.find(fav => fav.id === card.id) ? 'fill-red-500 text-red-500' : ''}`} />
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="w-8 h-8 p-0 bg-black/50 text-white hover:bg-black/70"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleWishlist(card)
-                      }}
-                    >
-                      <List className={`w-4 h-4 ${wishlist.find(wish => wish.id === card.id) ? 'fill-blue-500 text-blue-500' : ''}`} />
-                    </Button>
                   </div>
                 </div>
 

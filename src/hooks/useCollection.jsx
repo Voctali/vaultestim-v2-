@@ -238,8 +238,10 @@ export function CollectionProvider({ children }) {
     const isInWishlist = wishlist.find(wish => wish.id === card.id)
     if (isInWishlist) {
       await removeFromWishlist(card.id)
+      return { action: 'removed', card }
     } else {
       await addToWishlist(card)
+      return { action: 'added', card }
     }
   }
 

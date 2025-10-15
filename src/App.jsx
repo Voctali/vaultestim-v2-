@@ -27,6 +27,7 @@ import { CollectionProvider } from '@/hooks/useCollection.jsx'
 import { CardDatabaseProvider } from '@/hooks/useCardDatabase.jsx'
 import { SettingsProvider } from '@/hooks/useSettings'
 import { FriendsProvider } from '@/hooks/useFriends'
+import { ToastProvider } from '@/hooks/useToast'
 
 function AppContent() {
   const location = useLocation()
@@ -38,12 +39,13 @@ function AppContent() {
 
   // Toutes les autres pages avec providers
   return (
-    <AuthProvider>
-      <CollectionProvider>
-        <CardDatabaseProvider>
-          <SettingsProvider>
-            <FriendsProvider>
-              <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
+    <ToastProvider>
+      <AuthProvider>
+        <CollectionProvider>
+          <CardDatabaseProvider>
+            <SettingsProvider>
+              <FriendsProvider>
+                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
@@ -72,11 +74,12 @@ function AppContent() {
                   </Route>
                 </Routes>
               </div>
-            </FriendsProvider>
-          </SettingsProvider>
-        </CardDatabaseProvider>
-      </CollectionProvider>
-    </AuthProvider>
+              </FriendsProvider>
+            </SettingsProvider>
+          </CardDatabaseProvider>
+        </CollectionProvider>
+      </AuthProvider>
+    </ToastProvider>
   )
 }
 
