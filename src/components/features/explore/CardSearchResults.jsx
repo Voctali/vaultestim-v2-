@@ -13,7 +13,7 @@ import { Heart, List, Plus, Eye, Settings } from 'lucide-react'
 export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = true }) {
   const [selectedCard, setSelectedCard] = useState(null)
   const [showAddModal, setShowAddModal] = useState(false)
-  const { addToCollection, toggleFavorite, toggleWishlist, favorites, wishlist } = useCollection()
+  const { addToCollection, toggleFavorite, toggleWishlist, favorites, wishlist, collection } = useCollection()
   const { toast } = useToast()
 
   const handleAddToCollection = (card) => {
@@ -211,6 +211,7 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
         {sortedCards.map((card, index) => {
           const isFavorite = favorites.find(fav => fav.card_id === card.id)
           const isInWishlist = wishlist.find(wish => wish.card_id === card.id)
+          const isInCollection = collection.some(c => c.card_id === card.id)
           const uniqueKey = `${card.id || 'unknown'}-${card.setId || 'noset'}-${index}`
 
           return (
@@ -222,6 +223,11 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
                     card={card}
                     className="w-full h-full object-cover"
                   />
+
+                  {/* Overlay obscurci si carte non possédée */}
+                  {!isInCollection && (
+                    <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+                  )}
 
                   {/* Action buttons */}
                   <div className="absolute top-2 right-2 flex flex-col gap-1">

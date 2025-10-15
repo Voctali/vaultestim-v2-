@@ -116,13 +116,10 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
                   card={card}
                   className="w-full h-full object-cover"
                 />
-                {/* Overlay obscurci si la carte n'est pas en collection */}
+                {/* Badge "Non possédée" si la carte n'est pas en collection */}
                 {totalCopies === 0 && (
-                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <Package className="w-12 h-12 mx-auto mb-2 opacity-60" />
-                      <p className="text-sm font-semibold opacity-90">Non possédée</p>
-                    </div>
+                  <div className="absolute top-2 left-2 bg-red-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
+                    Non possédée
                   </div>
                 )}
               </div>

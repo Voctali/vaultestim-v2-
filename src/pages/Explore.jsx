@@ -32,7 +32,7 @@ export function Explore() {
   const [customBlocks, setCustomBlocks] = useState([])
   const [customExtensions, setCustomExtensions] = useState([])
   const [isSearching, setIsSearching] = useState(false) // État local pour afficher le bouton d'annulation
-  const { addToCollection, toggleFavorite, toggleWishlist, favorites, wishlist } = useCollection()
+  const { addToCollection, toggleFavorite, toggleWishlist, favorites, wishlist, collection } = useCollection()
   const { searchCards, seriesDatabase, discoveredCards, isLoading, totalDiscoveredCards, getCardsBySet } = useCardDatabase()
   const { toast } = useToast()
 
@@ -611,7 +611,10 @@ export function Explore() {
       ) : currentView === 'cards' ? (
         /* Cards List */
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-          {getFilteredData().map((card, cardIndex) => (
+          {getFilteredData().map((card, cardIndex) => {
+            const isInCollection = collection.some(c => c.card_id === card.id)
+
+            return (
             <Card
               key={`card-${card.id || cardIndex}`}
               className="golden-border card-hover cursor-pointer group overflow-hidden"
@@ -637,6 +640,11 @@ export function Explore() {
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground" style={{ display: card.images?.small || card.image ? 'none' : 'flex' }}>
                     <Database className="w-8 h-8" />
                   </div>
+
+                  {/* Overlay obscurci si carte non possédée */}
+                  {!isInCollection && (
+                    <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+                  )}
 
                   {/* Bouton d'ajout rapide à la collection */}
                   <div className="absolute top-2 right-2">
