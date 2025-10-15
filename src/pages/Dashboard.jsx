@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useCollection } from '@/hooks/useCollection.jsx'
 import { getUserLevel } from '@/constants/userLevels'
 import { Plus, Settings, Clock, Target, TrendingUp, Package } from 'lucide-react'
+import { translateCondition } from '@/utils/cardConditions'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -169,7 +170,7 @@ export function Dashboard() {
                       <Badge variant="secondary" className="mb-1">
                         {card.rarity}
                       </Badge>
-                      <p className="text-sm text-blue-500">{card.condition}</p>
+                      <p className="text-sm text-blue-500">{translateCondition(card.condition)}</p>
                     </div>
                   </div>
                 ))}

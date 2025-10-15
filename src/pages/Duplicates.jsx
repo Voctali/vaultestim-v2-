@@ -10,6 +10,7 @@ import { CardImage } from '@/components/features/explore/CardImage'
 import { SaleModal } from '@/components/features/collection/SaleModal'
 import { BatchSaleModal } from '@/components/features/collection/BatchSaleModal'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
+import { translateCondition } from '@/utils/cardConditions'
 import {
   Copy,
   Search,
@@ -323,7 +324,7 @@ export function Duplicates() {
                         <Badge variant="secondary" className="text-xs">
                           {card.rarity}
                         </Badge>
-                        <p className="text-xs text-orange-500">{card.condition}</p>
+                        <p className="text-xs text-orange-500">{translateCondition(card.condition)}</p>
                       </div>
 
                       <div className="text-right">

@@ -110,14 +110,47 @@ export const CONDITION_PRICE_MULTIPLIERS = {
 }
 
 /**
+ * Mapping des états utilisés dans l'application (anglais → français)
+ */
+const APP_CONDITION_MAP = {
+  // États en anglais
+  'mint': 'Neuf',
+  'near mint': 'Proche du neuf',
+  'near_mint': 'Proche du neuf',
+  'excellent': 'Excellent',
+  'good': 'Bon',
+  'light played': 'Moyen',
+  'light_played': 'Moyen',
+  'played': 'Joué',
+  'poor': 'Mauvais',
+  'damaged': 'Endommagé',
+
+  // États déjà en français (retournés tels quels)
+  'neuf': 'Neuf',
+  'proche du neuf': 'Proche du neuf',
+  'bon': 'Bon',
+  'moyen': 'Moyen',
+  'joué': 'Joué',
+  'mauvais': 'Mauvais',
+  'endommagé': 'Endommagé'
+}
+
+/**
  * Traduit un état de carte en français
- * @param {string} condition - État en anglais
+ * @param {string} condition - État en anglais ou français
  * @returns {string} - État en français
  */
 export function translateCondition(condition) {
-  if (!condition) return 'Quasi-neuf' // Par défaut
+  if (!condition) return 'Proche du neuf' // Par défaut
 
   const normalized = condition.toLowerCase().trim()
+
+  // Vérifier d'abord dans le mapping de l'application
+  if (APP_CONDITION_MAP[normalized]) {
+    return APP_CONDITION_MAP[normalized]
+  }
+
+  // Sinon utiliser le mapping complet
   return CONDITION_TRANSLATIONS[normalized] || condition
 }
 

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Euro, Calendar, TrendingUp, AlertCircle } from 'lucide-react'
+import { translateCondition } from '@/utils/cardConditions'
 
 export function SaleModal({ isOpen, onClose, onSubmit, card }) {
   const [salePrice, setSalePrice] = useState('')
@@ -97,7 +98,7 @@ export function SaleModal({ isOpen, onClose, onSubmit, card }) {
               <p className="text-sm text-muted-foreground">{card.series || card.extension || 'N/A'}</p>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="secondary">{card.rarity || 'N/A'}</Badge>
-                <Badge variant="outline">{card.condition || 'N/A'}</Badge>
+                <Badge variant="outline">{translateCondition(card.condition) || 'N/A'}</Badge>
                 {maxQuantity > 1 && (
                   <Badge variant="outline" className="bg-orange-500/20 text-orange-400">
                     x{maxQuantity} disponible{maxQuantity > 1 ? 's' : ''}

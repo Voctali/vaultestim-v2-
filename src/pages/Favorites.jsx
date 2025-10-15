@@ -9,6 +9,7 @@ import { CardImage } from '@/components/features/explore/CardImage'
 import { CardDetailsModal } from '@/components/features/collection/CardDetailsModal'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { Heart, List, Copy, Search, Filter, BookOpen } from 'lucide-react'
+import { translateCondition } from '@/utils/cardConditions'
 
 export function Favorites() {
   const location = useLocation()
@@ -187,7 +188,7 @@ export function Favorites() {
                     <Badge variant="secondary" className="text-xs">
                       {card.rarity}
                     </Badge>
-                    <p className="text-xs text-blue-500">{card.condition}</p>
+                    <p className="text-xs text-blue-500">{translateCondition(card.condition)}</p>
                   </div>
 
                   <div className="text-right">
