@@ -703,7 +703,7 @@ export const POKEMON_TRANSLATIONS = {
   'prismillon': 'vivillon',
   'hélionceau': 'litleo',
   'némélios': 'pyroar',
-  'flabébé': 'flabebe',
+  'flabébé': 'Flabébé',
   'floette': 'floette',
   'florges': 'florges',
   'cabriolaine': 'skiddo',
