@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { useCollection } from '@/hooks/useCollection.jsx'
 import { formatCardPrice } from '@/utils/priceFormatter'
+import { translateCondition } from '@/utils/cardConditions'
 import { ArrowLeft, Edit2, Save, X, Heart, List, Trash2, ExternalLink } from 'lucide-react'
 
 export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [] }) {
@@ -245,7 +246,7 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
                         isCurrentCard ? 'bg-primary/10 border-primary/30' : 'bg-muted/50 border-muted'
                       }`}
                     >
-                      <span className="text-sm font-medium flex-1">{condition}</span>
+                      <span className="text-sm font-medium flex-1">{translateCondition(condition)}</span>
                       <Badge variant={isCurrentCard ? "default" : "secondary"}>
                         {totalForCondition}x
                       </Badge>
@@ -254,7 +255,7 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
                         size="sm"
                         onClick={() => handleDeleteByCondition(condition)}
                         className="h-8 w-8 p-0 hover:bg-red-500/10"
-                        title={`Supprimer ${totalForCondition} carte(s) en état "${condition}"`}
+                        title={`Supprimer ${totalForCondition} carte(s) en état "${translateCondition(condition)}"`}
                       >
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
