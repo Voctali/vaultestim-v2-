@@ -782,7 +782,8 @@ export function Explore() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            )
+          })}
         </div>
       ) : null}
 
