@@ -111,7 +111,7 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
           {/* Card Display */}
           <div className="space-y-4">
             <div className="relative aspect-[3/4] max-w-sm mx-auto">
-              <div className="w-full h-full rounded-2xl overflow-hidden shadow-2xl">
+              <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl">
                 <CardImage
                   card={card}
                   className="w-full h-full object-cover"
