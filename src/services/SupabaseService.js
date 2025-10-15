@@ -374,12 +374,6 @@ export class SupabaseService {
     try {
       const userId = await this.getCurrentUserId()
 
-      // Supprimer les anciennes séries
-      await supabase
-        .from('series_database')
-        .delete()
-        .eq('user_id', userId)
-
       // Dédupliquer
       const uniqueSeries = []
       const seenIds = new Set()
@@ -393,7 +387,7 @@ export class SupabaseService {
         uniqueSeries.push({ ...serie, id: serieId })
       })
 
-      // Insérer par batch
+      // Insérer/mettre à jour par batch avec UPSERT (résout les conflits de clés)
       const BATCH_SIZE = 50
       let savedCount = 0
 
@@ -412,9 +406,13 @@ export class SupabaseService {
           }
         })
 
+        // Utiliser upsert au lieu de insert pour éviter les conflits de clés
         const { error } = await supabase
           .from('series_database')
-          .insert(seriesWithUserId)
+          .upsert(seriesWithUserId, {
+            onConflict: 'id,user_id',
+            ignoreDuplicates: false
+          })
 
         if (error) throw error
 
