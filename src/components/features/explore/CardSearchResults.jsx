@@ -270,7 +270,7 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
                         handleToggleWishlist(card)
                       }}
                     >
-                      <List className={`w-4 h-4 ${isInWishlist ? 'fill-blue-500 text-blue-500' : ''}`} />
+                      <List className={`w-4 h-4 ${isInWishlist ? 'fill-yellow-500 text-yellow-500' : ''}`} />
                     </Button>
                   </div>
                 </div>

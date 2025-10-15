@@ -712,7 +712,7 @@ export function Explore() {
                         handleToggleWishlist(card)
                       }}
                     >
-                      <List className={`w-4 h-4 ${wishlist.find(wish => wish.id === card.id) ? 'fill-blue-500 text-blue-500' : ''}`} />
+                      <List className={`w-4 h-4 ${wishlist.find(wish => wish.id === card.id) ? 'fill-yellow-500 text-yellow-500' : ''}`} />
                     </Button>
                   </div>
                 </div>
