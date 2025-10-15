@@ -672,7 +672,7 @@ export const POKEMON_TRANSLATIONS = {
   'pyrax': 'volcarona',
   'cobaltium': 'cobalion',
   'terrakium': 'terrakion',
-  'viridium': 'viridium',
+  'viridium': 'virizion',
   'boréas': 'tornadus',
   'fulguris': 'thundurus',
   'démétéros': 'landorus',
