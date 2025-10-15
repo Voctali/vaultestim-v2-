@@ -410,7 +410,7 @@ export class SupabaseService {
         const { error } = await supabase
           .from('series_database')
           .upsert(seriesWithUserId, {
-            onConflict: 'id,user_id',
+            onConflict: 'id',
             ignoreDuplicates: false
           })
 
