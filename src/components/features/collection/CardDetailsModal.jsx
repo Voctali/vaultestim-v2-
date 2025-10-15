@@ -16,9 +16,9 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
   const [editData, setEditData] = useState({})
   const { removeFromCollection, updateCardInCollection, toggleFavorite, toggleWishlist, favorites, wishlist, collection } = useCollection()
 
-  // Grouper les cartes identiques par état
-  const getCardsByCondition = () => {
-    if (!card) return {}
+  // Grouper les cartes identiques par état et version
+  const getCardsGrouped = () => {
+    if (!card) return { byCondition: {}, byVersion: {} }
 
     // Trouver toutes les cartes identiques (même nom et même série)
     const identicalCards = collection.filter(c =>
@@ -26,19 +26,29 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
     )
 
     // Grouper par état
-    const grouped = {}
+    const byCondition = {}
     identicalCards.forEach(c => {
       const condition = c.condition || 'Proche du neuf'
-      if (!grouped[condition]) {
-        grouped[condition] = []
+      if (!byCondition[condition]) {
+        byCondition[condition] = []
       }
-      grouped[condition].push(c)
+      byCondition[condition].push(c)
     })
 
-    return grouped
+    // Grouper par version
+    const byVersion = {}
+    identicalCards.forEach(c => {
+      const version = c.version || 'Normale'
+      if (!byVersion[version]) {
+        byVersion[version] = []
+      }
+      byVersion[version].push(c)
+    })
+
+    return { byCondition, byVersion }
   }
 
-  const cardsByCondition = getCardsByCondition()
+  const { byCondition: cardsByCondition, byVersion: cardsByVersion } = getCardsGrouped()
   const totalQuantity = Object.values(cardsByCondition).reduce((sum, cards) =>
     sum + cards.reduce((cardSum, c) => cardSum + (c.quantity || 1), 0), 0
   )
@@ -68,6 +78,55 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
     if (card && window.confirm('Êtes-vous sûr de vouloir supprimer cette carte de votre collection ?')) {
       removeFromCollection(card.id)
       onClose()
+    }
+  }
+
+  const handleDeleteAllCopies = () => {
+    if (!card) return
+
+    const identicalCards = collection.filter(c =>
+      c.name === card.name && c.series === card.series
+    )
+
+    const totalCopies = identicalCards.reduce((sum, c) => sum + (c.quantity || 1), 0)
+
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer TOUS les exemplaires de cette carte (${totalCopies} carte(s)) ?`)) {
+      identicalCards.forEach(c => {
+        removeFromCollection(c.id)
+      })
+      onClose()
+    }
+  }
+
+  const handleDeleteByCondition = (condition) => {
+    const cardsToDelete = cardsByCondition[condition]
+    const totalToDelete = cardsToDelete.reduce((sum, c) => sum + (c.quantity || 1), 0)
+
+    if (window.confirm(`Supprimer ${totalToDelete} carte(s) en état "${condition}" ?`)) {
+      cardsToDelete.forEach(c => {
+        removeFromCollection(c.id)
+      })
+
+      // Si toutes les cartes sont supprimées, fermer la modale
+      if (totalToDelete === totalQuantity) {
+        onClose()
+      }
+    }
+  }
+
+  const handleDeleteByVersion = (version) => {
+    const cardsToDelete = cardsByVersion[version]
+    const totalToDelete = cardsToDelete.reduce((sum, c) => sum + (c.quantity || 1), 0)
+
+    if (window.confirm(`Supprimer ${totalToDelete} carte(s) en version "${version}" ?`)) {
+      cardsToDelete.forEach(c => {
+        removeFromCollection(c.id)
+      })
+
+      // Si toutes les cartes sont supprimées, fermer la modale
+      if (totalToDelete === totalQuantity) {
+        onClose()
+      }
     }
   }
 
@@ -168,10 +227,13 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
               </div>
             </div>
 
-            {/* Quantités par état */}
-            <div className="space-y-3">
+            {/* Quantités par état et version */}
+            <div className="space-y-4">
               <h3 className="text-lg font-semibold golden-glow">Vos exemplaires ({totalQuantity})</h3>
+
+              {/* Par état */}
               <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Par état</h4>
                 {Object.entries(cardsByCondition).map(([condition, cards]) => {
                   const totalForCondition = cards.reduce((sum, c) => sum + (c.quantity || 1), 0)
                   const isCurrentCard = cards.some(c => c.id === card.id)
@@ -179,14 +241,55 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
                   return (
                     <div
                       key={condition}
-                      className={`flex items-center justify-between p-2 rounded border ${
+                      className={`flex items-center justify-between gap-2 p-2 rounded border ${
                         isCurrentCard ? 'bg-primary/10 border-primary/30' : 'bg-muted/50 border-muted'
                       }`}
                     >
-                      <span className="text-sm font-medium">{condition}</span>
+                      <span className="text-sm font-medium flex-1">{condition}</span>
                       <Badge variant={isCurrentCard ? "default" : "secondary"}>
                         {totalForCondition}x
                       </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteByCondition(condition)}
+                        className="h-8 w-8 p-0 hover:bg-red-500/10"
+                        title={`Supprimer ${totalForCondition} carte(s) en état "${condition}"`}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Par version */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Par version</h4>
+                {Object.entries(cardsByVersion).map(([version, cards]) => {
+                  const totalForVersion = cards.reduce((sum, c) => sum + (c.quantity || 1), 0)
+                  const isCurrentCard = cards.some(c => c.id === card.id)
+
+                  return (
+                    <div
+                      key={version}
+                      className={`flex items-center justify-between gap-2 p-2 rounded border ${
+                        isCurrentCard ? 'bg-primary/10 border-primary/30' : 'bg-muted/50 border-muted'
+                      }`}
+                    >
+                      <span className="text-sm font-medium flex-1">{version}</span>
+                      <Badge variant={isCurrentCard ? "default" : "secondary"}>
+                        {totalForVersion}x
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteByVersion(version)}
+                        className="h-8 w-8 p-0 hover:bg-red-500/10"
+                        title={`Supprimer ${totalForVersion} carte(s) en version "${version}"`}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
                     </div>
                   )
                 })}
@@ -383,39 +486,39 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
                   >
                     Annuler
                   </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleDeleteAllCopies}
+                    className="px-4"
+                    title="Supprimer tous les exemplaires"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </form>
             ) : (
-              /* Details View */
+              /* Informations complémentaires et actions */
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold golden-glow">Détails de votre exemplaire</h3>
+                {/* Informations de l'exemplaire courant */}
+                <div className="space-y-3">
+                  <div className="text-sm">
+                    <span className="font-medium">Prix d'achat:</span>
+                    <span className="ml-2">{card.purchasePrice ? `${card.purchasePrice}€` : 'Non renseigné'}</span>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Quantité:</span> {card.quantity || 1}
-                  </div>
-                  <div>
-                    <span className="font-medium">État:</span> {card.condition || 'Proche du neuf'}
-                  </div>
-                  <div>
-                    <span className="font-medium">Version:</span> {card.version || 'Normale'}
-                  </div>
-                  <div>
-                    <span className="font-medium">Prix d'achat:</span> {card.purchasePrice ? `${card.purchasePrice}€` : 'Non renseigné'}
-                  </div>
+                  {card.isGraded && (
+                    <div className="p-3 bg-primary/10 border border-primary/30 rounded">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="default">Carte Gradée</Badge>
+                      </div>
+                      <div className="text-sm space-y-1">
+                        <div><span className="font-medium">Société:</span> {card.gradeCompany}</div>
+                        <div><span className="font-medium">Note:</span> {card.grade}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                {card.isGraded && (
-                  <div className="p-3 bg-primary/10 border border-primary/30 rounded">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="default">Carte Gradée</Badge>
-                    </div>
-                    <div className="text-sm space-y-1">
-                      <div><span className="font-medium">Société:</span> {card.gradeCompany}</div>
-                      <div><span className="font-medium">Note:</span> {card.grade}</div>
-                    </div>
-                  </div>
-                )}
 
                 <div className="flex gap-2 pt-4">
                   <Button
@@ -427,8 +530,9 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
                   </Button>
                   <Button
                     variant="destructive"
-                    onClick={handleDelete}
+                    onClick={handleDeleteAllCopies}
                     className="px-4"
+                    title="Supprimer tous les exemplaires"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
