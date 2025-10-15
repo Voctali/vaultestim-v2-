@@ -186,8 +186,8 @@ export function CollectionProvider({ children }) {
       // Appel API Supabase
       await SupabaseCollectionService.removeFromFavorites(cardId)
 
-      // Mettre à jour l'état local
-      setFavorites(prev => prev.filter(card => card.id !== cardId))
+      // Mettre à jour l'état local - Filtrer par card_id, pas par id
+      setFavorites(prev => prev.filter(card => card.card_id !== cardId))
     } catch (error) {
       console.error('❌ Erreur suppression favoris:', error)
       throw error
@@ -217,8 +217,8 @@ export function CollectionProvider({ children }) {
       // Appel API Supabase
       await SupabaseCollectionService.removeFromWishlist(cardId)
 
-      // Mettre à jour l'état local
-      setWishlist(prev => prev.filter(card => card.id !== cardId))
+      // Mettre à jour l'état local - Filtrer par card_id, pas par id
+      setWishlist(prev => prev.filter(card => card.card_id !== cardId))
     } catch (error) {
       console.error('❌ Erreur suppression wishlist:', error)
       throw error
