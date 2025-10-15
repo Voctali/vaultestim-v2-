@@ -56,7 +56,8 @@
       "WebFetch(domain:en.wikipedia.org)",
       "WebFetch(domain:pastebin.com)",
       "WebFetch(domain:fr.wikipedia.org)",
-      "Bash(start https://supabase.com/dashboard/project/ubphwlmnfjdaiarbihcx/settings/general)"
+      "Bash(start https://supabase.com/dashboard/project/ubphwlmnfjdaiarbihcx/settings/general)",
+      "Bash(./deploy.bat)"
     ],
     "deny": [],
     "ask": []

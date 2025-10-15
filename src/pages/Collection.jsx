@@ -201,7 +201,7 @@ export function Collection() {
                         toggleFavorite(card)
                       }}
                     >
-                      <Heart className={`w-4 h-4 ${favorites.find(fav => fav.id === card.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                      <Heart className={`w-4 h-4 ${favorites.find(fav => fav.card_id === card.id) ? 'fill-red-500 text-red-500' : ''}`} />
                     </Button>
                   </div>
                 </div>

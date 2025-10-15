@@ -209,8 +209,8 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
         {sortedCards.map((card, index) => {
-          const isFavorite = favorites.find(fav => fav.id === card.id)
-          const isInWishlist = wishlist.find(wish => wish.id === card.id)
+          const isFavorite = favorites.find(fav => fav.card_id === card.id)
+          const isInWishlist = wishlist.find(wish => wish.card_id === card.id)
           const uniqueKey = `${card.id || 'unknown'}-${card.setId || 'noset'}-${index}`
 
           return (

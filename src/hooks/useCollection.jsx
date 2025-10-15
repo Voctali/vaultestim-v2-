@@ -226,7 +226,7 @@ export function CollectionProvider({ children }) {
   }
 
   const toggleFavorite = async (card) => {
-    const isFavorite = favorites.find(fav => fav.id === card.id)
+    const isFavorite = favorites.find(fav => fav.card_id === card.id)
     if (isFavorite) {
       await removeFromFavorites(card.id)
     } else {
@@ -235,7 +235,7 @@ export function CollectionProvider({ children }) {
   }
 
   const toggleWishlist = async (card) => {
-    const isInWishlist = wishlist.find(wish => wish.id === card.id)
+    const isInWishlist = wishlist.find(wish => wish.card_id === card.id)
     if (isInWishlist) {
       await removeFromWishlist(card.id)
       return { action: 'removed', card }

@@ -701,7 +701,7 @@ export function Explore() {
                         handleToggleFavorite(card)
                       }}
                     >
-                      <Heart className={`w-4 h-4 ${favorites.find(fav => fav.id === card.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                      <Heart className={`w-4 h-4 ${favorites.find(fav => fav.card_id === card.id) ? 'fill-red-500 text-red-500' : ''}`} />
                     </Button>
                     <Button
                       size="sm"
@@ -712,7 +712,7 @@ export function Explore() {
                         handleToggleWishlist(card)
                       }}
                     >
-                      <List className={`w-4 h-4 ${wishlist.find(wish => wish.id === card.id) ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+                      <List className={`w-4 h-4 ${wishlist.find(wish => wish.card_id === card.id) ? 'fill-yellow-500 text-yellow-500' : ''}`} />
                     </Button>
                   </div>
                 </div>
