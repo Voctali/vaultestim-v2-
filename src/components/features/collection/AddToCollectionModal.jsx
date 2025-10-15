@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CardImage } from '@/components/features/explore/CardImage'
-import { AVAILABLE_CONDITIONS } from '@/utils/cardConditions'
+import { AVAILABLE_CONDITIONS, translateCondition } from '@/utils/cardConditions'
 import { formatCardPriceWithCondition } from '@/utils/priceFormatter'
-import { ArrowLeft, Plus, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Plus, ExternalLink, Package } from 'lucide-react'
+import { useCollection } from '@/hooks/useCollection.jsx'
 
 export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
+  const { collection } = useCollection()
   const [formData, setFormData] = useState({
     quantity: 1,
     condition: 'near_mint', // État par défaut (Quasi-neuf)
@@ -19,6 +21,33 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
     purchasePrice: '',
     isGraded: false
   })
+
+  // Obtenir tous les exemplaires de cette carte déjà en collection
+  const getExistingCopies = () => {
+    if (!card) return []
+
+    // Filtrer les cartes de la collection qui correspondent à l'ID de la carte
+    const copies = collection.filter(c => c.card_id === card.id)
+
+    // Regrouper par état et version
+    const grouped = {}
+    copies.forEach(copy => {
+      const key = `${copy.condition}_${copy.version}`
+      if (!grouped[key]) {
+        grouped[key] = {
+          condition: copy.condition,
+          version: copy.version,
+          quantity: 0
+        }
+      }
+      grouped[key].quantity += (copy.quantity || 1)
+    })
+
+    return Object.values(grouped)
+  }
+
+  const existingCopies = getExistingCopies()
+  const totalCopies = existingCopies.reduce((sum, copy) => sum + copy.quantity, 0)
 
   // Debug: Afficher les informations de la carte dans la console
   if (card && isOpen) {
@@ -87,6 +116,15 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
                   card={card}
                   className="w-full h-full object-cover"
                 />
+                {/* Overlay obscurci si la carte n'est pas en collection */}
+                {totalCopies === 0 && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <Package className="w-12 h-12 mx-auto mb-2 opacity-60" />
+                      <p className="text-sm font-semibold opacity-90">Non possédée</p>
+                    </div>
+                  </div>
+                )}
               </div>
               {/* Close button on card */}
               <Button
@@ -173,6 +211,34 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
                 )}
               </div>
             </div>
+
+            {/* Existing Copies in Collection */}
+            {existingCopies.length > 0 && (
+              <div className="space-y-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Package className="w-5 h-5 text-blue-400" />
+                  <h3 className="text-sm font-semibold text-blue-400">
+                    Exemplaires en collection ({totalCopies})
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  {existingCopies.map((copy, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm bg-background/50 p-2 rounded">
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-xs">
+                          {translateCondition(copy.condition)}
+                        </Badge>
+                        <span className="text-muted-foreground">•</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {copy.version}
+                        </Badge>
+                      </div>
+                      <span className="font-semibold text-blue-400">x{copy.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Add to Collection Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
