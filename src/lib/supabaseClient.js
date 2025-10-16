@@ -15,16 +15,57 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Le nettoyage doit être fait manuellement par l'utilisateur si nécessaire
 console.log('✅ Pas de nettoyage automatique localStorage - Configuration stable')
 
+// Custom storage adapter pour plus de fiabilité
+const customStorage = {
+  getItem: (key) => {
+    try {
+      // Essayer d'abord localStorage, puis sessionStorage en fallback
+      const item = localStorage.getItem(key) || sessionStorage.getItem(key)
+      console.log(`🔑 [Storage] getItem(${key}):`, item ? 'trouvé' : 'non trouvé')
+      return item
+    } catch (error) {
+      console.error('❌ [Storage] Erreur getItem:', error)
+      return null
+    }
+  },
+  setItem: (key, value) => {
+    try {
+      // Écrire dans les deux pour redondance
+      localStorage.setItem(key, value)
+      sessionStorage.setItem(key, value)
+      console.log(`✅ [Storage] setItem(${key}): sauvegardé`)
+    } catch (error) {
+      console.error('❌ [Storage] Erreur setItem:', error)
+      // Si localStorage échoue, au moins sauvegarder dans sessionStorage
+      try {
+        sessionStorage.setItem(key, value)
+      } catch (e) {
+        console.error('❌ [Storage] Erreur sessionStorage:', e)
+      }
+    }
+  },
+  removeItem: (key) => {
+    try {
+      localStorage.removeItem(key)
+      sessionStorage.removeItem(key)
+      console.log(`🗑️ [Storage] removeItem(${key}): supprimé`)
+    } catch (error) {
+      console.error('❌ [Storage] Erreur removeItem:', error)
+    }
+  }
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    // Utiliser sessionStorage au lieu de localStorage pour mobile
-    // sessionStorage persiste durant toute la session du navigateur (même après F5)
-    // mais ne survit pas à la fermeture complète de l'onglet
-    // Cela évite les problèmes de localStorage effacé par le navigateur mobile
-    storage: sessionStorage
+    // Utiliser notre custom storage adapter pour plus de fiabilité
+    // Écrit dans localStorage ET sessionStorage pour redondance
+    storage: customStorage,
+    // Stratégie de stockage optimisée
+    storageKey: 'sb-vaultestim-auth-token',
+    flowType: 'pkce'
   },
   db: {
     schema: 'public'
