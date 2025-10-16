@@ -942,7 +942,6 @@ export const POKEMON_TRANSLATIONS = {
   'forgerette': 'brute bonnet',
   'taupikeau': 'flutter mane',
   'slitherwing': 'slither wing',
-  'manglouton': 'sandy shocks',
   'ferdeter': 'iron treads',
   'coléodôme': 'iron bundle',
   'carmadura': 'iron hands',
