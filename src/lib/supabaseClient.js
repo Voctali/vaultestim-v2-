@@ -36,7 +36,7 @@ const customStorage = {
     }
   },
 
-  setItem: async (key, value) => {
+  setItem: (key, value) => {
     console.log(`📝 [Storage] setItem appelé pour ${key}`, value ? `(${value.length} chars)` : '(null)')
     try {
       // Écrire dans localStorage
@@ -62,7 +62,7 @@ const customStorage = {
     }
   },
 
-  removeItem: async (key) => {
+  removeItem: (key) => {
     console.log(`🗑️ [Storage] removeItem appelé pour ${key}`)
     try {
       localStorage.removeItem(key)
