@@ -20,9 +20,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    // Utiliser la clé par défaut Supabase pour éviter les conflits
-    // Format: sb-{project-ref}-auth-token
-    storage: localStorage
+    // Utiliser sessionStorage au lieu de localStorage pour mobile
+    // sessionStorage persiste durant toute la session du navigateur (même après F5)
+    // mais ne survit pas à la fermeture complète de l'onglet
+    // Cela évite les problèmes de localStorage effacé par le navigateur mobile
+    storage: sessionStorage
   },
   db: {
     schema: 'public'
