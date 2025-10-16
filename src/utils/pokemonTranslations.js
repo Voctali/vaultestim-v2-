@@ -739,6 +739,7 @@ export const POKEMON_TRANSLATIONS = {
   'sonistrelle': 'noibat',
   'bruyverne': 'noivern',
   'nymphali': 'sylveon',
+  'strassie': 'carbink',
   'diancie': 'diancie',
   'hoopa': 'hoopa',
   'volcanion': 'volcanion',
