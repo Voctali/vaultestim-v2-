@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/useToast'
 import { IndexedDBService } from '@/services/IndexedDBService'
 import { ImageUploadService } from '@/services/ImageUploadService'
 import { buildBlocksHierarchy } from '@/services/BlockHierarchyService'
+import { translatePokemonName } from '@/utils/pokemonTranslations'
 import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
 export function Explore() {
@@ -146,10 +147,21 @@ export function Explore() {
           ext.name.toLowerCase().includes(searchLower)
         ) || []
       case 'cards':
-        const filteredCards = discoveredCards.filter(card =>
-          card.set?.id === selectedExtension?.id &&
-          card.name.toLowerCase().includes(searchLower)
-        )
+        const filteredCards = discoveredCards.filter(card => {
+          if (card.set?.id !== selectedExtension?.id) return false
+
+          // Recherche bilingue : français et anglais
+          const cardNameLower = card.name.toLowerCase()
+
+          // Recherche directe dans le nom anglais de la carte
+          const matchesEnglish = cardNameLower.includes(searchLower)
+
+          // Si l'utilisateur recherche en français, traduire vers l'anglais
+          const translatedSearch = translatePokemonName(searchLower)
+          const matchesTranslated = translatedSearch !== searchLower && cardNameLower.includes(translatedSearch)
+
+          return matchesEnglish || matchesTranslated
+        })
 
         // Debug: Afficher les propriétés de la première carte pour vérifier les données
         if (filteredCards.length > 0 && !window.cardDebugLogged) {

@@ -10,6 +10,7 @@ import { CardDetailsModal } from '@/components/features/collection/CardDetailsMo
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { Heart, List, Copy, Search, Filter, BookOpen } from 'lucide-react'
 import { translateCondition } from '@/utils/cardConditions'
+import { translatePokemonName } from '@/utils/pokemonTranslations'
 
 export function Favorites() {
   const location = useLocation()
@@ -81,9 +82,20 @@ export function Favorites() {
   const pageConfig = getPageConfig()
   const data = getData()
 
-  const filteredCards = data.filter(card =>
-    card.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredCards = data.filter(card => {
+    // Recherche bilingue : français et anglais
+    const searchLower = searchTerm.toLowerCase().trim()
+    const cardNameLower = card.name.toLowerCase()
+
+    // Recherche directe dans le nom anglais de la carte
+    const matchesEnglish = cardNameLower.includes(searchLower)
+
+    // Si l'utilisateur recherche en français, traduire vers l'anglais
+    const translatedSearch = translatePokemonName(searchLower)
+    const matchesTranslated = translatedSearch !== searchLower && cardNameLower.includes(translatedSearch)
+
+    return matchesEnglish || matchesTranslated
+  })
 
   const PageIcon = pageConfig.icon
 

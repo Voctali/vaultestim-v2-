@@ -10,6 +10,7 @@ import { CardImage } from '@/components/features/explore/CardImage'
 import { CardDetailsModal } from '@/components/features/collection/CardDetailsModal'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { translateCondition } from '@/utils/cardConditions'
+import { translatePokemonName } from '@/utils/pokemonTranslations'
 
 export function Collection() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -51,7 +52,18 @@ export function Collection() {
   const uniqueCards = Object.values(groupedCards)
 
   const filteredCards = uniqueCards.filter(card => {
-    const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase())
+    // Recherche bilingue : français et anglais
+    const searchLower = searchTerm.toLowerCase().trim()
+    const cardNameLower = card.name.toLowerCase()
+
+    // Recherche directe dans le nom anglais de la carte
+    const matchesEnglish = cardNameLower.includes(searchLower)
+
+    // Si l'utilisateur recherche en français, traduire vers l'anglais
+    const translatedSearch = translatePokemonName(searchLower)
+    const matchesTranslated = translatedSearch !== searchLower && cardNameLower.includes(translatedSearch)
+
+    const matchesSearch = matchesEnglish || matchesTranslated
     const matchesRarity = filters.rarity === 'all' || card.rarity === filters.rarity
     const matchesCondition = filters.condition === 'all' || card.condition === filters.condition
     const matchesType = filters.type === 'all' || card.type === filters.type

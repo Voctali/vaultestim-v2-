@@ -11,6 +11,7 @@ import { SaleModal } from '@/components/features/collection/SaleModal'
 import { BatchSaleModal } from '@/components/features/collection/BatchSaleModal'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { translateCondition } from '@/utils/cardConditions'
+import { translatePokemonName } from '@/utils/pokemonTranslations'
 import {
   Copy,
   Search,
@@ -40,9 +41,20 @@ export function Duplicates() {
 
   // Obtenir les doublons (cartes avec quantité > 1, priorisant les moins bonnes conditions)
   const duplicateCards = useMemo(() => {
-    return getDuplicates().filter(card =>
-      card.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    return getDuplicates().filter(card => {
+      // Recherche bilingue : français et anglais
+      const searchLower = searchTerm.toLowerCase().trim()
+      const cardNameLower = card.name.toLowerCase()
+
+      // Recherche directe dans le nom anglais de la carte
+      const matchesEnglish = cardNameLower.includes(searchLower)
+
+      // Si l'utilisateur recherche en français, traduire vers l'anglais
+      const translatedSearch = translatePokemonName(searchLower)
+      const matchesTranslated = translatedSearch !== searchLower && cardNameLower.includes(translatedSearch)
+
+      return matchesEnglish || matchesTranslated
+    })
   }, [getDuplicates, searchTerm])
 
   // Calculer la valeur totale d'un lot
