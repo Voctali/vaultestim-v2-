@@ -20,37 +20,56 @@ const customStorage = {
   getItem: (key) => {
     try {
       // Essayer d'abord localStorage, puis sessionStorage en fallback
-      const item = localStorage.getItem(key) || sessionStorage.getItem(key)
-      console.log(`🔑 [Storage] getItem(${key}):`, item ? 'trouvé' : 'non trouvé')
+      const localItem = localStorage.getItem(key)
+      const sessionItem = sessionStorage.getItem(key)
+      const item = localItem || sessionItem
+
+      console.log(`🔑 [Storage] getItem(${key}):`, item ? 'trouvé ✅' : 'non trouvé ❌')
+      if (item && localItem !== sessionItem) {
+        console.log(`⚠️ [Storage] Désynchronisation détectée pour ${key}`)
+      }
+
       return item
     } catch (error) {
-      console.error('❌ [Storage] Erreur getItem:', error)
+      console.error('❌ [Storage] Erreur getItem:', key, error)
       return null
     }
   },
-  setItem: (key, value) => {
+
+  setItem: async (key, value) => {
+    console.log(`📝 [Storage] setItem appelé pour ${key}`, value ? `(${value.length} chars)` : '(null)')
     try {
-      // Écrire dans les deux pour redondance
+      // Écrire dans localStorage
       localStorage.setItem(key, value)
+      console.log(`✅ [Storage] localStorage.setItem(${key}): OK`)
+
+      // Écrire dans sessionStorage pour redondance
       sessionStorage.setItem(key, value)
-      console.log(`✅ [Storage] setItem(${key}): sauvegardé`)
+      console.log(`✅ [Storage] sessionStorage.setItem(${key}): OK`)
+
+      console.log(`✅ [Storage] setItem(${key}): sauvegardé avec succès`)
     } catch (error) {
-      console.error('❌ [Storage] Erreur setItem:', error)
-      // Si localStorage échoue, au moins sauvegarder dans sessionStorage
+      console.error('❌ [Storage] Erreur setItem complète:', key, error)
+
+      // Fallback: essayer seulement sessionStorage
       try {
         sessionStorage.setItem(key, value)
+        console.log(`⚠️ [Storage] Fallback sessionStorage OK pour ${key}`)
       } catch (e) {
-        console.error('❌ [Storage] Erreur sessionStorage:', e)
+        console.error('❌ [Storage] Erreur sessionStorage fallback:', e)
+        throw e // Remonter l'erreur pour que Supabase sache que ça a échoué
       }
     }
   },
-  removeItem: (key) => {
+
+  removeItem: async (key) => {
+    console.log(`🗑️ [Storage] removeItem appelé pour ${key}`)
     try {
       localStorage.removeItem(key)
       sessionStorage.removeItem(key)
-      console.log(`🗑️ [Storage] removeItem(${key}): supprimé`)
+      console.log(`✅ [Storage] removeItem(${key}): supprimé`)
     } catch (error) {
-      console.error('❌ [Storage] Erreur removeItem:', error)
+      console.error('❌ [Storage] Erreur removeItem:', key, error)
     }
   }
 }
