@@ -743,6 +743,7 @@ export const POKEMON_TRANSLATIONS = {
   'mucuscule': 'goomy',
   'colimucus': 'sliggoo',
   'muplodocus': 'goodra',
+  'trousselin': 'klefki',
   'diancie': 'diancie',
   'hoopa': 'hoopa',
   'volcanion': 'volcanion',
