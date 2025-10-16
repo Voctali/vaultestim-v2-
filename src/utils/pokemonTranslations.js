@@ -748,6 +748,8 @@ export const POKEMON_TRANSLATIONS = {
   'desséliande': 'trevenant',
   'pitrouille': 'pumpkaboo',
   'banshitrouye': 'gourgeist',
+  'gerlaçon': 'bergmite',
+  'séracrawl': 'avalugg',
   'diancie': 'diancie',
   'hoopa': 'hoopa',
   'volcanion': 'volcanion',
