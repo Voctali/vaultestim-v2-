@@ -90,8 +90,9 @@ L'application utilise une architecture en couches de Context API :
 18. **📐 Layout Responsive Explorer** - Bouton "Ajouter carte" et navigation adaptés mobile/desktop
 19. **⚡ Cache Intelligent avec IndexedDB** - Système de cache local avec synchronisation incrémentale
 20. **🔄 Synchronisation Delta** - Chargement instantané depuis cache + sync arrière-plan des nouvelles cartes
-21. **🔐 Gestion de Session Optimisée** - Stockage de session pour éviter la disparition des onglets mobiles
+21. **🔐 Gestion de Session Optimisée** - Custom storage adapter synchrone pour Supabase (localStorage + sessionStorage avec redondance)
 22. **🌐 Recherche Bilingue Français/Anglais** - Recherche de cartes en français ou anglais dans toutes les collections
+23. **🔧 Storage Adapter Synchrone** - Fix critique : méthodes synchrones pour compatibilité Supabase Auth (évite perte de session)
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -163,6 +164,11 @@ L'application utilise une architecture en couches de Context API :
 - **Authentification** : Supabase Auth avec gestion complète de session
 - **Providers** : Email/Password avec validation
 - **Sessions** : Gestion automatique avec refresh tokens
+- **Custom Storage Adapter** :
+  - Méthodes **synchrones** (compatibilité Supabase Auth)
+  - Double redondance localStorage + sessionStorage
+  - Logs détaillés pour debugging (`🔑 [Storage] getItem/setItem`)
+  - Fallback automatique en cas d'erreur
 - **Rôles** : `user`, `admin` - Protection des routes admin
 - **États** : `isPremium` pour fonctionnalités premium
 - **Hook** : `useAuth()` avec `isAuthenticated`, `isAdmin`, `isPremium`, `user`, `logout`, `register`
@@ -242,8 +248,11 @@ L'application utilise une architecture en couches de Context API :
   - Auth: Email/Password avec sessions sécurisées
   - Database: PostgreSQL avec RLS
 - **Traduction** : Français→Anglais automatique pour recherche cartes (dictionnaire centralisé dans `src/utils/pokemonTranslations.js`)
-  - Exemples récents ajoutés : archéomire→bronzor, archéodong→bronzong, ptiravi→happiny, flotajou→panpour
-  - Attention aux doublons : vérifier qu'une traduction n'existe pas déjà avant d'en ajouter une nouvelle
+  - Exemples récents ajoutés : archéomire→bronzor, archéodong→bronzong, ptiravi→happiny, flotajou→panpour, manglouton→yungoos, guérilande→comfey
+  - **Corrections importantes** :
+    - Suppression doublons (ex: manglouton était à tort traduit en "sandy shocks" en Gen 9)
+    - Vérifier Pokedex order pour éviter confusions entre générations
+  - Attention aux doublons : vérifier qu'une traduction n'existe pas déjà avant d'en ajouter une nouvelle avec `grep -n "nom" pokemonTranslations.js`
 
 ## Démarrage Rapide
 ```bash
@@ -452,17 +461,53 @@ Le système utilise une approche hybride pour optimiser les performances :
 - **Statistiques stockage** : Cartes, extensions, images, tailles
 
 ### 🔧 Résolution de Problèmes Courants
+
+#### **Problèmes d'Infrastructure**
 - **CORS TCG API** : Résolu par proxy Vite (`/api/pokemontcg`)
 - **Persistence modifications** : Type de bloc correctement détecté
 - **Reconstruction données** : useEffect optimisés pour éviter boucles
 - **Performance** : Traitement par batch pour gros volumes
-- **Recherche intelligente** : Filtrage par limite de mots pour éviter faux positifs (Mew vs Mewtwo)
-- **Multi-device** : Synchronisation Supabase automatique avec cache local pour performance
-- **Mobile** : Pull-to-refresh désactivé pour éviter rafraîchissements accidentels
-- **Traductions Pokémon** : Dictionnaire centralisé dans `src/utils/pokemonTranslations.js` - Éviter les doublons
-- **AbortController** : Annulation des recherches pour éviter race conditions et résultats obsolètes
 - **localStorage plein (QuotaExceededError)** : Utiliser `/clean-storage.html` ou lien sur page de login
 - **Cache IndexedDB** : Chargement instantané + synchronisation incrémentale pour performance maximale
+
+#### **Problèmes de Recherche**
+- **Recherche intelligente** : Filtrage par limite de mots pour éviter faux positifs (Mew vs Mewtwo)
+- **Traductions Pokémon** : Dictionnaire centralisé dans `src/utils/pokemonTranslations.js` - Éviter les doublons
+- **AbortController** : Annulation des recherches pour éviter race conditions et résultats obsolètes
+
+#### **Problèmes de Synchronisation**
+- **Multi-device** : Synchronisation Supabase automatique avec cache local pour performance
+- **Mobile** : Pull-to-refresh désactivé pour éviter rafraîchissements accidentels
+
+#### **🔴 CRITIQUE - Problème de Session Supabase (RÉSOLU)**
+**Symptôme** : Les onglets de navigation disparaissent après actualisation de la page, utilisateur déconnecté automatiquement.
+
+**Cause Racine** : Le custom storage adapter avait des méthodes `setItem` et `removeItem` déclarées comme `async`, mais Supabase Auth attend un storage adapter **synchrone** (comme l'API localStorage native). Résultat : le token d'authentification n'était **jamais sauvegardé**.
+
+**Solution Appliquée** (Fichier `src/lib/supabaseClient.js`) :
+```javascript
+// ❌ AVANT (incorrect - async)
+const customStorage = {
+  setItem: async (key, value) => { ... },
+  removeItem: async (key) => { ... }
+}
+
+// ✅ APRÈS (correct - synchrone)
+const customStorage = {
+  setItem: (key, value) => { ... },  // Pas async
+  removeItem: (key) => { ... }       // Pas async
+}
+```
+
+**Procédure de Fix pour Utilisateurs Existants** :
+1. **Se déconnecter** complètement de l'application (bouton déconnexion ou `localStorage.clear()`)
+2. **Se reconnecter** avec les identifiants → Le nouveau storage synchrone sauvegarde correctement le token
+3. **Vérifier les logs console** : Doit afficher `📝 [Storage] setItem appelé pour sb-...-auth-token`
+4. **Actualiser la page** : Les onglets restent maintenant visibles ✅
+
+**Fichiers Modifiés** :
+- `src/lib/supabaseClient.js` : Storage adapter synchrone avec logs détaillés
+- `src/services/SupabaseAuthService.js` : Utilisation cohérente de `getSession()` au lieu de `getUser()`
 
 ## Déploiement
 
