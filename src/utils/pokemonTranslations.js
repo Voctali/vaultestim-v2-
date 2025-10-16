@@ -746,6 +746,8 @@ export const POKEMON_TRANSLATIONS = {
   'trousselin': 'klefki',
   'brocélôme': 'phantump',
   'desséliande': 'trevenant',
+  'pitrouille': 'pumpkaboo',
+  'banshitrouye': 'gourgeist',
   'diancie': 'diancie',
   'hoopa': 'hoopa',
   'volcanion': 'volcanion',
