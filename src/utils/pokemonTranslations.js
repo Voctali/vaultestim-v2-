@@ -698,6 +698,7 @@ export const POKEMON_TRANSLATIONS = {
   'passerouge': 'fletchling',
   'braisillon': 'fletchinder',
   'flambusard': 'talonflame',
+  'brutalibré': 'hawlucha',
   'lépidonille': 'scatterbug',
   'pérégrain': 'spewpa',
   'prismillon': 'vivillon',
