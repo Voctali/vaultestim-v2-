@@ -91,6 +91,7 @@ L'application utilise une architecture en couches de Context API :
 19. **⚡ Cache Intelligent avec IndexedDB** - Système de cache local avec synchronisation incrémentale
 20. **🔄 Synchronisation Delta** - Chargement instantané depuis cache + sync arrière-plan des nouvelles cartes
 21. **🔐 Gestion de Session Optimisée** - Stockage de session pour éviter la disparition des onglets mobiles
+22. **🌐 Recherche Bilingue Français/Anglais** - Recherche de cartes en français ou anglais dans toutes les collections
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -346,6 +347,31 @@ L'application sera accessible sur http://localhost:5174
 
 ### 🔍 Système de Recherche Avancé
 
+#### **Recherche Bilingue Français/Anglais** (Nouveau!)
+- **Fonctionnalité** : Recherche de cartes avec noms français OU anglais dans toutes les collections
+- **Pages supportées** :
+  - `Collection.jsx` : Ma Collection → Toutes mes cartes
+  - `Favorites.jsx` : Favoris, Liste de souhaits
+  - `Duplicates.jsx` : Gestion des doublons
+  - `Explore.jsx` : Explorer → Cartes d'une extension
+- **Implémentation** :
+  ```javascript
+  // Recherche directe en anglais
+  const matchesEnglish = cardNameLower.includes(searchLower)
+
+  // Traduction automatique français→anglais
+  const translatedSearch = translatePokemonName(searchLower)
+  const matchesTranslated = translatedSearch !== searchLower && cardNameLower.includes(translatedSearch)
+
+  return matchesEnglish || matchesTranslated
+  ```
+- **Exemples d'utilisation** :
+  - `dracaufeu` → trouve "Charizard"
+  - `salamèche` → trouve "Charmander"
+  - `pikachu` → fonctionne dans les deux langues
+  - `amphinobi` → trouve "Greninja"
+- **Couverture** : Support de 976+ Pokémon (Générations 1-9)
+
 #### **Annulation de Recherche**
 - **AbortController** : Gestion des requêtes simultanées
 - **Bouton Annuler** : Visible pendant la recherche en cours
@@ -357,6 +383,7 @@ L'application sera accessible sur http://localhost:5174
 - **Format** : `'nom_français': 'nom_anglais'` (tout en minuscules)
 - **Export** : `translatePokemonName(frenchName)` pour conversion automatique
 - **Maintenance** : Vérifier les doublons avec `grep -n "nom" pokemonTranslations.js`
+- **Utilisation** : Importé dans les pages de collection pour recherche bilingue
 
 ### 🎨 Améliorations Visuelles
 
@@ -441,11 +468,15 @@ Le système utilise une approche hybride pour optimiser les performances :
 
 ### Production (Vercel)
 ```bash
+# IMPORTANT : Déployer depuis la racine du projet (vaultestim-v2/)
+# PAS depuis le dossier src/
+
 # Déploiement automatique via CLI
+cd /f/Logiciels/Appli\ Vaultestim/vaultestim-v2
 vercel --prod
 
-# Ou push vers GitHub (si connecté)
-git push origin master
+# Forcer rebuild sans cache
+vercel --prod --force
 ```
 
 ### Variables d'Environnement Vercel
@@ -455,4 +486,11 @@ Configurer dans le dashboard Vercel :
 - `VITE_POKEMON_TCG_API_KEY` : Clé API Pokemon TCG (optionnelle)
 
 ### URL de Production
-L'application est déployée sur : `vaultestim-v2-3vnio8r0h-voctalis-projects.vercel.app`
+- **Domaine personnalisé** : https://vaultestim-v2.vercel.app
+- **Projet Vercel** : `vaultestim-v2` (NON "src")
+
+### Notes de Déploiement
+- ⚠️ **Ne pas créer de projets multiples** : Utiliser uniquement le projet `vaultestim-v2`
+- 📁 **Déployer depuis la racine** : Le dossier `src/` contient le code source, PAS un projet Vercel séparé
+- 🔄 **Cache navigateur** : Après déploiement, tester en mode navigation privée pour éviter les problèmes de cache
+- ✅ **Vérification du build** : Un build réussi compile ~1927 modules en ~7-8 secondes
