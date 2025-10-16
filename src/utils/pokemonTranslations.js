@@ -797,6 +797,8 @@ export const POKEMON_TRANSLATIONS = {
   'croquine': 'bounsweet',
   'candine': 'steenee',
   'sucreine': 'tsareena',
+  'guérilande': 'comfey',
+  'guerilande': 'comfey',
   'guériaigle': 'braviary',
   'gueriaigle': 'braviary',
   'météno': 'minior',
