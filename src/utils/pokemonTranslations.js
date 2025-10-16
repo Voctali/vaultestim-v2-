@@ -744,6 +744,8 @@ export const POKEMON_TRANSLATIONS = {
   'colimucus': 'sliggoo',
   'muplodocus': 'goodra',
   'trousselin': 'klefki',
+  'brocélôme': 'phantump',
+  'desséliande': 'trevenant',
   'diancie': 'diancie',
   'hoopa': 'hoopa',
   'volcanion': 'volcanion',
