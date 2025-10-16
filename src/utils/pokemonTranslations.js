@@ -721,7 +721,7 @@ export const POKEMON_TRANSLATIONS = {
   'cocotine': 'aromatisse',
   'sucroquin': 'swirlix',
   'cupcanaille': 'slurpuff',
-  'opermine': 'inkay',
+  'opermine': 'binacle',
   'kravarech': 'malamar',
   'sepiatop': 'inkay',
   'sepiatroce': 'malamar',
