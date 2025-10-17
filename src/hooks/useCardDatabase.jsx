@@ -854,19 +854,26 @@ export function CardDatabaseProvider({ children }) {
             })
         }
 
-        // IMPORTANT: Sauvegarder aussi les cartes avec prix mis à jour dans IndexedDB
-        // Les prix ne peuvent PAS être sauvegardés dans Supabase (champs inexistants)
-        // MAIS on peut les sauvegarder dans IndexedDB qui a un stockage illimité
+        // IMPORTANT: Sauvegarder aussi les cartes avec prix mis à jour
         if (priceUpdatedCards.length > 0) {
           console.log(`💰 ${priceUpdatedCards.length} prix mis à jour`)
 
-          // Sauvegarder dans IndexedDB pour persister les prix entre les rechargements
+          // Sauvegarder dans IndexedDB (cache local rapide)
           CardCacheService.saveCards(priceUpdatedCards)
             .then((savedCount) => {
               console.log(`💾 Cache local: ${savedCount} cartes avec prix mis à jour sauvegardées`)
             })
             .catch((error) => {
               console.warn('⚠️ Erreur sauvegarde prix dans cache local:', error)
+            })
+
+          // Sauvegarder dans Supabase (synchronisation multi-device)
+          SupabaseService.addDiscoveredCards(priceUpdatedCards)
+            .then((addedCount) => {
+              console.log(`☁️ Supabase: ${addedCount} cartes avec prix synchronisées (multi-device)`)
+            })
+            .catch((error) => {
+              console.warn('⚠️ Erreur sauvegarde prix dans Supabase:', error)
             })
         }
 
@@ -1558,11 +1565,20 @@ export function CardDatabaseProvider({ children }) {
         // Attendre que toutes les cartes du batch soient traitées
         const batchResults = await Promise.all(batchPromises)
 
-        // Filtrer les résultats valides et sauvegarder dans IndexedDB
+        // Filtrer les résultats valides et sauvegarder
         const validResults = batchResults.filter(card => card !== null)
         if (validResults.length > 0) {
-          // Sauvegarder directement dans IndexedDB (écrase les anciennes versions)
+          // Sauvegarder dans IndexedDB (cache local rapide)
           await CardCacheService.saveCards(validResults)
+
+          // Sauvegarder dans Supabase (synchronisation multi-device)
+          SupabaseService.addDiscoveredCards(validResults)
+            .then((addedCount) => {
+              console.log(`☁️ Supabase: ${addedCount} cartes avec prix synchronisées (multi-device)`)
+            })
+            .catch((error) => {
+              console.warn('⚠️ Erreur sauvegarde prix dans Supabase:', error)
+            })
 
           // Mettre à jour l'état React
           setDiscoveredCards(prevCards => {

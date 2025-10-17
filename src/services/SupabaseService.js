@@ -24,7 +24,9 @@ export class SupabaseService {
     'images',
     'set',
     'set_id',
-    '_source'
+    '_source',
+    'cardmarket',  // Structure complète des prix CardMarket (EUR)
+    'tcgplayer'    // Structure complète des prix TCGPlayer (USD)
   ]
 
   /**
@@ -154,7 +156,7 @@ export class SupabaseService {
 
       const { data, error } = await supabase
         .from('discovered_cards')
-        .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, _saved_at')
+        .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, _saved_at')
         .eq('user_id', userId)
         .gte('_saved_at', sinceTimestamp)
         .order('_saved_at', { ascending: true })
@@ -203,7 +205,7 @@ export class SupabaseService {
 
           const queryPromise = supabase
             .from('discovered_cards')
-            .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source')
+            .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer')
             .eq('user_id', userId)
             .range(offset, offset + BATCH_SIZE - 1)
 
