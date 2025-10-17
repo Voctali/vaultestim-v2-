@@ -18,6 +18,7 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
     quantity: 1,
     condition: 'near_mint', // État par défaut (Quasi-neuf)
     version: 'Normale',
+    language: 'Français', // Langue par défaut
     purchasePrice: '',
     isGraded: false
   })
@@ -73,6 +74,7 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
       quantity: 1,
       condition: 'near_mint',
       version: 'Normale',
+      language: 'Français',
       purchasePrice: '',
       isGraded: false
     })
@@ -296,17 +298,29 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="purchasePrice">Prix d'achat (€)</Label>
-                  <Input
-                    id="purchasePrice"
-                    placeholder="70.86"
-                    type="number"
-                    step="0.01"
-                    value={formData.purchasePrice}
-                    onChange={(e) => handleInputChange('purchasePrice', e.target.value)}
-                    className="golden-border"
-                  />
+                  <Label htmlFor="language">Langue</Label>
+                  <Select value={formData.language} onValueChange={(value) => handleInputChange('language', value)}>
+                    <SelectTrigger className="golden-border">
+                      <SelectValue placeholder="Français" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Français">🇫🇷 Français</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="purchasePrice">Prix d'achat (€)</Label>
+                <Input
+                  id="purchasePrice"
+                  placeholder="70.86"
+                  type="number"
+                  step="0.01"
+                  value={formData.purchasePrice}
+                  onChange={(e) => handleInputChange('purchasePrice', e.target.value)}
+                  className="golden-border"
+                />
               </div>
 
               <div className="flex items-center space-x-2">

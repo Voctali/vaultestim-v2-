@@ -81,8 +81,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     // Utiliser notre custom storage adapter pour plus de fiabilité
     // Écrit dans localStorage ET sessionStorage pour redondance
-    storage: customStorage
+    storage: customStorage,
     // Note: On laisse Supabase utiliser sa clé par défaut (sb-{project-ref}-auth-token)
+    // Configuration pour améliorer la persistance de session
+    storageKey: 'vaultestim-auth',
+    flowType: 'pkce' // Plus sécurisé et compatible avec les hard refresh
   },
   db: {
     schema: 'public'

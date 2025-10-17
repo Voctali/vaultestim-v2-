@@ -15,6 +15,7 @@ import { IndexedDBService } from '@/services/IndexedDBService'
 import { ImageUploadService } from '@/services/ImageUploadService'
 import { buildBlocksHierarchy } from '@/services/BlockHierarchyService'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
+import { formatCardPrice } from '@/utils/priceFormatter'
 import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
 export function Explore() {
@@ -679,9 +680,13 @@ export function Explore() {
                           quantity: 1,
                           condition: 'near_mint', // État quasi-neuf par défaut
                           version: 'Normale',
+                          language: 'Français', // Langue française par défaut
                           purchasePrice: null,
                           marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
                           value: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
+                          // Sauvegarder aussi les structures complètes pour référence future
+                          cardmarket: card.cardmarket || null,
+                          tcgplayer: card.tcgplayer || null,
                           isGraded: false
                         }
 
@@ -791,6 +796,11 @@ export function Explore() {
                       </p>
                     )}
                   </div>
+
+                  {/* Prix de la carte */}
+                  <div className="mt-2 text-right">
+                    <p className="font-semibold text-green-500 text-sm">{formatCardPrice(card)}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -872,9 +882,13 @@ export function Explore() {
               quantity: formData.quantity || 1,
               condition: formData.condition || 'near_mint',
               version: formData.version || 'Normale',
+              language: formData.language || 'Français',
               purchasePrice: formData.purchasePrice || null,
               marketPrice: selectedCard.cardmarket?.prices?.averageSellPrice || selectedCard.tcgplayer?.prices?.holofoil?.market || null,
               value: selectedCard.cardmarket?.prices?.averageSellPrice || selectedCard.tcgplayer?.prices?.holofoil?.market || null,
+              // Sauvegarder aussi les structures complètes pour référence future
+              cardmarket: selectedCard.cardmarket || null,
+              tcgplayer: selectedCard.tcgplayer || null,
               isGraded: formData.isGraded || false
             }
 

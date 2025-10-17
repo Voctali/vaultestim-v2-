@@ -11,6 +11,7 @@ import { CardDetailsModal } from '@/components/features/collection/CardDetailsMo
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { translateCondition } from '@/utils/cardConditions'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
+import { formatCardPrice } from '@/utils/priceFormatter'
 
 export function Collection() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -231,7 +232,7 @@ export function Collection() {
                   </div>
 
                   <div className="text-right">
-                    <p className="font-semibold text-green-500">{card.marketPrice || card.value}€</p>
+                    <p className="font-semibold text-green-500">{formatCardPrice(card)}</p>
                   </div>
                 </div>
               </CardContent>

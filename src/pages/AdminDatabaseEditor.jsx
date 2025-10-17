@@ -20,6 +20,7 @@ import { buildBlocksHierarchy } from '@/services/BlockHierarchyService'
 import { CardPreviewModal } from '@/components/features/explore/CardPreviewModal'
 import { DataMigration } from '@/components/features/settings/DataMigration'
 import { DatabaseBackup } from '@/components/features/settings/DatabaseBackup'
+import { PriceMigrationPanel } from '@/components/features/admin/PriceMigrationPanel'
 
 export function AdminDatabaseEditor() {
   const { discoveredCards, seriesDatabase, isLoading } = useCardDatabase()
@@ -857,6 +858,9 @@ export function AdminDatabaseEditor() {
 
       {/* Sauvegarde de la base de données */}
       <DatabaseBackup />
+
+      {/* Migration des prix depuis l'API Pokemon TCG */}
+      <PriceMigrationPanel />
 
       {/* Statistiques */}
       <div className="grid gap-4 md:grid-cols-4">

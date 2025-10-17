@@ -795,7 +795,7 @@ export function CardDatabaseProvider({ children }) {
           // Carte complètement nouvelle
           uniqueNewCards.push(card)
         } else {
-          // Carte existante : mettre à jour UNIQUEMENT les prix
+          // Carte existante : mettre à jour les prix ET les structures complètes
           const existingCard = existingCardsMap.get(card.id)
           const updatedCard = {
             ...existingCard,
@@ -804,6 +804,9 @@ export function CardDatabaseProvider({ children }) {
             marketPriceDetails: card.marketPriceDetails,
             tcgPlayerPrice: card.tcgPlayerPrice,
             cardMarketPrice: card.cardMarketPrice,
+            // IMPORTANT : Sauvegarder aussi les structures complètes pour référence future
+            cardmarket: card.cardmarket || existingCard.cardmarket,
+            tcgplayer: card.tcgplayer || existingCard.tcgplayer,
             _timestamp: currentTimestamp
           }
 
@@ -851,10 +854,20 @@ export function CardDatabaseProvider({ children }) {
             })
         }
 
-        // Note: Les prix ne sont PAS sauvegardés dans Supabase car ces champs n'existent pas dans la table
-        // Les prix restent uniquement en mémoire locale (React state)
+        // IMPORTANT: Sauvegarder aussi les cartes avec prix mis à jour dans IndexedDB
+        // Les prix ne peuvent PAS être sauvegardés dans Supabase (champs inexistants)
+        // MAIS on peut les sauvegarder dans IndexedDB qui a un stockage illimité
         if (priceUpdatedCards.length > 0) {
-          console.log(`💰 ${priceUpdatedCards.length} prix mis à jour (en mémoire locale uniquement)`)
+          console.log(`💰 ${priceUpdatedCards.length} prix mis à jour`)
+
+          // Sauvegarder dans IndexedDB pour persister les prix entre les rechargements
+          CardCacheService.saveCards(priceUpdatedCards)
+            .then((savedCount) => {
+              console.log(`💾 Cache local: ${savedCount} cartes avec prix mis à jour sauvegardées`)
+            })
+            .catch((error) => {
+              console.warn('⚠️ Erreur sauvegarde prix dans cache local:', error)
+            })
         }
 
         // Retourner l'état mis à jour immédiatement
@@ -1460,6 +1473,155 @@ export function CardDatabaseProvider({ children }) {
     }
   }
 
+  // Migration des prix : récupérer les structures complètes de prix pour toutes les cartes existantes
+  const migratePrices = async (onProgress = null, cancelSignal = null) => {
+    try {
+      console.log('🔄 Démarrage de la migration des prix...')
+      console.log('⚠️ Cette opération peut prendre plusieurs minutes pour 14,000+ cartes')
+
+      // Charger toutes les cartes depuis le cache local
+      const allCards = discoveredCards
+
+      if (allCards.length === 0) {
+        console.log('⚠️ Aucune carte à migrer')
+        return { success: 0, errors: 0, total: 0 }
+      }
+
+      console.log(`📊 ${allCards.length} cartes à migrer`)
+
+      // Configuration du traitement par batch
+      const BATCH_SIZE = 10 // Réduire pour éviter rate limiting
+      const DELAY_BETWEEN_BATCHES = 2000 // 2 secondes entre chaque batch
+
+      let processedCount = 0
+      let updatedCount = 0
+      let errorCount = 0
+      let skippedCount = 0
+
+      // Traiter par batches
+      for (let i = 0; i < allCards.length; i += BATCH_SIZE) {
+        // Vérifier si la migration a été annulée
+        if (cancelSignal?.cancelled) {
+          console.log('⏸️ Migration interrompue par l\'utilisateur')
+          return {
+            success: updatedCount,
+            errors: errorCount,
+            skipped: skippedCount,
+            total: allCards.length,
+            interrupted: true,
+            progress: Math.round((processedCount / allCards.length) * 100)
+          }
+        }
+
+        const batch = allCards.slice(i, Math.min(i + BATCH_SIZE, allCards.length))
+
+        // Traiter toutes les cartes du batch en parallèle
+        const batchPromises = batch.map(async (card) => {
+          try {
+            // Vérifier si la carte a déjà les structures de prix
+            if (card.cardmarket || card.tcgplayer) {
+              skippedCount++
+              return null // Déjà migrée
+            }
+
+            // Récupérer les données fraîches de l'API Pokemon TCG
+            const response = await fetch(`/api/pokemontcg/v2/cards/${card.id}`)
+
+            if (!response.ok) {
+              throw new Error(`API error: ${response.status}`)
+            }
+
+            const data = await response.json()
+            const freshCard = data.data
+
+            if (freshCard) {
+              updatedCount++
+
+              // Créer la carte mise à jour avec les structures complètes
+              return {
+                ...card,
+                cardmarket: freshCard.cardmarket || null,
+                tcgplayer: freshCard.tcgplayer || null,
+                marketPrice: freshCard.cardmarket?.prices?.averageSellPrice || freshCard.tcgplayer?.prices?.holofoil?.market || card.marketPrice,
+                _timestamp: new Date().toISOString()
+              }
+            }
+
+            return null
+          } catch (error) {
+            errorCount++
+            console.warn(`⚠️ Erreur migration prix pour ${card.name} (${card.id}):`, error.message)
+            return null
+          }
+        })
+
+        // Attendre que toutes les cartes du batch soient traitées
+        const batchResults = await Promise.all(batchPromises)
+
+        // Filtrer les résultats valides et sauvegarder dans IndexedDB
+        const validResults = batchResults.filter(card => card !== null)
+        if (validResults.length > 0) {
+          // Sauvegarder directement dans IndexedDB (écrase les anciennes versions)
+          await CardCacheService.saveCards(validResults)
+
+          // Mettre à jour l'état React
+          setDiscoveredCards(prevCards => {
+            const cardsMap = new Map(prevCards.map(c => [c.id, c]))
+            validResults.forEach(updatedCard => {
+              cardsMap.set(updatedCard.id, updatedCard)
+            })
+            return Array.from(cardsMap.values())
+          })
+        }
+
+        processedCount += batch.length
+
+        // Calculer la progression
+        const progress = Math.round((processedCount / allCards.length) * 100)
+
+        // Log de progression
+        console.log(`🔄 Migration: ${processedCount}/${allCards.length} cartes (${progress}%) | ✅ ${updatedCount} migrées | ⏭️ ${skippedCount} déjà OK | ❌ ${errorCount} erreurs`)
+
+        // Callback de progression
+        if (onProgress) {
+          onProgress({
+            total: allCards.length,
+            processed: processedCount,
+            updated: updatedCount,
+            skipped: skippedCount,
+            errors: errorCount,
+            progress: progress
+          })
+        }
+
+        // Pause entre les batches pour éviter le rate limiting
+        if (i + BATCH_SIZE < allCards.length) {
+          await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES))
+        }
+      }
+
+      // Mettre à jour le timestamp de synchronisation
+      await CardCacheService.updateLastSyncTimestamp()
+
+      console.log(`✅ Migration terminée !`)
+      console.log(`   📊 Total: ${allCards.length} cartes`)
+      console.log(`   ✅ Migrées: ${updatedCount} cartes`)
+      console.log(`   ⏭️ Déjà OK: ${skippedCount} cartes`)
+      console.log(`   ❌ Erreurs: ${errorCount} cartes`)
+
+      return {
+        success: updatedCount,
+        errors: errorCount,
+        skipped: skippedCount,
+        total: allCards.length
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur lors de la migration des prix:', error)
+      throw error
+    }
+  }
+
   // Rafraîchir les prix de toutes les cartes dans la base de données
   const refreshAllPrices = async () => {
     try {
@@ -1646,6 +1808,7 @@ export function CardDatabaseProvider({ children }) {
     searchInLocalCache,
     startBackgroundSync,
     refreshAllPrices,
+    migratePrices, // Migration ponctuelle des prix pour cartes existantes
 
     // Recherche rapide et suggestions
     quickSearch: searchInLocalCache,

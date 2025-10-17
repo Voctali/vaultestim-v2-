@@ -10,49 +10,53 @@ import { CardImage } from '@/components/features/explore/CardImage'
 import { useCollection } from '@/hooks/useCollection.jsx'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { translateCondition } from '@/utils/cardConditions'
-import { ArrowLeft, Edit2, Save, X, Heart, List, Trash2, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Edit2, Save, X, Heart, List, Trash2, ExternalLink, Plus, Minus, Flag } from 'lucide-react'
 
 export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [] }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState({})
   const { removeFromCollection, updateCardInCollection, toggleFavorite, toggleWishlist, favorites, wishlist, collection } = useCollection()
 
-  // Grouper les cartes identiques par état et version
-  const getCardsGrouped = () => {
-    if (!card) return { byCondition: {}, byVersion: {} }
+  // Grouper les cartes identiques par version ET état
+  const getCardsGroupedByVersionAndCondition = () => {
+    if (!card) return []
 
-    // Trouver toutes les cartes identiques (même nom et même série)
+    // Trouver toutes les cartes identiques (même card_id)
+    const cardIdToMatch = card.card_id || card.id
     const identicalCards = collection.filter(c =>
-      c.name === card.name && c.series === card.series
+      (c.card_id || c.id) === cardIdToMatch
     )
 
-    // Grouper par état
-    const byCondition = {}
-    identicalCards.forEach(c => {
-      const condition = c.condition || 'Proche du neuf'
-      if (!byCondition[condition]) {
-        byCondition[condition] = []
-      }
-      byCondition[condition].push(c)
-    })
-
-    // Grouper par version
-    const byVersion = {}
+    // Grouper par version + état
+    const grouped = {}
     identicalCards.forEach(c => {
       const version = c.version || 'Normale'
-      if (!byVersion[version]) {
-        byVersion[version] = []
+      const condition = c.condition || 'Proche du neuf'
+      const key = `${version}|||${condition}` // Utiliser un séparateur unique
+
+      if (!grouped[key]) {
+        grouped[key] = {
+          version,
+          condition,
+          cards: [],
+          totalQuantity: 0
+        }
       }
-      byVersion[version].push(c)
+      grouped[key].cards.push(c)
+      grouped[key].totalQuantity += (c.quantity || 1)
     })
 
-    return { byCondition, byVersion }
+    // Convertir en tableau et trier par version puis état
+    return Object.values(grouped).sort((a, b) => {
+      if (a.version !== b.version) {
+        return a.version.localeCompare(b.version)
+      }
+      return a.condition.localeCompare(b.condition)
+    })
   }
 
-  const { byCondition: cardsByCondition, byVersion: cardsByVersion } = getCardsGrouped()
-  const totalQuantity = Object.values(cardsByCondition).reduce((sum, cards) =>
-    sum + cards.reduce((cardSum, c) => cardSum + (c.quantity || 1), 0), 0
-  )
+  const groupedCards = getCardsGroupedByVersionAndCondition()
+  const totalQuantity = groupedCards.reduce((sum, group) => sum + group.totalQuantity, 0)
 
   useEffect(() => {
     if (card) {
@@ -85,8 +89,9 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
   const handleDeleteAllCopies = () => {
     if (!card) return
 
+    const cardIdToMatch = card.card_id || card.id
     const identicalCards = collection.filter(c =>
-      c.name === card.name && c.series === card.series
+      (c.card_id || c.id) === cardIdToMatch
     )
 
     const totalCopies = identicalCards.reduce((sum, c) => sum + (c.quantity || 1), 0)
@@ -99,33 +104,60 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
     }
   }
 
-  const handleDeleteByCondition = (condition) => {
-    const cardsToDelete = cardsByCondition[condition]
-    const totalToDelete = cardsToDelete.reduce((sum, c) => sum + (c.quantity || 1), 0)
 
-    if (window.confirm(`Supprimer ${totalToDelete} carte(s) en état "${condition}" ?`)) {
-      cardsToDelete.forEach(c => {
-        removeFromCollection(c.id)
+  // Augmenter la quantité d'un groupe (version + état)
+  const handleIncreaseQuantity = (version, condition) => {
+    // Trouver la première carte du groupe et augmenter sa quantité
+    const group = groupedCards.find(g => g.version === version && g.condition === condition)
+    if (group && group.cards.length > 0) {
+      const firstCard = group.cards[0]
+      updateCardInCollection(firstCard.id, {
+        ...firstCard,
+        quantity: (firstCard.quantity || 1) + 1
       })
+    }
+  }
 
-      // Si toutes les cartes sont supprimées, fermer la modale
-      if (totalToDelete === totalQuantity) {
-        onClose()
+  // Diminuer la quantité d'un groupe (version + état)
+  const handleDecreaseQuantity = (version, condition) => {
+    const group = groupedCards.find(g => g.version === version && g.condition === condition)
+    if (!group || group.cards.length === 0) return
+
+    // Si totalQuantity > 1, on diminue
+    if (group.totalQuantity > 1) {
+      // Trouver la première carte avec quantity > 1, sinon prendre la première
+      const cardToUpdate = group.cards.find(c => (c.quantity || 1) > 1) || group.cards[0]
+
+      if ((cardToUpdate.quantity || 1) > 1) {
+        // Diminuer la quantité
+        updateCardInCollection(cardToUpdate.id, {
+          ...cardToUpdate,
+          quantity: (cardToUpdate.quantity || 1) - 1
+        })
+      } else {
+        // Supprimer cette carte (quantité = 1)
+        removeFromCollection(cardToUpdate.id)
+
+        // Si c'était la dernière carte de la collection, fermer la modale
+        if (totalQuantity === 1) {
+          onClose()
+        }
       }
     }
   }
 
-  const handleDeleteByVersion = (version) => {
-    const cardsToDelete = cardsByVersion[version]
-    const totalToDelete = cardsToDelete.reduce((sum, c) => sum + (c.quantity || 1), 0)
+  // Supprimer toutes les cartes d'un groupe (version + état)
+  const handleDeleteGroup = (version, condition) => {
+    const group = groupedCards.find(g => g.version === version && g.condition === condition)
+    if (!group) return
 
-    if (window.confirm(`Supprimer ${totalToDelete} carte(s) en version "${version}" ?`)) {
-      cardsToDelete.forEach(c => {
+    if (window.confirm(`Supprimer ${group.totalQuantity} carte(s) en version "${version}" (${translateCondition(condition)}) ?`)) {
+      group.cards.forEach(c => {
         removeFromCollection(c.id)
       })
 
       // Si toutes les cartes sont supprimées, fermer la modale
-      if (totalToDelete === totalQuantity) {
+      if (group.totalQuantity === totalQuantity) {
         onClose()
       }
     }
@@ -228,69 +260,71 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
               </div>
             </div>
 
-            {/* Quantités par état et version */}
+            {/* Quantités par version et état */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold golden-glow">Vos exemplaires ({totalQuantity})</h3>
 
-              {/* Par état */}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Par état</h4>
-                {Object.entries(cardsByCondition).map(([condition, cards]) => {
-                  const totalForCondition = cards.reduce((sum, c) => sum + (c.quantity || 1), 0)
-                  const isCurrentCard = cards.some(c => c.id === card.id)
+                {groupedCards.map((group) => {
+                  const isCurrentCard = group.cards.some(c => c.id === card.id)
 
                   return (
                     <div
-                      key={condition}
-                      className={`flex items-center justify-between gap-2 p-2 rounded border ${
+                      key={`${group.version}-${group.condition}`}
+                      className={`flex items-center gap-3 p-3 rounded-lg border ${
                         isCurrentCard ? 'bg-primary/10 border-primary/30' : 'bg-muted/50 border-muted'
                       }`}
                     >
-                      <span className="text-sm font-medium flex-1">{translateCondition(condition)}</span>
-                      <Badge variant={isCurrentCard ? "default" : "secondary"}>
-                        {totalForCondition}x
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteByCondition(condition)}
-                        className="h-8 w-8 p-0 hover:bg-red-500/10"
-                        title={`Supprimer ${totalForCondition} carte(s) en état "${translateCondition(condition)}"`}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
-                  )
-                })}
-              </div>
+                      {/* Drapeau et informations */}
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="text-2xl">🇫🇷</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold">{group.version}</span>
+                          <span className="text-xs text-muted-foreground">{translateCondition(group.condition)}</span>
+                        </div>
+                      </div>
 
-              {/* Par version */}
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Par version</h4>
-                {Object.entries(cardsByVersion).map(([version, cards]) => {
-                  const totalForVersion = cards.reduce((sum, c) => sum + (c.quantity || 1), 0)
-                  const isCurrentCard = cards.some(c => c.id === card.id)
+                      {/* Boutons d'action */}
+                      <div className="flex items-center gap-2">
+                        {/* Bouton diminuer ou supprimer */}
+                        {group.totalQuantity === 1 ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteGroup(group.version, group.condition)}
+                            className="h-9 w-9 p-0 hover:bg-red-500/10"
+                            title="Supprimer cet exemplaire"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDecreaseQuantity(group.version, group.condition)}
+                            className="h-9 w-9 p-0 hover:bg-accent"
+                            title="Diminuer la quantité"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                        )}
 
-                  return (
-                    <div
-                      key={version}
-                      className={`flex items-center justify-between gap-2 p-2 rounded border ${
-                        isCurrentCard ? 'bg-primary/10 border-primary/30' : 'bg-muted/50 border-muted'
-                      }`}
-                    >
-                      <span className="text-sm font-medium flex-1">{version}</span>
-                      <Badge variant={isCurrentCard ? "default" : "secondary"}>
-                        {totalForVersion}x
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteByVersion(version)}
-                        className="h-8 w-8 p-0 hover:bg-red-500/10"
-                        title={`Supprimer ${totalForVersion} carte(s) en version "${version}"`}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                        {/* Quantité */}
+                        <span className="text-lg font-bold min-w-[2rem] text-center">
+                          {group.totalQuantity}
+                        </span>
+
+                        {/* Bouton augmenter */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleIncreaseQuantity(group.version, group.condition)}
+                          className="h-9 w-9 p-0 hover:bg-accent"
+                          title="Augmenter la quantité"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   )
                 })}

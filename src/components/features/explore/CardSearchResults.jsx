@@ -37,9 +37,13 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
       quantity: 1,
       condition: 'near_mint', // État quasi-neuf par défaut
       version: 'Normale',
+      language: 'Français', // Langue française par défaut
       purchasePrice: null,
       marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
       value: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
+      // Sauvegarder aussi les structures complètes pour référence future
+      cardmarket: card.cardmarket || null,
+      tcgplayer: card.tcgplayer || null,
       isGraded: false
     }
 
@@ -80,9 +84,13 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
       quantity: formData.quantity || 1,
       condition: formData.condition || 'near_mint',
       version: formData.version || 'Normale',
+      language: formData.language || 'Français',
       purchasePrice: formData.purchasePrice || null,
       marketPrice: selectedCard.cardmarket?.prices?.averageSellPrice || selectedCard.tcgplayer?.prices?.holofoil?.market || null,
       value: selectedCard.cardmarket?.prices?.averageSellPrice || selectedCard.tcgplayer?.prices?.holofoil?.market || null,
+      // Sauvegarder aussi les structures complètes pour référence future
+      cardmarket: selectedCard.cardmarket || null,
+      tcgplayer: selectedCard.tcgplayer || null,
       isGraded: formData.isGraded || false
     }
 
