@@ -103,6 +103,16 @@ export function PriceMigrationPanel() {
         {/* Progression de la migration en cours */}
         {isMigrating && progress && (
           <div className="space-y-4">
+            {/* Avertissement Important */}
+            <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+              <div className="flex items-start gap-2 text-yellow-400 text-sm">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>Important :</strong> Ne quittez pas cette page pendant la migration. Si vous quittez, la migration s'arrêtera mais vous pourrez la reprendre à {progress.progress}%.
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Migration en cours...</span>
@@ -253,10 +263,10 @@ export function PriceMigrationPanel() {
             <Badge variant="outline" className="mt-0.5">Info</Badge>
             <div>
               <div>• La migration traite <strong>10 cartes toutes les 2 secondes</strong> pour éviter le rate limiting</div>
-              <div>• Les cartes avec prix existants sont automatiquement sautées</div>
-              <div>• Vous pouvez <strong>interrompre et reprendre</strong> la migration à tout moment</div>
-              <div>• La migration reprend automatiquement là où elle s'est arrêtée</div>
-              <div>• Vous pouvez continuer à utiliser l'application pendant la migration</div>
+              <div>• Les cartes avec prix existants sont <strong>automatiquement sautées</strong></div>
+              <div>• Vous pouvez <strong>interrompre</strong> avec le bouton "Annuler" et <strong>reprendre</strong> plus tard</div>
+              <div>• La progression est sauvegardée : les cartes déjà migrées ne seront pas retraitées</div>
+              <div className="text-yellow-400">• ⚠️ <strong>Restez sur cette page</strong> pendant la migration (sinon elle s'arrête)</div>
             </div>
           </div>
         </div>

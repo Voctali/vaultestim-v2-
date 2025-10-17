@@ -1494,7 +1494,25 @@ export function CardDatabaseProvider({ children }) {
         return { success: 0, errors: 0, total: 0 }
       }
 
-      console.log(`📊 ${allCards.length} cartes à migrer`)
+      // IMPORTANT : Calculer d'abord combien de cartes ont DÉJÀ les prix
+      const cardsWithPrices = allCards.filter(card => card.cardmarket || card.tcgplayer)
+      const cardsWithoutPrices = allCards.filter(card => !card.cardmarket && !card.tcgplayer)
+      const alreadyMigrated = cardsWithPrices.length
+
+      console.log(`📊 ${allCards.length} cartes totales`)
+      console.log(`✅ ${alreadyMigrated} cartes déjà migrées`)
+      console.log(`⏭️ ${cardsWithoutPrices.length} cartes restantes à migrer`)
+
+      if (cardsWithoutPrices.length === 0) {
+        console.log('🎉 Toutes les cartes sont déjà migrées !')
+        return {
+          success: 0,
+          errors: 0,
+          skipped: allCards.length,
+          total: allCards.length,
+          alreadyComplete: true
+        }
+      }
 
       // Configuration du traitement par batch
       const BATCH_SIZE = 10 // Réduire pour éviter rate limiting
@@ -1503,7 +1521,7 @@ export function CardDatabaseProvider({ children }) {
       let processedCount = 0
       let updatedCount = 0
       let errorCount = 0
-      let skippedCount = 0
+      let skippedCount = alreadyMigrated // Commencer avec le nombre déjà migré
 
       // Traiter par batches
       for (let i = 0; i < allCards.length; i += BATCH_SIZE) {
@@ -1592,21 +1610,23 @@ export function CardDatabaseProvider({ children }) {
 
         processedCount += batch.length
 
-        // Calculer la progression
-        const progress = Math.round((processedCount / allCards.length) * 100)
+        // Calculer la progression RÉELLE (en incluant les cartes déjà migrées)
+        const totalProcessedIncludingAlreadyMigrated = processedCount + alreadyMigrated
+        const progress = Math.round((totalProcessedIncludingAlreadyMigrated / allCards.length) * 100)
 
         // Log de progression
-        console.log(`🔄 Migration: ${processedCount}/${allCards.length} cartes (${progress}%) | ✅ ${updatedCount} migrées | ⏭️ ${skippedCount} déjà OK | ❌ ${errorCount} erreurs`)
+        console.log(`🔄 Migration: ${totalProcessedIncludingAlreadyMigrated}/${allCards.length} cartes (${progress}%) | ✅ ${updatedCount} migrées | ⏭️ ${skippedCount} déjà OK | ❌ ${errorCount} erreurs`)
 
         // Callback de progression
         if (onProgress) {
           onProgress({
             total: allCards.length,
-            processed: processedCount,
+            processed: totalProcessedIncludingAlreadyMigrated,
             updated: updatedCount,
             skipped: skippedCount,
             errors: errorCount,
-            progress: progress
+            progress: progress,
+            alreadyMigrated: alreadyMigrated // Pour affichage dans l'UI
           })
         }
 
