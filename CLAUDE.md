@@ -93,6 +93,9 @@ L'application utilise une architecture en couches de Context API :
 21. **🔐 Gestion de Session Optimisée** - Custom storage adapter synchrone pour Supabase (localStorage + sessionStorage avec redondance)
 22. **🌐 Recherche Bilingue Français/Anglais** - Recherche de cartes en français ou anglais dans toutes les collections
 23. **🔧 Storage Adapter Synchrone** - Fix critique : méthodes synchrones pour compatibilité Supabase Auth (évite perte de session)
+24. **💰 Système de Gestion des Prix** - Affichage et formatage complet des prix CardMarket (EUR) et TCGPlayer (USD)
+25. **🔄 Migration Automatique des Prix** - Outil admin pour récupérer les prix de 14,000+ cartes avec reprise automatique
+26. **☁️ Sauvegarde Prix dans Supabase** - Synchronisation multi-device des structures complètes de prix (colonnes JSONB)
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -453,6 +456,189 @@ Le système utilise une approche hybride pour optimiser les performances :
 - **Auto-nettoyage** : Pas de nettoyage automatique pour éviter perte de données
 - **Debug** : Logs détaillés avec emojis dans la console pour traçabilité
 
+### 💰 Système de Gestion des Prix (Nouveau!)
+
+#### **Architecture de Stockage des Prix**
+Les prix sont stockés de deux manières complémentaires :
+- **Structures complètes** : `card.cardmarket` (EUR) et `card.tcgplayer` (USD) en JSONB
+- **Prix calculés** : `card.marketPrice` pour affichage rapide
+- **Multi-device** : Synchronisation automatique via Supabase
+- **Cache local** : IndexedDB pour performance instantanée
+
+#### **Extraction et Formatage des Prix**
+**Fichier** : `src/utils/priceFormatter.js`
+
+**Fonction principale** : `formatCardPrice(card, decimals = 2)`
+
+**Ordre de priorité d'extraction** :
+1. **CardMarket** (EUR) : `card.cardmarket.prices.averageSellPrice`
+2. **TCGPlayer Holofoil** (USD) : `card.tcgplayer.prices.holofoil.market`
+3. **TCGPlayer Normal** (USD) : `card.tcgplayer.prices.normal.market`
+4. **TCGPlayer Reverse** (USD) : `card.tcgplayer.prices.reverseHolofoil.market`
+5. **TCGPlayer 1st Edition** (USD) : `card.tcgplayer.prices.1stEditionHolofoil.market`
+
+**Ajustement par condition** :
+```javascript
+Near Mint: 100% du prix
+Excellent: 95%
+Good: 85%
+Light Played: 75%
+Played: 65%
+Poor: 50%
+```
+
+#### **Migration des Prix**
+
+**Composant** : `src/components/features/admin/PriceMigrationPanel.jsx`
+
+**Fonctionnalités** :
+- **Interface Admin** : Panneau dédié dans Admin → Éditeur de Base de Données
+- **Statistiques temps réel** : Cartes totales, avec prix, sans prix, % couverture
+- **Barre de progression** : Affichage visuel du traitement (0-100%)
+- **Compteurs détaillés** : ✅ Migrées | ⏭️ Déjà OK | ❌ Erreurs
+- **Interruption/Reprise** : Bouton "Annuler" pour stopper et reprendre plus tard
+- **Reprise intelligente** : La progression démarre au bon % (ex: 20% si 20% déjà migrés)
+- **Avertissement visuel** : Message jaune "Ne quittez pas cette page pendant la migration"
+
+**Fonction** : `migratePrices(onProgress, cancelSignal)` dans `useCardDatabase.jsx`
+
+**Configuration** :
+- **Batch size** : 10 cartes par batch
+- **Délai entre batches** : 2 secondes (évite rate limiting API)
+- **Estimation** : ~47 minutes pour 14,234 cartes (2s par batch de 10)
+
+**Algorithme de migration** :
+```javascript
+1. Calculer nombre de cartes avec/sans prix
+2. Afficher progression de départ (ex: 20% si 2,847/14,234 ont déjà les prix)
+3. Pour chaque batch de 10 cartes :
+   - Vérifier signal d'annulation
+   - Skipper les cartes avec prix existants
+   - Fetch API Pokemon TCG pour cartes sans prix
+   - Extraire cardmarket + tcgplayer + marketPrice
+   - Sauvegarder dans IndexedDB (cache local)
+   - Sauvegarder dans Supabase (multi-device)
+   - Mettre à jour React state
+   - Pause 2 secondes
+4. Mettre à jour timestamp de synchronisation
+5. Retourner résultats (success, errors, skipped, total)
+```
+
+**Gestion de l'interruption** :
+```javascript
+// Vérification du signal à chaque batch
+if (cancelSignal?.cancelled) {
+  return {
+    success: updatedCount,
+    errors: errorCount,
+    skipped: skippedCount,
+    total: allCards.length,
+    interrupted: true,
+    progress: currentProgress
+  }
+}
+```
+
+#### **Sauvegarde Supabase des Prix**
+
+**Modifications** : `src/services/SupabaseService.js`
+
+**Champs JSONB ajoutés** à la table `discovered_cards` :
+- `cardmarket` : Structure complète CardMarket (EUR)
+  - `prices.averageSellPrice`, `prices.lowPrice`, `prices.trendPrice`, etc.
+- `tcgplayer` : Structure complète TCGPlayer (USD)
+  - `prices.holofoil.market`, `prices.normal.market`, etc.
+
+**Index GIN créés** pour recherche rapide :
+```sql
+CREATE INDEX idx_discovered_cards_cardmarket ON discovered_cards USING GIN (cardmarket);
+CREATE INDEX idx_discovered_cards_tcgplayer ON discovered_cards USING GIN (tcgplayer);
+```
+
+**Whitelist mise à jour** :
+```javascript
+static ALLOWED_CARD_FIELDS = [
+  'id', 'name', 'name_fr', 'types', 'hp', 'number',
+  'artist', 'rarity', 'rarity_fr', 'images', 'set',
+  'set_id', '_source',
+  'cardmarket',  // Structure complète des prix CardMarket (EUR)
+  'tcgplayer'    // Structure complète des prix TCGPlayer (USD)
+]
+```
+
+**Synchronisation automatique** :
+- `addDiscoveredCards()` sauvegarde prix pour nouvelles cartes ET mises à jour
+- `migratePrices()` synchronise vers Supabase en parallèle de IndexedDB
+- Logs détaillés : `☁️ Supabase: X cartes avec prix synchronisées (multi-device)`
+
+#### **Affichage des Prix dans l'Application**
+
+**Pages modifiées** :
+- `src/pages/Collection.jsx` : Affichage prix sous chaque carte
+- `src/pages/Explore.jsx` : Prix dans grille de cartes
+- `src/components/features/collection/CardDetailsModal.jsx` : Prix détaillés
+- `src/components/features/explore/AddCardModal.jsx` : Prix avant ajout
+
+**Usage** :
+```javascript
+import { formatCardPrice } from '@/utils/priceFormatter'
+
+// Dans le JSX
+<div className="text-sm text-muted-foreground">
+  {formatCardPrice(card)}
+</div>
+```
+
+#### **Résolution du Bug "Prix N/A"**
+
+**Problème initial** :
+- Tous les prix affichaient "Prix N/A" partout dans l'app
+- Les structures `cardmarket` et `tcgplayer` n'étaient pas sauvegardées
+- Seul `marketPrice` était calculé temporairement
+
+**Solutions apportées** :
+1. **formatCardPrice** : Extraction intelligente depuis structures API
+2. **Persistence IndexedDB** : Sauvegarde des structures complètes
+3. **Persistence Supabase** : Colonnes JSONB pour sync multi-device
+4. **Migration automatique** : Récupération des prix pour cartes existantes
+5. **Sauvegarde systématique** : Lors de l'ajout de cartes, les prix sont toujours sauvegardés
+
+#### **Messages d'Information Utilisateur**
+
+**Dans PriceMigrationPanel** :
+```
+Info :
+• La migration traite 10 cartes toutes les 2 secondes pour éviter le rate limiting
+• Les cartes avec prix existants sont automatiquement sautées
+• Vous pouvez interrompre avec le bouton "Annuler" et reprendre plus tard
+• La progression est sauvegardée : les cartes déjà migrées ne seront pas retraitées
+• ⚠️ Restez sur cette page pendant la migration (sinon elle s'arrête)
+```
+
+**Pendant la migration** :
+```
+⚠️ Important : Ne quittez pas cette page pendant la migration.
+Si vous quittez, la migration s'arrêtera mais vous pourrez la reprendre à 20%.
+```
+
+#### **Limitations et Comportement**
+
+**Migration s'arrête si** :
+- L'utilisateur change de page (React component unmount)
+- L'utilisateur ferme le navigateur
+- L'utilisateur clique sur "Annuler"
+
+**Migration reprend automatiquement** :
+- Calcule combien de cartes ont déjà les prix (ex: 2,847 = 20%)
+- Affiche la progression à 20% au lieu de 0%
+- Skip automatiquement les cartes déjà migrées
+- Continue uniquement avec les cartes sans prix
+
+**Temps de migration** :
+- 10 cartes / 2 secondes = 5 cartes/seconde = 300 cartes/minute
+- Pour 14,234 cartes : ~47 minutes
+- Mais seulement pour les cartes SANS prix (les autres sont skippées)
+
 ## Debugging et Maintenance
 
 ### 🔍 Outils de Debug
@@ -478,6 +664,13 @@ Le système utilise une approche hybride pour optimiser les performances :
 #### **Problèmes de Synchronisation**
 - **Multi-device** : Synchronisation Supabase automatique avec cache local pour performance
 - **Mobile** : Pull-to-refresh désactivé pour éviter rafraîchissements accidentels
+
+#### **Problèmes de Prix**
+- **"Prix N/A" partout** : Depuis migration Supabase, les prix n'étaient plus sauvegardés
+  - **Cause** : Seul `marketPrice` temporaire était calculé, pas les structures complètes
+  - **Solution** : `formatCardPrice` extrait prix depuis `cardmarket`/`tcgplayer`, sauvegarde en JSONB
+  - **Migration** : Outil admin pour récupérer prix de toutes les cartes existantes
+  - **Progression intelligente** : Reprend à X% au lieu de 0% (skip les cartes déjà migrées)
 
 #### **🔴 CRITIQUE - Problème de Session Supabase (RÉSOLU)**
 **Symptôme** : Les onglets de navigation disparaissent après actualisation de la page, utilisateur déconnecté automatiquement.
@@ -529,6 +722,29 @@ Configurer dans le dashboard Vercel :
 - `VITE_SUPABASE_URL` : URL de votre projet Supabase
 - `VITE_SUPABASE_ANON_KEY` : Clé anonyme Supabase
 - `VITE_POKEMON_TCG_API_KEY` : Clé API Pokemon TCG (optionnelle)
+
+### Script SQL Supabase (REQUIS pour gestion des prix)
+**IMPORTANT** : Exécuter ce script dans le SQL Editor de Supabase avant d'utiliser la migration des prix
+
+**URL** : https://supabase.com/dashboard/project/ubphwlmnfjdaiarbihcx/sql/new
+
+```sql
+-- Ajouter les colonnes pour les prix
+ALTER TABLE discovered_cards
+ADD COLUMN IF NOT EXISTS cardmarket JSONB,
+ADD COLUMN IF NOT EXISTS tcgplayer JSONB;
+
+-- Créer des index pour améliorer les performances
+CREATE INDEX IF NOT EXISTS idx_discovered_cards_cardmarket ON discovered_cards USING GIN (cardmarket);
+CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards USING GIN (tcgplayer);
+
+-- Commentaires pour documentation
+COMMENT ON COLUMN discovered_cards.cardmarket IS 'Structure complète des prix CardMarket (EUR)';
+COMMENT ON COLUMN discovered_cards.tcgplayer IS 'Structure complète des prix TCGPlayer (USD)';
+```
+
+**Vérification** :
+Après exécution, vérifier dans Table Editor que les colonnes `cardmarket` et `tcgplayer` apparaissent avec le type `jsonb`.
 
 ### URL de Production
 - **Domaine personnalisé** : https://vaultestim-v2.vercel.app
