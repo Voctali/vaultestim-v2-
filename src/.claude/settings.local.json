@@ -58,7 +58,9 @@
       "WebFetch(domain:fr.wikipedia.org)",
       "Bash(start https://supabase.com/dashboard/project/ubphwlmnfjdaiarbihcx/settings/general)",
       "Bash(./deploy.bat)",
-      "Bash(git diff-tree:*)"
+      "Bash(git diff-tree:*)",
+      "Bash(git apply fix-supabase-upsert.patch)",
+      "Bash(find . -maxdepth 1 ( -name \"*.bat\" -o -name \"*.sh\" -o -name \"*.ps1\" ) -type f)"
     ],
     "deny": [],
     "ask": []

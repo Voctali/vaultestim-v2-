@@ -251,34 +251,26 @@ export class SupabaseService {
   }
 
   /**
-   * Ajouter de nouvelles cartes (sans doublons)
+   * Ajouter ou mettre à jour des cartes (avec upsert automatique)
    */
   static async addDiscoveredCards(newCards) {
     try {
       const userId = await this.getCurrentUserId()
 
-      // Récupérer les IDs existants
-      const { data: existing } = await supabase
-        .from('discovered_cards')
-        .select('id')
-        .eq('user_id', userId)
-
-      const existingIds = new Set(existing?.map(c => c.id) || [])
-
-      // Filtrer les nouvelles cartes
-      const cardsToAdd = newCards.filter(card => !existingIds.has(card.id))
-
-      if (cardsToAdd.length === 0) {
-        console.log('ℹ️ Aucune nouvelle carte à ajouter')
+      if (newCards.length === 0) {
+        console.log('ℹ️ Aucune carte à sauvegarder')
         return 0
       }
 
-      // Insérer par batch
-      const BATCH_SIZE = 100
-      let addedCount = 0
+      // IMPORTANT: Ne plus filtrer les cartes existantes - laisser upsert gérer ça
+      // Cela permet de mettre à jour les prix des cartes existantes
 
-      for (let i = 0; i < cardsToAdd.length; i += BATCH_SIZE) {
-        const batch = cardsToAdd.slice(i, i + BATCH_SIZE)
+      // Insérer/Mettre à jour par batch
+      const BATCH_SIZE = 100
+      let upsertedCount = 0
+
+      for (let i = 0; i < newCards.length; i += BATCH_SIZE) {
+        const batch = newCards.slice(i, i + BATCH_SIZE)
 
         const cardsWithUserId = batch.map(card => {
           // Filtrer pour ne garder que les champs autorisés dans Supabase
@@ -287,26 +279,33 @@ export class SupabaseService {
           return {
             ...cleanCard,
             user_id: userId,
-            _saved_at: new Date().toISOString()
+            _saved_at: new Date().toISOString() // Timestamp mis à jour = détecté par delta sync
           }
         })
 
-        // Utiliser upsert pour gérer automatiquement les conflits de clés
+        // Log de debug pour la première carte du premier batch
+        if (i === 0 && cardsWithUserId.length > 0) {
+          const firstCard = cardsWithUserId[0]
+          const hasPrices = !!(firstCard.cardmarket || firstCard.tcgplayer)
+          console.log(`🔍 Exemple carte à upsert: ${firstCard.name} - Prix: ${hasPrices ? '✅' : '❌'}`)
+        }
+
+        // Utiliser upsert pour INSERT (nouvelles) ou UPDATE (existantes)
         const { error } = await supabase
           .from('discovered_cards')
           .upsert(cardsWithUserId, {
             onConflict: 'id',
-            ignoreDuplicates: false
+            ignoreDuplicates: false // IMPORTANT: false = met à jour les existantes
           })
 
         if (error) throw error
 
-        addedCount += batch.length
-        console.log(`📦 Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} nouvelles cartes ajoutées (${addedCount} total)`)
+        upsertedCount += batch.length
+        console.log(`📦 Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batch.length} cartes sauvegardées (${upsertedCount}/${newCards.length})`)
       }
 
-      console.log(`✅ ${addedCount} nouvelles cartes ajoutées`)
-      return addedCount
+      console.log(`✅ ${upsertedCount} cartes sauvegardées dans Supabase (multi-device)`)
+      return upsertedCount
     } catch (error) {
       console.error('❌ Erreur addDiscoveredCards:', error)
       return 0
