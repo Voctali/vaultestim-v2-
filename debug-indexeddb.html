@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug IndexedDB</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        h1 {
+            color: #ffd700;
+            text-align: center;
+        }
+        button {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+        }
+        button:hover {
+            background: #ffed4e;
+        }
+        pre {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            color: #4caf50;
+        }
+        .error {
+            color: #f44336;
+        }
+        .info {
+            color: #2196f3;
+        }
+        .success {
+            color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug IndexedDB</h1>
+    <p style="text-align: center; color: #999;">
+        Analyse de la structure de vos bases de données IndexedDB
+    </p>
+
+    <button onclick="debugIndexedDB()">🔍 Analyser IndexedDB</button>
+
+    <div id="results"></div>
+
+    <script>
+        async function debugIndexedDB() {
+            const resultsDiv = document.getElementById('results')
+            let output = '<pre>'
+
+            try {
+                // Lister toutes les bases de données disponibles
+                output += '<span class="info">📦 Bases de données IndexedDB disponibles :</span>\n\n'
+
+                const databases = await indexedDB.databases()
+
+                if (databases.length === 0) {
+                    output += '<span class="error">❌ Aucune base de données IndexedDB trouvée !</span>\n'
+                    resultsDiv.innerHTML = output + '</pre>'
+                    return
+                }
+
+                databases.forEach(db => {
+                    output += `  - ${db.name} (version: ${db.version})\n`
+                })
+
+                output += '\n<span class="info">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>\n\n'
+
+                // Explorer chaque base de données
+                for (const dbInfo of databases) {
+                    output += `<span class="success">📂 Exploration de "${dbInfo.name}"</span>\n\n`
+
+                    try {
+                        const db = await openDB(dbInfo.name)
+
+                        output += `  Version: ${db.version}\n`
+                        output += `  Object Stores: ${db.objectStoreNames.length}\n\n`
+
+                        // Lister tous les stores
+                        const storeNames = Array.from(db.objectStoreNames)
+                        for (const storeName of storeNames) {
+                            output += `  <span class="info">📋 Store: "${storeName}"</span>\n`
+
+                            try {
+                                const tx = db.transaction(storeName, 'readonly')
+                                const store = tx.objectStore(storeName)
+
+                                // Compter les éléments
+                                const count = await new Promise((resolve) => {
+                                    const countRequest = store.count()
+                                    countRequest.onsuccess = () => resolve(countRequest.result)
+                                    countRequest.onerror = () => resolve(0)
+                                })
+
+                                output += `    Éléments: ${count.toLocaleString()}\n`
+                                output += `    KeyPath: ${store.keyPath || '(none)'}\n`
+
+                                // Lister les index
+                                const indexNames = Array.from(store.indexNames)
+                                if (indexNames.length > 0) {
+                                    output += `    Index: ${indexNames.join(', ')}\n`
+                                }
+
+                                // Si c'est un store de cartes, afficher un échantillon
+                                if (count > 0 && (storeName.includes('card') || storeName === 'cards')) {
+                                    output += `\n    <span class="success">📄 Échantillon (première carte):</span>\n`
+                                    const sample = await new Promise((resolve) => {
+                                        const getAllRequest = store.getAll(null, 1)
+                                        getAllRequest.onsuccess = () => {
+                                            const result = getAllRequest.result
+                                            resolve(result && result.length > 0 ? result[0] : null)
+                                        }
+                                        getAllRequest.onerror = () => resolve(null)
+                                    })
+
+                                    if (sample) {
+                                        output += `    - ID: ${sample.id || '(no id)'}\n`
+                                        output += `    - Name: ${sample.name || '(no name)'}\n`
+                                        output += `    - Has cardmarket: ${!!sample.cardmarket}\n`
+                                        output += `    - Has cardmarket.url: ${!!sample.cardmarket?.url}\n`
+                                        if (sample.cardmarket?.url) {
+                                            output += `    - URL: ${sample.cardmarket.url}\n`
+                                        }
+                                        output += `    - Clés disponibles: ${Object.keys(sample).join(', ')}\n`
+                                    }
+                                }
+
+                                output += '\n'
+
+                            } catch (storeError) {
+                                output += `    <span class="error">❌ Erreur: ${storeError.message}</span>\n\n`
+                            }
+                        }
+
+                        db.close()
+
+                    } catch (dbError) {
+                        output += `  <span class="error">❌ Impossible d'ouvrir: ${dbError.message}</span>\n\n`
+                    }
+
+                    output += '<span class="info">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>\n\n'
+                }
+
+                output += '<span class="success">✅ Analyse terminée !</span>\n'
+
+            } catch (error) {
+                output += `<span class="error">❌ Erreur: ${error.message}</span>\n`
+                output += `${error.stack}\n`
+            }
+
+            output += '</pre>'
+            resultsDiv.innerHTML = output
+        }
+
+        function openDB(name) {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(name)
+                request.onsuccess = () => resolve(request.result)
+                request.onerror = () => reject(request.error)
+            })
+        }
+    </script>
+</body>
+</html>

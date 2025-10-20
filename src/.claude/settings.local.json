@@ -60,7 +60,16 @@
       "Bash(./deploy.bat)",
       "Bash(git diff-tree:*)",
       "Bash(git apply fix-supabase-upsert.patch)",
-      "Bash(find . -maxdepth 1 ( -name \"*.bat\" -o -name \"*.sh\" -o -name \"*.ps1\" ) -type f)"
+      "Bash(find . -maxdepth 1 ( -name \"*.bat\" -o -name \"*.sh\" -o -name \"*.ps1\" ) -type f)",
+      "Bash(git restore src/hooks/useCardDatabase.jsx src/services/SupabaseService.js)",
+      "Bash(move apply-fixes.js apply-fixes.cjs)",
+      "Bash(start \"F:\\Logiciels\\Appli Vaultestim\\vaultestim-v2\\diagnose-cardmarket-urls.html\")",
+      "Bash(start \"F:\\Logiciels\\Appli Vaultestim\\vaultestim-v2\\debug-indexeddb.html\")",
+      "Bash(start \"F:\\Logiciels\\Appli Vaultestim\\vaultestim-v2\\test-cardmarket-urls.html\")",
+      "WebFetch(domain:www.cardmarket.com)",
+      "Bash(del:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "ask": []

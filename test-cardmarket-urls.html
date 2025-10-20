@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CardMarket URLs - VaultEstim</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        h1 {
+            color: #d4af37;
+            text-align: center;
+        }
+        .card-test {
+            background: #2a2a2a;
+            border: 2px solid #d4af37;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .card-info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .card-info h3 {
+            margin-top: 0;
+            color: #d4af37;
+        }
+        .url-test {
+            margin: 10px 0;
+            padding: 10px;
+            background: #1a1a1a;
+            border-left: 4px solid #d4af37;
+            border-radius: 4px;
+        }
+        .url-test .strategy {
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+        .url-test .url {
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #64B5F6;
+            background: #000;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .url-test a {
+            color: #64B5F6;
+            text-decoration: none;
+        }
+        .url-test a:hover {
+            text-decoration: underline;
+        }
+        .recommended {
+            border-left-color: #4CAF50;
+        }
+        .recommended .strategy::after {
+            content: " ⭐ RECOMMANDÉ";
+            color: #4CAF50;
+            font-size: 11px;
+        }
+        .search-string {
+            background: #FF9800;
+            color: #000;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test CardMarket URLs - VaultEstim v2</h1>
+
+    <div id="results"></div>
+
+    <script type="module">
+        // Fonction de nettoyage du nom (copie depuis cardMarketUrlBuilder.js)
+        function cleanCardName(name) {
+            if (!name) return ''
+            return name
+                .replace(/[^\w\s\-']/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+        }
+
+        // Fonction principale (copie depuis cardMarketUrlBuilder.js)
+        function buildCardMarketUrl(card, strategy = 'auto') {
+            if (!card) return null
+
+            if (card.cardmarket?.url) {
+                return card.cardmarket.url
+            }
+
+            const cleanName = cleanCardName(card.name)
+            const setName = card.set?.name || card.extension || ''
+            const number = card.number || ''
+
+            if (strategy === 'auto') {
+                if (number) {
+                    strategy = 'precise'
+                } else {
+                    strategy = 'simple'
+                }
+            }
+
+            let searchString = ''
+
+            switch (strategy) {
+                case 'set-precise':
+                    searchString = `${cleanName} ${number}`
+                    if (card.set?.id) {
+                        searchString += ` ${card.set.id.toUpperCase()}`
+                    } else if (setName) {
+                        searchString += ` ${setName}`
+                    }
+                    break
+                case 'precise':
+                    searchString = cleanName
+                    if (number) searchString += ` ${number}`
+                    break
+                case 'simple':
+                    searchString = cleanName
+                    break
+                case 'minimal':
+                    searchString = cleanName.split(' ')[0]
+                    break
+                case 'number':
+                    if (number && setName) {
+                        searchString = `${number} ${setName}`
+                    } else {
+                        searchString = cleanName
+                    }
+                    break
+                default:
+                    searchString = cleanName
+            }
+
+            const encodedSearch = encodeURIComponent(searchString.trim())
+            return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${encodedSearch}`
+        }
+
+        function getCardMarketSearchString(card) {
+            const cleanName = cleanCardName(card.name)
+            const parts = [cleanName]
+
+            if (card.number) parts.push(card.number)
+
+            // Note: On n'ajoute PAS l'extension par défaut
+
+            return parts.join(' ')
+        }
+
+        function buildCardMarketFallbackUrls(card) {
+            const urls = []
+
+            if (card.cardmarket?.url) {
+                urls.push({
+                    url: card.cardmarket.url,
+                    strategy: 'direct',
+                    label: 'Lien direct API',
+                    recommended: false
+                })
+            }
+
+            if (card.number) {
+                urls.push({
+                    url: buildCardMarketUrl(card, 'precise'),
+                    strategy: 'precise',
+                    label: `${card.name} ${card.number}`,
+                    recommended: true
+                })
+            }
+
+            if (card.number && (card.set?.id || card.set?.name || card.extension)) {
+                const setCode = card.set?.id ? card.set.id.toUpperCase() : (card.set?.name || card.extension)
+                urls.push({
+                    url: buildCardMarketUrl(card, 'set-precise'),
+                    strategy: 'set-precise',
+                    label: `${card.name} ${card.number} ${setCode}`,
+                    recommended: false
+                })
+            }
+
+            if (card.number && card.set?.name) {
+                urls.push({
+                    url: buildCardMarketUrl(card, 'number'),
+                    strategy: 'number',
+                    label: `#${card.number} ${card.set.name}`
+                })
+            }
+
+            urls.push({
+                url: buildCardMarketUrl(card, 'simple'),
+                strategy: 'simple',
+                label: card.name
+            })
+
+            urls.push({
+                url: buildCardMarketUrl(card, 'minimal'),
+                strategy: 'minimal',
+                label: card.name.split(' ')[0]
+            })
+
+            return urls
+        }
+
+        // Cartes de test
+        const testCards = [
+            {
+                name: 'Amoonguss',
+                number: '11',
+                set: {
+                    name: 'Boundaries Crossed',
+                    id: 'bw4'
+                }
+            },
+            {
+                name: 'Pikachu VMAX',
+                number: '44',
+                set: {
+                    name: 'Vivid Voltage',
+                    id: 'swsh4'
+                }
+            },
+            {
+                name: 'Charizard',
+                number: '4',
+                set: {
+                    name: 'Base Set',
+                    id: 'base1'
+                }
+            },
+            {
+                name: 'Mew ex',
+                number: '151',
+                set: {
+                    name: '151',
+                    id: 'sv3pt5'
+                }
+            }
+        ]
+
+        // Afficher les résultats
+        const resultsDiv = document.getElementById('results')
+
+        testCards.forEach(card => {
+            const cardDiv = document.createElement('div')
+            cardDiv.className = 'card-test'
+
+            const cardInfo = `
+                <div class="card-info">
+                    <h3>${card.name} #${card.number}</h3>
+                    <p><strong>Extension:</strong> ${card.set.name} (${card.set.id})</p>
+                    <div class="search-string">
+                        📋 String de recherche: ${getCardMarketSearchString(card)}
+                    </div>
+                </div>
+            `
+
+            const urls = buildCardMarketFallbackUrls(card)
+            const urlsHtml = urls.map(urlObj => {
+                const decodedUrl = decodeURIComponent(urlObj.url)
+                const searchParam = decodedUrl.split('searchString=')[1] || ''
+                return `
+                    <div class="url-test ${urlObj.recommended ? 'recommended' : ''}">
+                        <div class="strategy">${urlObj.strategy}</div>
+                        <div><strong>Label:</strong> ${urlObj.label}</div>
+                        <div><strong>Recherche:</strong> "${searchParam}"</div>
+                        <div class="url"><a href="${urlObj.url}" target="_blank">${urlObj.url}</a></div>
+                    </div>
+                `
+            }).join('')
+
+            cardDiv.innerHTML = cardInfo + '<h4>URLs générées (du plus au moins précis):</h4>' + urlsHtml
+            resultsDiv.appendChild(cardDiv)
+        })
+    </script>
+</body>
+</html>

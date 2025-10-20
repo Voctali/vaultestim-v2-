@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic CardMarket URLs - VaultEstim</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        h1 {
+            color: #d4af37;
+            text-align: center;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .stat-card {
+            background: #2a2a2a;
+            border: 2px solid #d4af37;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #d4af37;
+            margin: 10px 0;
+        }
+        .stat-label {
+            color: #aaa;
+            font-size: 14px;
+        }
+        .search-box {
+            margin: 20px 0;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #d4af37;
+            color: #e0e0e0;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .cards-list {
+            margin-top: 20px;
+        }
+        .card-item {
+            background: #2a2a2a;
+            border-left: 4px solid #d4af37;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .card-item.has-direct {
+            border-left-color: #4CAF50;
+        }
+        .card-item.no-direct {
+            border-left-color: #FF5722;
+        }
+        .card-name {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .card-info {
+            color: #aaa;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        .direct-url {
+            background: #4CAF50;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .no-url {
+            background: #FF5722;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .url-link {
+            color: #64B5F6;
+            text-decoration: none;
+            word-break: break-all;
+            font-size: 12px;
+        }
+        .url-link:hover {
+            text-decoration: underline;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #d4af37;
+            font-size: 18px;
+        }
+        .error {
+            background: #f44336;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .filter-buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 10px 20px;
+            background: #2a2a2a;
+            border: 2px solid #d4af37;
+            color: #d4af37;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .filter-btn.active {
+            background: #d4af37;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnostic CardMarket URLs - VaultEstim v2</h1>
+
+    <div class="loading" id="loading">
+        Chargement de la base de données IndexedDB...
+    </div>
+
+    <div id="error" style="display: none;"></div>
+
+    <div id="content" style="display: none;">
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total cartes</div>
+                <div class="stat-number" id="totalCards">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">✅ Avec lien direct</div>
+                <div class="stat-number" id="withDirect" style="color: #4CAF50;">0</div>
+                <div class="stat-label" id="percentDirect">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">❌ Sans lien direct</div>
+                <div class="stat-number" id="withoutDirect" style="color: #FF5722;">0</div>
+                <div class="stat-label" id="percentNoDirect">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">💰 Avec prix CardMarket</div>
+                <div class="stat-number" id="withPrice" style="color: #2196F3;">0</div>
+                <div class="stat-label" id="percentPrice">0%</div>
+            </div>
+        </div>
+
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="setFilter('all')">Toutes</button>
+            <button class="filter-btn" onclick="setFilter('with-direct')">✅ Avec lien direct</button>
+            <button class="filter-btn" onclick="setFilter('no-direct')">❌ Sans lien direct</button>
+            <button class="filter-btn" onclick="setFilter('with-price')">💰 Avec prix</button>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Rechercher une carte (nom, extension, numéro)..." oninput="filterCards()">
+        </div>
+
+        <div class="cards-list" id="cardsList"></div>
+    </div>
+
+    <script>
+        let allCards = [];
+        let currentFilter = 'all';
+
+        async function loadCardsFromIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('VaultEstim_CardCache', 1);
+
+                request.onerror = () => reject(request.error);
+
+                request.onsuccess = () => {
+                    const db = request.result;
+                    const transaction = db.transaction(['cards'], 'readonly');
+                    const objectStore = transaction.objectStore('cards');
+                    const getAllRequest = objectStore.getAll();
+
+                    getAllRequest.onsuccess = () => {
+                        resolve(getAllRequest.result);
+                    };
+
+                    getAllRequest.onerror = () => reject(getAllRequest.error);
+                };
+            });
+        }
+
+        function analyzeCards(cards) {
+            const total = cards.length;
+            const withDirect = cards.filter(c => c.cardmarket?.url).length;
+            const withoutDirect = total - withDirect;
+            const withPrice = cards.filter(c => c.cardmarket?.prices || c.tcgplayer?.prices).length;
+
+            document.getElementById('totalCards').textContent = total.toLocaleString();
+            document.getElementById('withDirect').textContent = withDirect.toLocaleString();
+            document.getElementById('withoutDirect').textContent = withoutDirect.toLocaleString();
+            document.getElementById('withPrice').textContent = withPrice.toLocaleString();
+
+            const percentDirect = total > 0 ? Math.round((withDirect / total) * 100) : 0;
+            const percentNoDirect = total > 0 ? Math.round((withoutDirect / total) * 100) : 0;
+            const percentPrice = total > 0 ? Math.round((withPrice / total) * 100) : 0;
+
+            document.getElementById('percentDirect').textContent = `${percentDirect}%`;
+            document.getElementById('percentNoDirect').textContent = `${percentNoDirect}%`;
+            document.getElementById('percentPrice').textContent = `${percentPrice}%`;
+
+            console.log('📊 Analyse des cartes:');
+            console.log(`Total: ${total}`);
+            console.log(`Avec lien direct: ${withDirect} (${percentDirect}%)`);
+            console.log(`Sans lien direct: ${withoutDirect} (${percentNoDirect}%)`);
+            console.log(`Avec prix: ${withPrice} (${percentPrice}%)`);
+        }
+
+        function displayCards(cards) {
+            const cardsList = document.getElementById('cardsList');
+            cardsList.innerHTML = '';
+
+            if (cards.length === 0) {
+                cardsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #aaa;">Aucune carte trouvée</div>';
+                return;
+            }
+
+            cards.forEach(card => {
+                const hasDirect = !!card.cardmarket?.url;
+                const hasPrice = !!(card.cardmarket?.prices || card.tcgplayer?.prices);
+
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `card-item ${hasDirect ? 'has-direct' : 'no-direct'}`;
+
+                let priceInfo = '';
+                if (card.cardmarket?.prices?.averageSellPrice) {
+                    priceInfo = `<div class="card-info">💰 Prix CardMarket: ${card.cardmarket.prices.averageSellPrice.toFixed(2)} EUR</div>`;
+                } else if (card.tcgplayer?.prices) {
+                    const price = card.tcgplayer.prices.holofoil?.market || card.tcgplayer.prices.normal?.market || card.tcgplayer.prices.reverseHolofoil?.market;
+                    if (price) {
+                        priceInfo = `<div class="card-info">💰 Prix TCGPlayer: $${price.toFixed(2)} USD</div>`;
+                    }
+                }
+
+                cardDiv.innerHTML = `
+                    <div class="card-name">${card.name} #${card.number || 'N/A'}</div>
+                    <div class="card-info">📦 Extension: ${card.set?.name || 'Unknown'} (${card.set?.id || 'N/A'})</div>
+                    ${priceInfo}
+                    ${hasDirect
+                        ? `<div class="direct-url">✅ Lien direct disponible</div>
+                           <div class="card-info"><a href="${card.cardmarket.url}" target="_blank" class="url-link">${card.cardmarket.url}</a></div>`
+                        : `<div class="no-url">❌ Pas de lien direct (recherche générique utilisée)</div>`
+                    }
+                `;
+
+                cardsList.appendChild(cardDiv);
+            });
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            filterCards();
+        }
+
+        function filterCards() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            let filtered = allCards;
+
+            // Apply filter
+            if (currentFilter === 'with-direct') {
+                filtered = filtered.filter(c => c.cardmarket?.url);
+            } else if (currentFilter === 'no-direct') {
+                filtered = filtered.filter(c => !c.cardmarket?.url);
+            } else if (currentFilter === 'with-price') {
+                filtered = filtered.filter(c => c.cardmarket?.prices || c.tcgplayer?.prices);
+            }
+
+            // Apply search
+            if (searchTerm) {
+                filtered = filtered.filter(c =>
+                    c.name.toLowerCase().includes(searchTerm) ||
+                    (c.set?.name || '').toLowerCase().includes(searchTerm) ||
+                    (c.number || '').toString().includes(searchTerm)
+                );
+            }
+
+            displayCards(filtered.slice(0, 100)); // Limit to 100 for performance
+        }
+
+        // Load data on page load
+        (async () => {
+            try {
+                const cards = await loadCardsFromIndexedDB();
+                allCards = cards;
+
+                if (cards.length === 0) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('error').className = 'error';
+                    document.getElementById('error').innerHTML = `
+                        <strong>⚠️ Aucune carte trouvée dans IndexedDB</strong><br><br>
+                        Assurez-vous d'avoir lancé l'application et ajouté des cartes à votre base de données.<br>
+                        La base de données IndexedDB s'appelle "VaultEstim_CardCache".
+                    `;
+                    return;
+                }
+
+                analyzeCards(cards);
+                displayCards(cards.slice(0, 100)); // Show first 100 cards
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').className = 'error';
+                document.getElementById('error').innerHTML = `
+                    <strong>❌ Erreur de chargement</strong><br><br>
+                    ${error.message}<br><br>
+                    Assurez-vous que l'application est lancée et que vous avez des cartes dans votre base de données.
+                `;
+            }
+        })();
+    </script>
+</body>
+</html>
