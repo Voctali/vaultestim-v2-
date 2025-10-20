@@ -7,11 +7,13 @@ import { useCardDatabase } from '@/hooks/useCardDatabase.jsx'
 import { Download, RefreshCw, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react'
 
 export function PriceMigrationPanel() {
-  const { migratePrices, discoveredCards } = useCardDatabase()
+  const { migratePrices, retryCardsWithoutPrices, discoveredCards } = useCardDatabase()
   const [isMigrating, setIsMigrating] = useState(false)
   const [progress, setProgress] = useState(null)
   const [result, setResult] = useState(null)
   const [cancelSignal, setCancelSignal] = useState(null)
+  const [isRetrying, setIsRetrying] = useState(false)
+  const [retryResult, setRetryResult] = useState(null)
 
   const handleMigrate = async () => {
     setIsMigrating(true)
@@ -39,6 +41,31 @@ export function PriceMigrationPanel() {
       setResult({ error: error.message })
     } finally {
       setIsMigrating(false)
+      setCancelSignal(null)
+    }
+  }
+
+
+  const handleRetry = async () => {
+    setIsRetrying(true)
+    setProgress({ processed: 0, total: 0, progress: 0, updated: 0, errors: 0, stillWithoutPrices: 0 })
+    setRetryResult(null)
+
+    const signal = { cancelled: false }
+    setCancelSignal(signal)
+
+    try {
+      const result = await retryCardsWithoutPrices((progressData) => {
+        setProgress(progressData)
+      }, signal)
+
+      setRetryResult(result)
+      console.log('✅ Retry terminé:', result)
+    } catch (error) {
+      console.error('❌ Erreur retry:', error)
+      setRetryResult({ error: error.message })
+    } finally {
+      setIsRetrying(false)
       setCancelSignal(null)
     }
   }
@@ -215,6 +242,24 @@ export function PriceMigrationPanel() {
 
         {/* Actions */}
         <div className="flex flex-col md:flex-row gap-3">
+          <Button
+            onClick={handleRetry}
+            disabled={isRetrying || isMigrating || cardsWithoutPrices === 0}
+            className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+          >
+            {isRetrying ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Retry en cours...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Retry cartes sans prix ({cardsWithoutPrices})
+              </>
+            )}
+          </Button>
+
           <Button
             onClick={handleMigrate}
             disabled={isMigrating || cardsWithoutPrices === 0}

@@ -96,6 +96,11 @@ L'application utilise une architecture en couches de Context API :
 24. **💰 Système de Gestion des Prix** - Affichage et formatage complet des prix CardMarket (EUR) et TCGPlayer (USD)
 25. **🔄 Migration Automatique des Prix** - Outil admin pour récupérer les prix de 14,000+ cartes avec reprise automatique
 26. **☁️ Sauvegarde Prix dans Supabase** - Synchronisation multi-device des structures complètes de prix (colonnes JSONB)
+27. **🔗 Intégration CardMarket Complète** - Base de 59,683 cartes + 4,527 produits scellés + 64,210 prix dans Supabase
+28. **🤖 Matching Automatique CardMarket** - Algorithme intelligent basé sur attaques (70%) + nom (20%) + suffixes (10%)
+29. **⚙️ Migration des Attaques** - Script de migration pour ajouter attaques/abilities/weaknesses aux cartes existantes
+30. **✨ Liens Directs CardMarket** - Bouton "Trouver lien direct" dans CardMarketLinks pour matching auto
+31. **🌍 Base de Données Commune** - Architecture partagée où TOUS les utilisateurs voient les mêmes blocs/extensions/cartes dans "Explorer les séries"
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -135,12 +140,15 @@ L'application utilise une architecture en couches de Context API :
 - `saveSeriesDatabase()` / `loadSeriesDatabase()` - Gestion des extensions
 - `addDiscoveredCards()` - Ajout incrémental de cartes (pas de remplacement)
 - `deleteCardById()` - Suppression de cartes spécifiques
+- **🌍 Base commune partagée** : `discovered_cards` charge TOUTES les cartes sans filtre user_id - tous les utilisateurs voient les mêmes blocs/extensions/cartes dans "Explorer les séries"
+- **🔄 Déduplication intelligente** : `getCardCompletenessScore()` sélectionne la version la plus complète de chaque carte (priorité aux prix, attaques, etc.)
+- **👤 Collections personnelles** : Les ajouts à "Ma Collection" restent personnels par utilisateur (séparation affichage/possession)
 - **Multi-device** : Synchronisation automatique entre appareils
-- **Traitement par batch** : Optimisé pour gros volumes de données (chunking)
+- **Traitement par batch** : Optimisé pour gros volumes de données (chunking de 1000 cartes/batch)
 - **Index optimisés** : Recherche rapide par user_id, card_id
 - **Synchronisation incrémentale** : Récupération uniquement des cartes modifiées depuis un timestamp
 - **Tables principales** :
-  - `discovered_cards` : Toutes les cartes découvertes par utilisateur avec `_saved_at` timestamp
+  - `discovered_cards` : Base commune de 14,000+ cartes visibles par TOUS (affichage dans Explorer)
   - `user_profiles` : Profils utilisateurs avec métadonnées
 
 #### CardCacheService (Cache Local IndexedDB)
@@ -162,6 +170,30 @@ L'application utilise une architecture en couches de Context API :
 - **Validation** : Types supportés (JPG, PNG, GIF, WebP) - Maximum 5MB
 - **Conversion** : Base64 → Blob URL pour affichage
 - **Base de données dédiée** : VaultEstim_Images avec indexation
+
+#### CardMarketSupabaseService (Intégration CardMarket)
+- `searchCardsByName(pokemonName, limit)` - Recherche de cartes CardMarket par nom
+- `getPriceForProduct(idProduct)` - Récupération des prix CardMarket en EUR
+- `saveUserMatch(userId, cardId, cardmarketId, score, method)` - Sauvegarde d'un matching utilisateur
+- `getUserMatch(userId, cardId)` - Récupération d'un matching existant
+- `loadUserMatches(userId)` - Chargement de tous les matchings d'un utilisateur
+- `buildDirectUrl(idProduct)` - Construction d'URL directe vers produit CardMarket
+- `extractAttacksFromName(cardName)` - Extraction des attaques depuis nom CardMarket (format: "Pikachu [Thunderbolt | Quick Attack]")
+- `calculateAttackMatchScore(attacks1, attacks2)` - Calcul du score de correspondance entre attaques
+- **Base de données** : Tables Supabase publiques (singles, nonsingles, prices) + table privée (user_cardmarket_matches)
+- **Données importées** : 59,683 cartes singles + 4,527 produits scellés + 64,210 prix
+- **Script d'import** : `import-cardmarket.mjs` pour import depuis JSON vers Supabase
+
+#### CardMarketMatchingService (Matching Automatique)
+- `matchCard(card, userId, saveMatch)` - Matcher une carte utilisateur avec CardMarket
+- `matchCards(cards, userId, onProgress)` - Matching de plusieurs cartes en batch
+- **Algorithme de scoring** :
+  - 70% basé sur les attaques (matching exact des noms d'attaques)
+  - 20% basé sur la similarité du nom (Levenshtein-like)
+  - 10% bonus si mêmes suffixes (V, VMAX, GX, EX, ex, etc.)
+- **Seuil de confiance** : 20% minimum pour sauvegarder (peut être ajusté)
+- **Méthodes de matching** : `auto_attacks` (par attaques), `auto_name` (par nom), `manual` (utilisateur)
+- **Composant UI** : `CardMarketLinks.jsx` avec bouton "Trouver lien direct"
 
 ### Système d'Authentification
 - **Authentification** : Supabase Auth avec gestion complète de session
@@ -272,16 +304,32 @@ L'application sera accessible sur http://localhost:5174
 
 ### 🗃️ Système de Base de Données Cloud (Supabase)
 
-#### **Architecture**
-- **Tables PostgreSQL** :
-  - `discovered_cards` : Cartes découvertes par utilisateur avec métadonnées complètes
-  - `user_profiles` : Profils utilisateurs liés à auth.users
-  - Row Level Security (RLS) : Isolation complète des données par utilisateur
+#### **Architecture de Base Commune** 🌍
+L'application utilise une **architecture hybride** avec deux types de données :
+
+**1. Base commune partagée (Explorer les séries)** :
+- **Table** : `discovered_cards` - Base de 14,000+ cartes visibles par TOUS les utilisateurs
+- **Comportement** : Pas de filtre `user_id` lors du chargement avec `loadDiscoveredCards()`
+- **Objectif** : Affichage uniforme des blocs/extensions/cartes dans l'onglet "Explorer les séries"
+- **Enrichissement** : Quand une nouvelle carte est ajoutée, elle devient visible pour TOUS les utilisateurs
+
+**2. Collections personnelles (Ma Collection)** :
+- **Comportement** : Les ajouts à "Ma Collection" restent personnels par utilisateur
+- **Séparation** : Distinction claire entre "voir les cartes disponibles" (commun) et "posséder les cartes" (personnel)
+
+#### **Déduplication Intelligente**
+- **Fonction** : `getCardCompletenessScore(card)` dans `SupabaseService.js` (lignes 287-313)
+- **Algorithme de scoring** :
+  - Données de base : +1 point (name, types, hp, number, etc.)
+  - Prix : +2 points chacun (cardmarket, tcgplayer)
+  - Données de combat : +1 point (attacks, abilities, weaknesses, etc.)
+- **Comportement** : Quand plusieurs versions d'une même carte existent, conserve celle avec le score le plus élevé
+- **Logs** : `✨ X cartes UNIQUES après déduplication`
 
 #### **Capacités**
 - **Stockage illimité** : Cloud PostgreSQL sans limitations
 - **Multi-device** : Synchronisation automatique entre tous les appareils
-- **Traitement par batch** : Chunking optimisé pour gros volumes (500 cartes/batch)
+- **Traitement par batch** : Chunking optimisé pour gros volumes (1000 cartes/batch)
 - **Index optimisés** : Recherche ultra-rapide par user_id, card_id
 - **Cache local** : Performance instantanée avec fallback sur Supabase
 - **Trigger updated_at** : Mise à jour automatique des timestamps

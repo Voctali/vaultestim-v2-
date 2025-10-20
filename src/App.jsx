@@ -6,6 +6,7 @@ import { Collection } from '@/pages/Collection'
 import { Favorites } from '@/pages/Favorites'
 import { Duplicates } from '@/pages/Duplicates'
 import { SealedProducts } from '@/pages/SealedProducts'
+import { SealedProductsCatalog } from '@/pages/SealedProductsCatalog'
 import { Premium } from '@/pages/Premium'
 import { Scanner } from '@/pages/Scanner'
 import { Admin } from '@/pages/Admin'
@@ -55,10 +56,12 @@ function AppContent() {
                   <Route path="/" element={<Layout />}>
                     <Route index element={<Dashboard />} />
                     <Route path="explorer" element={<Explore />} />
+                    <Route path="explorer/catalogue-produits-scelles" element={<SealedProductsCatalog />} />
                     <Route path="collection" element={<Collection />} />
                     <Route path="collection/favorites" element={<Favorites />} />
                     <Route path="collection/wishlist" element={<Favorites />} />
                     <Route path="collection/duplicates" element={<Duplicates />} />
+                    <Route path="collection/produits-scelles" element={<SealedProducts />} />
                     <Route path="favoris" element={<Favorites />} />
                     <Route path="produits-scelles" element={<SealedProducts />} />
                     <Route path="premium" element={<Premium />} />

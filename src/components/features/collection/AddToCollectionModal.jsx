@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CardImage } from '@/components/features/explore/CardImage'
+import { CardMarketLink } from '@/components/features/collection/CardMarketLinks'
 import { AVAILABLE_CONDITIONS, translateCondition } from '@/utils/cardConditions'
 import { formatCardPriceWithCondition } from '@/utils/priceFormatter'
 import { ArrowLeft, Plus, ExternalLink, Package } from 'lucide-react'
@@ -59,7 +60,7 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
       series: card.series,
       number: card.number,
       cardMarketPrice: card.cardMarketPrice,
-      cardMarketURL: card.cardMarketPrice?.url,
+      cardMarketURL: card.cardmarket?.url,
       tcgPlayerPrice: card.tcgPlayerPrice,
       tcgPlayerURL: card.tcgPlayerPrice?.url
     })
@@ -179,34 +180,9 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
 
               {/* Liens vers les marketplaces */}
               <div className="flex flex-wrap gap-3 text-sm">
-                {/* CardMarket - Utiliser URL directe ou générer lien de recherche */}
-                {(card.cardMarketPrice?.url || card.name) && (
-                  <a
-                    href={
-                      card.cardMarketPrice?.url ||
-                      `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${encodeURIComponent(card.name + ' ' + (card.set?.name || ''))}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:underline transition-colors"
-                    title={card.cardMarketPrice?.url ? 'Lien direct vers la carte' : 'Rechercher sur CardMarket'}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    CardMarket (EUR) {!card.cardMarketPrice?.url && '🔍'}
-                  </a>
+                {/* CardMarket - Composant optimisé avec copie et fallback */}
+                <CardMarketLink card={card} />
                 )}
-                {/* TCGPlayer - Générer lien de recherche direct */}
-                {card.name && (
-                  <a
-                    href={`https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${encodeURIComponent(card.name + ' ' + (card.set?.name || ''))}&page=1`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:underline transition-colors"
-                    title="Rechercher sur TCGPlayer"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    TCGPlayer (USD) 🔍
-                  </a>
                 )}
               </div>
             </div>

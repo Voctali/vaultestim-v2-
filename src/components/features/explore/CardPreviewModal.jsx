@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { CardImage } from '@/components/features/explore/CardImage'
+import { CardMarketLink } from '@/components/features/collection/CardMarketLinks'
 import { X, Plus, ExternalLink } from 'lucide-react'
 
 export function CardPreviewModal({ isOpen, onClose, card, onAddToCollection }) {
@@ -109,34 +110,9 @@ export function CardPreviewModal({ isOpen, onClose, card, onAddToCollection }) {
 
               {/* Liens vers les marketplaces */}
               <div className="flex flex-wrap gap-3 text-sm pt-2">
-                {/* CardMarket - Utiliser URL directe ou générer lien de recherche */}
-                {(card.cardMarketPrice?.url || card.name) && (
-                  <a
-                    href={
-                      card.cardMarketPrice?.url ||
-                      `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${encodeURIComponent(card.name + ' ' + (card.set?.name || ''))}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:underline transition-colors"
-                    title={card.cardMarketPrice?.url ? 'Lien direct vers la carte' : 'Rechercher sur CardMarket'}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    CardMarket (EUR) {!card.cardMarketPrice?.url && '🔍'}
-                  </a>
+                {/* CardMarket - Composant optimisé avec copie et fallback */}
+                <CardMarketLink card={card} />
                 )}
-                {/* TCGPlayer - Générer lien de recherche direct */}
-                {card.name && (
-                  <a
-                    href={`https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${encodeURIComponent(card.name + ' ' + (card.set?.name || ''))}&page=1`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:underline transition-colors"
-                    title="Rechercher sur TCGPlayer"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    TCGPlayer (USD) 🔍
-                  </a>
                 )}
               </div>
 

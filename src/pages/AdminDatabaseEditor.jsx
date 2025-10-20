@@ -21,9 +21,16 @@ import { CardPreviewModal } from '@/components/features/explore/CardPreviewModal
 import { DataMigration } from '@/components/features/settings/DataMigration'
 import { DatabaseBackup } from '@/components/features/settings/DatabaseBackup'
 import { PriceMigrationPanel } from '@/components/features/admin/PriceMigrationPanel'
+import { AttacksMigrationPanel } from '@/components/features/admin/AttacksMigrationPanel'
+import { CardMarketDebugPanel } from '@/components/features/admin/CardMarketDebugPanel'
+import { CardMarketBulkHelper } from '@/components/features/admin/CardMarketBulkHelper'
+import { SealedProductsManager } from '@/components/features/admin/SealedProductsManager'
 
 export function AdminDatabaseEditor() {
   const { discoveredCards, seriesDatabase, isLoading } = useCardDatabase()
+
+  // Onglet principal : 'cards' ou 'sealed-products'
+  const [mainTab, setMainTab] = useState('cards')
 
   // États pour les données transformées (comme dans Explorer)
   const [blocksData, setBlocksData] = useState([])
@@ -813,7 +820,7 @@ export function AdminDatabaseEditor() {
           <Database className="h-8 w-8 text-primary" />
           <div>
             <div className="flex items-center gap-2 mb-1">
-              {navigationPath.length > 0 && (
+              {mainTab === 'cards' && navigationPath.length > 0 && (
                 <>
                   <Button
                     variant="ghost"
@@ -831,36 +838,67 @@ export function AdminDatabaseEditor() {
               )}
             </div>
             <h1 className="text-3xl font-bold">
-              {currentView === 'blocks' && 'Éditeur de Base de Données'}
-              {currentView === 'extensions' && `Extensions de ${selectedBlock?.name}`}
-              {currentView === 'cards' && `Cartes de ${selectedExtension?.name}`}
+              Éditeur de Base de Données
             </h1>
             <p className="text-muted-foreground">
-              {currentView === 'blocks' && 'Gérez vos blocs, extensions et cartes personnalisés'}
-              {currentView === 'extensions' && `${selectedBlock?.totalExtensions || 0} extensions • ${selectedBlock?.totalCards || 0} cartes`}
-              {currentView === 'cards' && `Extension ${selectedExtension?.name || ''}`}
+              {mainTab === 'cards' && 'Gérez vos blocs, extensions et cartes personnalisés'}
+              {mainTab === 'sealed-products' && 'Gérez votre collection de produits scellés'}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button onClick={handleCreateNew}>
-            <Plus className="h-4 w-4 mr-2" />
-            {currentView === 'blocks' && 'Nouveau Bloc'}
-            {currentView === 'extensions' && 'Nouvelle Extension'}
-            {currentView === 'cards' && 'Nouvelle Carte'}
-          </Button>
+          {mainTab === 'cards' && (
+            <Button onClick={handleCreateNew}>
+              <Plus className="h-4 w-4 mr-2" />
+              {currentView === 'blocks' && 'Nouveau Bloc'}
+              {currentView === 'extensions' && 'Nouvelle Extension'}
+              {currentView === 'cards' && 'Nouvelle Carte'}
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Migration des données IndexedDB → Backend */}
-      <DataMigration />
+      {/* Onglets principaux */}
+      <div className="flex gap-2 border-b">
+        <Button
+          variant={mainTab === 'cards' ? 'default' : 'ghost'}
+          onClick={() => setMainTab('cards')}
+          className="rounded-b-none"
+        >
+          <Database className="h-4 w-4 mr-2" />
+          Cartes
+        </Button>
+        <Button
+          variant={mainTab === 'sealed-products' ? 'default' : 'ghost'}
+          onClick={() => setMainTab('sealed-products')}
+          className="rounded-b-none"
+        >
+          <Package className="h-4 w-4 mr-2" />
+          Produits Scellés
+        </Button>
+      </div>
+
+      {/* Affichage selon l'onglet sélectionné */}
+      {mainTab === 'sealed-products' ? (
+        <SealedProductsManager />
+      ) : (
+        <>
+          {/* Migration des données IndexedDB → Backend */}
+          <DataMigration />
 
       {/* Sauvegarde de la base de données */}
       <DatabaseBackup />
 
       {/* Migration des prix depuis l'API Pokemon TCG */}
       <PriceMigrationPanel />
+      {/* Migration des attaques depuis l'API Pokemon TCG */}
+      <AttacksMigrationPanel />
+      {/* Debug des liens CardMarket */}
+      <CardMarketBulkHelper />
+
+      {/* Debug des liens CardMarket */}
+      <CardMarketDebugPanel />
 
       {/* Statistiques */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -1611,6 +1649,8 @@ export function AdminDatabaseEditor() {
           card={previewCard}
         />
       )}
+    </>
+  )}
     </div>
   )
 }

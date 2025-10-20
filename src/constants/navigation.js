@@ -1,4 +1,4 @@
-import { Home, BookOpen, Heart, List, Copy, Search, Camera, BarChart3, Users, Settings, Crown, LogOut, Database, Shield, UserCog } from "lucide-react"
+import { Home, BookOpen, Heart, List, Copy, Search, Camera, BarChart3, Users, Settings, Crown, LogOut, Database, Shield, UserCog, Package } from "lucide-react"
 
 export const NAVIGATION_ITEMS = [
   {
@@ -20,7 +20,8 @@ export const NAVIGATION_ITEMS = [
       { id: 'all-cards', label: 'Toutes mes cartes', path: '/collection', icon: BookOpen },
       { id: 'favorites', label: 'Cartes Favorites', path: '/collection/favorites', icon: Heart },
       { id: 'wishlist', label: 'Liste de Souhaits', path: '/collection/wishlist', icon: List },
-      { id: 'duplicates', label: 'Doublons', path: '/collection/duplicates', icon: Copy }
+      { id: 'duplicates', label: 'Doublons', path: '/collection/duplicates', icon: Copy },
+      { id: 'sealed-products', label: 'Produits Scellés', path: '/collection/produits-scelles', icon: Package }
     ]
   },
   {

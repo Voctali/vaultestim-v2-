@@ -26,7 +26,12 @@ export class SupabaseService {
     'set_id',
     '_source',
     'cardmarket',  // Structure complète des prix CardMarket (EUR)
-    'tcgplayer'    // Structure complète des prix TCGPlayer (USD)
+    'tcgplayer',   // Structure complète des prix TCGPlayer (USD)
+    'attacks',     // Attaques de la carte (CRITIQUE pour matching CardMarket!)
+    'abilities',   // Talents/Capacités
+    'weaknesses',  // Faiblesses
+    'resistances', // Résistances
+    'retreat_cost' // Coût de retraite
   ]
 
   /**
@@ -148,23 +153,45 @@ export class SupabaseService {
 
   /**
    * Charger seulement les cartes modifiées depuis un certain timestamp (sync incrémentale)
+   * BASE COMMUNE : charge les cartes de tous les utilisateurs
    */
   static async loadCardsModifiedSince(sinceTimestamp) {
     try {
-      console.log(`🔄 Chargement cartes modifiées depuis: ${sinceTimestamp}`)
-      const userId = await this.getCurrentUserId()
+      console.log(`🔄 Chargement cartes modifiées depuis: ${sinceTimestamp} (BASE COMMUNE)`)
 
       const { data, error } = await supabase
         .from('discovered_cards')
-        .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, _saved_at')
-        .eq('user_id', userId)
+        .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, attacks, abilities, weaknesses, resistances, retreat_cost, _saved_at')
         .gte('_saved_at', sinceTimestamp)
         .order('_saved_at', { ascending: true })
 
       if (error) throw error
 
       console.log(`📦 ${data.length} cartes modifiées depuis ${sinceTimestamp}`)
-      return data
+
+      // Dédupliquer les cartes (même logique que loadDiscoveredCards)
+      const uniqueCardsMap = new Map()
+
+      data.forEach(card => {
+        const existing = uniqueCardsMap.get(card.id)
+
+        if (!existing) {
+          uniqueCardsMap.set(card.id, card)
+        } else {
+          const existingScore = this.getCardCompletenessScore(existing)
+          const newScore = this.getCardCompletenessScore(card)
+
+          if (newScore > existingScore) {
+            uniqueCardsMap.set(card.id, card)
+          }
+        }
+      })
+
+      const uniqueCards = Array.from(uniqueCardsMap.values())
+
+      console.log(`✨ ${uniqueCards.length} cartes uniques après déduplication`)
+
+      return uniqueCards
     } catch (error) {
       console.error('❌ Erreur loadCardsModifiedSince:', error)
       return []
@@ -172,21 +199,18 @@ export class SupabaseService {
   }
 
   /**
-   * Charger toutes les cartes découvertes (avec pagination pour > 1000 cartes)
+   * Charger toutes les cartes découvertes (BASE COMMUNE - toutes les cartes de tous les utilisateurs)
+   * Les cartes sont dédupliquées par ID pour créer une base de données partagée
    */
   static async loadDiscoveredCards() {
     try {
-      console.log('🔍 Récupération userId...')
-      const userId = await this.getCurrentUserId()
-      console.log(`✅ UserId: ${userId}`)
+      console.log('🌍 Chargement de la base de données COMMUNE (toutes les cartes découvertes)...')
 
-      console.log('📡 Chargement des cartes par batch (optimisé)...')
-
-      // Charger par batch de 100 (sécurisé)
+      // Charger par batch de 1000 (optimisé pour la base commune)
       let allCards = []
       let hasMore = true
       let offset = 0
-      const BATCH_SIZE = 100
+      const BATCH_SIZE = 1000
 
       while (hasMore) {
         console.log(`🔄 Batch ${Math.floor(offset / BATCH_SIZE) + 1}: Requête offset=${offset}...`)
@@ -203,10 +227,10 @@ export class SupabaseService {
             setTimeout(() => reject(new Error('Timeout après 15s')), 15000)
           )
 
+          // CHANGEMENT : On ne filtre PLUS par user_id pour charger TOUTES les cartes
           const queryPromise = supabase
             .from('discovered_cards')
-            .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer')
-            .eq('user_id', userId)
+            .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, attacks, abilities, weaknesses, resistances, retreat_cost')
             .range(offset, offset + BATCH_SIZE - 1)
 
           console.log('⏳ Attente réponse...')
@@ -241,13 +265,73 @@ export class SupabaseService {
         }
       }
 
-      console.log(`📦 ${allCards.length} cartes chargées depuis Supabase`)
-      return allCards
+      console.log(`📦 ${allCards.length} cartes brutes chargées depuis Supabase`)
+
+      // DÉDUPLICATION : Ne garder qu'une seule version de chaque carte (par id)
+      // Privilégier les cartes les plus récentes (_saved_at) ou les plus complètes
+      const uniqueCardsMap = new Map()
+
+      allCards.forEach(card => {
+        const existing = uniqueCardsMap.get(card.id)
+
+        if (!existing) {
+          // Première occurrence de cette carte
+          uniqueCardsMap.set(card.id, card)
+        } else {
+          // Carte déjà présente, garder la plus complète
+          // Priorité : celle avec le plus de données (prix, attaques, etc.)
+          const existingScore = this.getCardCompletenessScore(existing)
+          const newScore = this.getCardCompletenessScore(card)
+
+          if (newScore > existingScore) {
+            uniqueCardsMap.set(card.id, card)
+          }
+        }
+      })
+
+      const uniqueCards = Array.from(uniqueCardsMap.values())
+
+      console.log(`✨ ${uniqueCards.length} cartes UNIQUES après déduplication`)
+      console.log(`   (${allCards.length - uniqueCards.length} doublons supprimés)`)
+
+      return uniqueCards
     } catch (error) {
       console.error('❌ Erreur loadDiscoveredCards:', error)
       console.error('Détails:', error.message)
       return []
     }
+  }
+
+  /**
+   * Calculer un score de "complétude" pour une carte
+   * Plus le score est élevé, plus la carte est complète
+   */
+  static getCardCompletenessScore(card) {
+    let score = 0
+
+    // Données de base (1 point chacune)
+    if (card.name) score += 1
+    if (card.name_fr) score += 1
+    if (card.types && card.types.length > 0) score += 1
+    if (card.hp) score += 1
+    if (card.number) score += 1
+    if (card.artist) score += 1
+    if (card.rarity) score += 1
+    if (card.images) score += 1
+    if (card.set) score += 1
+
+    // Prix (2 points chacun car important)
+    if (card.cardmarket) score += 2
+    if (card.tcgplayer) score += 2
+
+    // Données de combat (1 point chacune)
+    if (card.attacks && card.attacks.length > 0) score += 1
+    if (card.abilities && card.abilities.length > 0) score += 1
+    if (card.weaknesses) score += 1
+    if (card.resistances) score += 1
+    if (card.retreat_cost) score += 1
+
+    return score
   }
 
   /**

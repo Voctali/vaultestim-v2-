@@ -548,6 +548,12 @@ export class TCGdxService {
       tcgPlayerPrice: item.tcgplayer || null,
       cardMarketPrice: item.cardmarket || null,
       series: correctBlock, // Utiliser le bloc mappé
+      // Données de combat (ajoutées automatiquement depuis l'API)
+      attacks: item.attacks || [],
+      abilities: item.abilities || [],
+      weaknesses: item.weaknesses || [],
+      resistances: item.resistances || [],
+      retreat_cost: item.retreatCost || [], // Note: retreat_cost avec underscore pour Supabase
       _source: 'pokemon-tcg',
       _timestamp: Date.now()
     }

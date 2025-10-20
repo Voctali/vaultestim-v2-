@@ -781,6 +781,11 @@ export function CardDatabaseProvider({ children }) {
     return score
   }
 
+
+  /**
+   * Nettoyer les URLs de redirection prices.pokemontcg.io d'une carte
+   * Retourne la carte avec l'URL supprimée si c'est une redirection
+   */
   const addDiscoveredCards = (newCards) => {
     setDiscoveredCards(prevCards => {
       const existingCardsMap = new Map(prevCards.map(card => [card.id, card]))
@@ -1610,18 +1615,19 @@ export function CardDatabaseProvider({ children }) {
 
         processedCount += batch.length
 
-        // Calculer la progression RÉELLE (en incluant les cartes déjà migrées)
-        const totalProcessedIncludingAlreadyMigrated = processedCount + alreadyMigrated
-        const progress = Math.round((totalProcessedIncludingAlreadyMigrated / allCards.length) * 100)
+        // Calculer la progression RÉELLE
+        // IMPORTANT : processedCount inclut déjà toutes les cartes traitées (migrées + skippées)
+        // Ne PAS ajouter alreadyMigrated car cela causerait un double comptage
+        const progress = Math.min(100, Math.round((processedCount / allCards.length) * 100))
 
         // Log de progression
-        console.log(`🔄 Migration: ${totalProcessedIncludingAlreadyMigrated}/${allCards.length} cartes (${progress}%) | ✅ ${updatedCount} migrées | ⏭️ ${skippedCount} déjà OK | ❌ ${errorCount} erreurs`)
+        console.log(`🔄 Migration: ${processedCount}/${allCards.length} cartes (${progress}%) | ✅ ${updatedCount} migrées | ⏭️ ${skippedCount} déjà OK | ❌ ${errorCount} erreurs`)
 
         // Callback de progression
         if (onProgress) {
           onProgress({
             total: allCards.length,
-            processed: totalProcessedIncludingAlreadyMigrated,
+            processed: processedCount,
             updated: updatedCount,
             skipped: skippedCount,
             errors: errorCount,
@@ -1658,7 +1664,373 @@ export function CardDatabaseProvider({ children }) {
     }
   }
 
-  // Rafraîchir les prix de toutes les cartes dans la base de données
+  /**
+   * Migrer les attaques pour toutes les cartes
+   * Récupère attacks, abilities, weaknesses, resistances, retreat_cost depuis l'API Pokemon TCG
+   */
+  const migrateAttacks = async (onProgress = null, cancelSignal = null) => {
+    try {
+      console.log('🔄 Démarrage de la migration des attaques...')
+      console.log('⚠️ Cette opération peut prendre plusieurs minutes')
+
+      const allCards = discoveredCards
+
+      if (allCards.length === 0) {
+        console.log('⚠️ Aucune carte à migrer')
+        return { success: 0, errors: 0, total: 0 }
+      }
+
+      // Calculer combien de cartes ont déjà les attaques
+      const cardsWithAttacks = allCards.filter(card =>
+        card.attacks && Array.isArray(card.attacks) && card.attacks.length > 0
+      )
+      const cardsWithoutAttacks = allCards.filter(card =>
+        !card.attacks || !Array.isArray(card.attacks) || card.attacks.length === 0
+      )
+      const alreadyMigrated = cardsWithAttacks.length
+
+      console.log(`📊 ${allCards.length} cartes totales`)
+      console.log(`✅ ${alreadyMigrated} cartes avec attaques`)
+      console.log(`⏭️ ${cardsWithoutAttacks.length} cartes sans attaques`)
+
+      if (cardsWithoutAttacks.length === 0) {
+        console.log('🎉 Toutes les cartes ont déjà leurs attaques !')
+        return {
+          success: 0,
+          errors: 0,
+          skipped: allCards.length,
+          total: allCards.length,
+          alreadyComplete: true
+        }
+      }
+
+      // Configuration
+      const BATCH_SIZE = 10
+      const DELAY_BETWEEN_BATCHES = 2000 // 2 secondes
+
+      let processedCount = 0
+      let updatedCount = 0
+      let errorCount = 0
+      let skippedCount = alreadyMigrated
+      let notFoundCount = 0
+
+      // Traiter par batches
+      for (let i = 0; i < allCards.length; i += BATCH_SIZE) {
+        // Vérifier annulation
+        if (cancelSignal?.cancelled) {
+          console.log('⏸️ Migration interrompue par l\'utilisateur')
+          return {
+            success: updatedCount,
+            errors: errorCount,
+            skipped: skippedCount,
+            total: allCards.length,
+            interrupted: true,
+            progress: Math.round((processedCount / allCards.length) * 100)
+          }
+        }
+
+        const batch = allCards.slice(i, Math.min(i + BATCH_SIZE, allCards.length))
+
+        // Traiter le batch en parallèle
+        const batchPromises = batch.map(async (card) => {
+          try {
+            // Vérifier si la carte a déjà les attaques
+            if (card.attacks && Array.isArray(card.attacks) && card.attacks.length > 0) {
+              skippedCount++
+              return null
+            }
+
+            // Récupérer depuis l'API Pokemon TCG
+            const response = await fetch(`/api/pokemontcg/v2/cards/${card.id}`)
+
+            if (!response.ok) {
+              if (response.status === 404) {
+                notFoundCount++
+                console.warn(`⚠️ Carte non trouvée: ${card.name} (${card.id})`)
+                return null
+              }
+              throw new Error(`API error: ${response.status}`)
+            }
+
+            const data = await response.json()
+            const freshCard = data.data
+
+            if (freshCard) {
+              // Vérifier si on a des données à ajouter
+              const hasData = freshCard.attacks || freshCard.abilities || freshCard.weaknesses ||
+                             freshCard.resistances || freshCard.retreatCost
+
+              if (hasData) {
+                updatedCount++
+
+                // Créer la carte mise à jour
+                return {
+                  ...card,
+                  attacks: freshCard.attacks || null,
+                  abilities: freshCard.abilities || null,
+                  weaknesses: freshCard.weaknesses || null,
+                  resistances: freshCard.resistances || null,
+                  retreat_cost: freshCard.retreatCost || null,
+                  _timestamp: new Date().toISOString()
+                }
+              }
+            }
+
+            return null
+          } catch (error) {
+            errorCount++
+            console.warn(`⚠️ Erreur migration attaques pour ${card.name} (${card.id}):`, error.message)
+            return null
+          }
+        })
+
+        // Attendre que le batch soit terminé
+        const batchResults = await Promise.all(batchPromises)
+
+        // Filtrer et sauvegarder les résultats valides
+        const validResults = batchResults.filter(card => card !== null)
+        if (validResults.length > 0) {
+          // Sauvegarder dans IndexedDB
+          await CardCacheService.saveCards(validResults)
+
+          // Sauvegarder dans Supabase
+          SupabaseService.addDiscoveredCards(validResults)
+            .then((addedCount) => {
+              console.log(`☁️ Supabase: ${addedCount} cartes avec attaques synchronisées`)
+            })
+            .catch((error) => {
+              console.warn('⚠️ Erreur sauvegarde attaques dans Supabase:', error)
+            })
+
+          // Mettre à jour l'état React
+          setDiscoveredCards(prevCards => {
+            const cardsMap = new Map(prevCards.map(c => [c.id, c]))
+            validResults.forEach(updatedCard => {
+              cardsMap.set(updatedCard.id, updatedCard)
+            })
+            return Array.from(cardsMap.values())
+          })
+        }
+
+        processedCount += batch.length
+
+        // Calculer la progression
+        const progress = Math.min(100, Math.round((processedCount / allCards.length) * 100))
+
+        console.log(`🔄 Migration: ${processedCount}/${allCards.length} cartes (${progress}%) | ✅ ${updatedCount} migrées | ⏭️ ${skippedCount} déjà OK | ❌ ${errorCount} erreurs | ⚠️ ${notFoundCount} non trouvées`)
+
+        // Callback de progression
+        if (onProgress) {
+          onProgress(progress)
+        }
+
+        // Pause entre les batches
+        if (i + BATCH_SIZE < allCards.length) {
+          await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES))
+        }
+      }
+
+      // Mettre à jour le timestamp
+      await CardCacheService.updateLastSyncTimestamp()
+
+      console.log(`✅ Migration des attaques terminée !`)
+      console.log(`   📊 Total: ${allCards.length} cartes`)
+      console.log(`   ✅ Migrées: ${updatedCount} cartes`)
+      console.log(`   ⏭️ Déjà OK: ${skippedCount} cartes`)
+      console.log(`   ❌ Erreurs: ${errorCount} cartes`)
+      console.log(`   ⚠️ Non trouvées: ${notFoundCount} cartes`)
+
+      return {
+        success: updatedCount,
+        errors: errorCount,
+        skipped: skippedCount,
+        total: allCards.length,
+        notFound: notFoundCount
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur lors de la migration des attaques:', error)
+      throw error
+    }
+  }
+
+// Réessayer uniquement les cartes sans prix
+  const retryCardsWithoutPrices = async (onProgress = null, cancelSignal = null) => {
+    try {
+      console.log('🔄 Retry des cartes sans prix...')
+
+      // Filtrer uniquement les cartes SANS prix
+      const cardsWithoutPrices = discoveredCards.filter(card => !card.cardmarket && !card.tcgplayer)
+
+      if (cardsWithoutPrices.length === 0) {
+        console.log('✅ Toutes les cartes ont déjà des prix !')
+        return {
+          success: 0,
+          errors: 0,
+          skipped: 0,
+          total: 0,
+          cardsStillWithoutPrices: [],
+          alreadyComplete: true
+        }
+      }
+
+      console.log(`📊 ${cardsWithoutPrices.length} cartes sans prix à réessayer`)
+
+      const BATCH_SIZE = 10
+      const DELAY_BETWEEN_BATCHES = 2000 // 2 secondes
+
+      let processedCount = 0
+      let updatedCount = 0
+      let errorCount = 0
+      const cardsStillWithoutPrices = [] // Liste des cartes qui n'ont toujours pas de prix après retry
+
+      // Traiter par batches
+      for (let i = 0; i < cardsWithoutPrices.length; i += BATCH_SIZE) {
+        // Vérifier annulation
+        if (cancelSignal?.cancelled) {
+          console.log('⏸️ Retry interrompu par l\'utilisateur')
+          return {
+            success: updatedCount,
+            errors: errorCount,
+            skipped: 0,
+            total: cardsWithoutPrices.length,
+            cardsStillWithoutPrices,
+            interrupted: true,
+            progress: Math.round((processedCount / cardsWithoutPrices.length) * 100)
+          }
+        }
+
+        const batch = cardsWithoutPrices.slice(i, Math.min(i + BATCH_SIZE, cardsWithoutPrices.length))
+
+        // Traiter le batch
+        const batchPromises = batch.map(async (card) => {
+          try {
+            // Récupérer depuis l'API Pokemon TCG
+            const response = await fetch(`/api/pokemontcg/v2/cards/${card.id}`)
+
+            if (!response.ok) {
+              throw new Error(`API error: ${response.status}`)
+            }
+
+            const data = await response.json()
+            const freshCard = data.data
+
+            if (freshCard) {
+              // Vérifier si l'API retourne des prix
+              if (freshCard.cardmarket || freshCard.tcgplayer) {
+                updatedCount++
+
+                return {
+                  ...card,
+                  cardmarket: freshCard.cardmarket || null,
+                  tcgplayer: freshCard.tcgplayer || null,
+                  marketPrice: freshCard.cardmarket?.prices?.averageSellPrice || freshCard.tcgplayer?.prices?.holofoil?.market || card.marketPrice,
+                  _timestamp: new Date().toISOString()
+                }
+              } else {
+                // L'API ne fournit pas de prix pour cette carte
+                cardsStillWithoutPrices.push({
+                  id: card.id,
+                  name: card.name,
+                  set: card.set?.name || 'Unknown',
+                  number: card.number || 'N/A',
+                  rarity: card.rarity || 'Unknown'
+                })
+                return null
+              }
+            }
+
+            return null
+          } catch (error) {
+            errorCount++
+            console.warn(`⚠️ Erreur retry prix pour ${card.name} (${card.id}):`, error.message)
+            // Ajouter aussi aux cartes sans prix en cas d'erreur
+            cardsStillWithoutPrices.push({
+              id: card.id,
+              name: card.name,
+              set: card.set?.name || 'Unknown',
+              number: card.number || 'N/A',
+              rarity: card.rarity || 'Unknown',
+              error: error.message
+            })
+            return null
+          }
+        })
+
+        const batchResults = await Promise.all(batchPromises)
+        const validResults = batchResults.filter(card => card !== null)
+
+        // Sauvegarder les cartes avec prix récupérés
+        if (validResults.length > 0) {
+          await CardCacheService.saveCards(validResults)
+
+          SupabaseService.addDiscoveredCards(validResults)
+            .catch((error) => {
+              console.warn('⚠️ Erreur sauvegarde prix dans Supabase:', error)
+            })
+
+          // Mettre à jour React state
+          setDiscoveredCards(prevCards => {
+            const cardsMap = new Map(prevCards.map(c => [c.id, c]))
+            validResults.forEach(updatedCard => {
+              cardsMap.set(updatedCard.id, updatedCard)
+            })
+            return Array.from(cardsMap.values())
+          })
+        }
+
+        processedCount += batch.length
+
+        const progress = Math.min(100, Math.round((processedCount / cardsWithoutPrices.length) * 100))
+
+        console.log(`🔄 Retry: ${processedCount}/${cardsWithoutPrices.length} cartes (${progress}%) | ✅ ${updatedCount} récupérés | ❌ ${errorCount} erreurs | 🚫 ${cardsStillWithoutPrices.length} toujours sans prix`)
+
+        if (onProgress) {
+          onProgress({
+            total: cardsWithoutPrices.length,
+            processed: processedCount,
+            updated: updatedCount,
+            errors: errorCount,
+            stillWithoutPrices: cardsStillWithoutPrices.length,
+            progress: progress
+          })
+        }
+
+        // Pause entre batches
+        if (i + BATCH_SIZE < cardsWithoutPrices.length) {
+          await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES))
+        }
+      }
+
+      await CardCacheService.updateLastSyncTimestamp()
+
+      console.log(`✅ Retry terminé !`)
+      console.log(`   📊 Total: ${cardsWithoutPrices.length} cartes`)
+      console.log(`   ✅ Prix récupérés: ${updatedCount} cartes`)
+      console.log(`   ❌ Erreurs: ${errorCount} cartes`)
+      console.log(`   🚫 Toujours sans prix: ${cardsStillWithoutPrices.length} cartes`)
+
+      return {
+        success: updatedCount,
+        errors: errorCount,
+        skipped: 0,
+        total: cardsWithoutPrices.length,
+        cardsStillWithoutPrices
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur lors du retry des prix:', error)
+      throw error
+    }
+  }
+
+
+    // Rafraîchir les prix de toutes les cartes dans la base de données
+
+  /**
+   * Convertir les URLs de redirection prices.pokemontcg.io en URLs directes CardMarket
+   * Résout le problème de lenteur (10-20s → 2-3s)
+   */
   const refreshAllPrices = async () => {
     try {
       console.log('🔄 Démarrage de la mise à jour automatique des prix...')
@@ -1845,6 +2217,8 @@ export function CardDatabaseProvider({ children }) {
     startBackgroundSync,
     refreshAllPrices,
     migratePrices, // Migration ponctuelle des prix pour cartes existantes
+    migrateAttacks, // Migration ponctuelle des attaques pour cartes existantes
+    retryCardsWithoutPrices, // Retry uniquement les cartes sans prix
 
     // Recherche rapide et suggestions
     quickSearch: searchInLocalCache,
