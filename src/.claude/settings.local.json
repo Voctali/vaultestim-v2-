@@ -69,7 +69,20 @@
       "WebFetch(domain:www.cardmarket.com)",
       "Bash(del:*)",
       "Bash(git remote add:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(VERCEL_TOKEN=8sBhwNloskY8EsrnuND3glfF vercel --prod --token 8sBhwNloskY8EsrnuND3glfF)",
+      "Bash(start https://vercel.com/vaultestim-4465/vaultestim-v2)",
+      "Bash(start https://vercel.com/dashboard)",
+      "Bash(start https://vercel.com/voctalis-projects/vaultestim-v2)",
+      "Bash(git checkout:*)",
+      "Bash(start https://vercel.com/voctalis-projects/vaultestim-v2/deployments)",
+      "Bash(start https://vercel.com/voctalis-projects/vaultestim-v2/settings/git)",
+      "Bash(start https://vercel.com/voctalis-projects/vaultestim-v2/BBPHAHn1dTgigku79xUDxB7mmKAy)",
+      "Bash(start https://vaultestim-v2-git-master-voctalis-projects.vercel.app)",
+      "Bash(start https://vaultestim-v2.vercel.app)",
+      "Bash(start chrome --incognito https://vaultestim-v2.vercel.app)",
+      "Bash(start https://vaultestim-v2.vercel.app/produits-scelles)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []
