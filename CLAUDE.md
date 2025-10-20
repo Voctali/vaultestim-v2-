@@ -101,6 +101,12 @@ L'application utilise une architecture en couches de Context API :
 29. **⚙️ Migration des Attaques** - Script de migration pour ajouter attaques/abilities/weaknesses aux cartes existantes
 30. **✨ Liens Directs CardMarket** - Bouton "Trouver lien direct" dans CardMarketLinks pour matching auto
 31. **🌍 Base de Données Commune** - Architecture partagée où TOUS les utilisateurs voient les mêmes blocs/extensions/cartes dans "Explorer les séries"
+32. **📊 Composants Admin CardMarket** - Nouveaux composants intégrés pour gestion avancée des produits scellés et prix
+   - **CardMarketBulkHelper** : Assistant de recherche en masse CardMarket (dans Admin/Base de Données)
+   - **PriceHistoryChart & Modal** : Graphiques d'évolution des prix avec historique détaillé
+   - **SealedProductModal** : Modale d'ajout/édition de produits scellés
+   - **SealedProductsManager** : Gestionnaire complet de produits scellés (dans Admin/Base de Données)
+   - **Accessible via** : `/produits-scelles` et `/admin/base-donnees`
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -752,17 +758,65 @@ const customStorage = {
 
 ## Déploiement
 
-### Production (Vercel)
-```bash
-# IMPORTANT : Déployer depuis la racine du projet (vaultestim-v2/)
-# PAS depuis le dossier src/
+### 🚀 Déploiement Automatique (Actif)
 
-# Déploiement automatique via CLI
+**Le projet est configuré pour le déploiement automatique sur Vercel.**
+
+#### Configuration Git
+
+**Repository GitHub** : `Voctali/vaultestim-v2-`
+
+**Remotes configurés** :
+- `github` → `https://github.com/Voctali/vaultestim-v2-.git` (remote principal - ✅ UTILISER CELUI-CI)
+- `origin` → Placeholder invalide (❌ NE PAS UTILISER)
+
+**Branche de production** : `main`
+
+#### Workflow de Déploiement Automatique
+
+**Chaque push sur `main` déclenche automatiquement un déploiement Vercel !**
+
+```bash
+# Workflow standard (géré par Claude Code)
+# 1. Modifications de fichiers
+# 2. Claude Code gère automatiquement :
+git add .
+git commit -m "Description des modifications"
+git push github main
+
+# 3. Vercel détecte le push et déploie automatiquement en production
+# 4. L'app est mise à jour sur https://vaultestim-v2.vercel.app
+```
+
+**⚠️ IMPORTANT** : Toujours pousser sur le remote `github` (PAS `origin`)
+
+#### Demander à Claude Code de Déployer
+
+**Vous n'avez pas besoin de retenir les commandes git !** Dites simplement à Claude Code :
+
+- *"Peux-tu commit mes changements ?"*
+- *"Déploie mes modifications sur Vercel"*
+- *"Pousse les dernières modifs"*
+- *"Commit et déploie tout ça"*
+
+**Claude Code gère automatiquement** :
+1. ✅ Vérification des fichiers modifiés (`git status`)
+2. ✅ Ajout des fichiers (`git add .`)
+3. ✅ Création du commit avec message approprié
+4. ✅ Push vers GitHub (`git push github main`)
+5. ✅ Vérification du déploiement Vercel
+
+### Production (Vercel)
+
+**Déploiement automatique configuré** - Pas besoin de commandes manuelles !
+
+```bash
+# Si déploiement manuel nécessaire (rare)
 cd /f/Logiciels/Appli\ Vaultestim/vaultestim-v2
-vercel --prod
+vercel --prod --token 8sBhwNloskY8EsrnuND3glfF
 
 # Forcer rebuild sans cache
-vercel --prod --force
+vercel --prod --force --token 8sBhwNloskY8EsrnuND3glfF
 ```
 
 ### Variables d'Environnement Vercel
@@ -770,6 +824,37 @@ Configurer dans le dashboard Vercel :
 - `VITE_SUPABASE_URL` : URL de votre projet Supabase
 - `VITE_SUPABASE_ANON_KEY` : Clé anonyme Supabase
 - `VITE_POKEMON_TCG_API_KEY` : Clé API Pokemon TCG (optionnelle)
+
+### 📍 Accéder aux Nouveautés CardMarket Déployées
+
+Les nouveaux composants CardMarket sont **déjà déployés en production** et accessibles directement !
+
+#### **Page Produits Scellés**
+**URL Production** : https://vaultestim-v2.vercel.app/produits-scelles
+
+**Nouveautés disponibles** :
+- ✅ **SealedProductModal** : Modale pour ajouter/éditer des produits scellés (bouton "Ajouter un produit")
+- ✅ **PriceHistoryModal** : Graphiques d'évolution des prix (bouton "Voir l'historique" sur chaque produit)
+- ✅ Bouton **"Actualiser les prix"** pour refresh automatique via CardMarket
+- ✅ **Alertes de prix** avec indicateurs visuels (hausse/baisse)
+
+#### **Éditeur Admin de Base de Données**
+**URL Production** : https://vaultestim-v2.vercel.app/admin/base-donnees (nécessite compte admin)
+
+**Nouveautés disponibles** :
+- ✅ **CardMarketBulkHelper** : Outil de recherche en masse dans l'onglet dédié
+- ✅ **SealedProductsManager** : Gestionnaire complet dans l'onglet "Produits Scellés"
+- ✅ **Migration des prix** : Outil de récupération automatique des prix
+
+#### 🔍 Résolution des Problèmes de Cache
+
+Si les nouveautés ne s'affichent pas :
+
+1. **Hard refresh** : `Ctrl + Shift + R` (Windows) ou `Cmd + Shift + R` (Mac)
+2. **Désactiver le cache** :
+   - Chrome : F12 → Network → Cocher "Disable cache"
+   - Puis actualiser la page
+3. **Navigation privée** : Tester en mode incognito pour contourner le cache
 
 ### Script SQL Supabase (REQUIS pour gestion des prix)
 **IMPORTANT** : Exécuter ce script dans le SQL Editor de Supabase avant d'utiliser la migration des prix
