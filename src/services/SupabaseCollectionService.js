@@ -22,21 +22,67 @@ export class SupabaseCollectionService {
 
   /**
    * Récupérer la collection de l'utilisateur
+   * Enrichit les cartes avec les données de prix depuis discovered_cards
    */
   static async getUserCollection() {
     try {
       const userId = await this.getCurrentUserId()
 
-      const { data, error } = await supabase
+      // Récupérer les cartes de la collection
+      const { data: collectionData, error: collectionError } = await supabase
         .from('user_collection')
         .select('*')
         .eq('user_id', userId)
         .order('date_added', { ascending: false })
 
-      if (error) throw error
+      if (collectionError) throw collectionError
 
-      console.log(`✅ ${data.length} cartes dans la collection`)
-      return data
+      console.log(`✅ ${collectionData.length} cartes dans la collection`)
+
+      // Si pas de cartes, retourner directement
+      if (!collectionData || collectionData.length === 0) {
+        return []
+      }
+
+      // Récupérer les IDs des cartes
+      const cardIds = [...new Set(collectionData.map(card => card.card_id))]
+
+      // Récupérer les données complètes depuis discovered_cards (avec prix)
+      const { data: discoveredData, error: discoveredError } = await supabase
+        .from('discovered_cards')
+        .select('id, cardmarket, tcgplayer')
+        .in('id', cardIds)
+
+      if (discoveredError) {
+        console.warn('⚠️ Impossible de récupérer les prix depuis discovered_cards:', discoveredError)
+      }
+
+      // Créer un map pour les données de prix
+      const priceMap = {}
+      if (discoveredData) {
+        discoveredData.forEach(card => {
+          priceMap[card.id] = {
+            cardmarket: card.cardmarket,
+            tcgplayer: card.tcgplayer
+          }
+        })
+      }
+
+      // Enrichir les cartes de la collection avec les prix
+      const enrichedData = collectionData.map(card => {
+        const priceData = priceMap[card.card_id]
+        if (priceData) {
+          return {
+            ...card,
+            cardmarket: priceData.cardmarket,
+            tcgplayer: priceData.tcgplayer
+          }
+        }
+        return card
+      })
+
+      console.log(`💰 ${Object.keys(priceMap).length} cartes enrichies avec les prix`)
+      return enrichedData
     } catch (error) {
       console.error('❌ Erreur getUserCollection:', error)
       return []
@@ -176,21 +222,61 @@ export class SupabaseCollectionService {
 
   /**
    * Récupérer les favoris de l'utilisateur
+   * Enrichit les cartes avec les données de prix depuis discovered_cards
    */
   static async getUserFavorites() {
     try {
       const userId = await this.getCurrentUserId()
 
-      const { data, error } = await supabase
+      const { data: favoritesData, error: favoritesError } = await supabase
         .from('user_favorites')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (favoritesError) throw favoritesError
 
-      console.log(`✅ ${data.length} favoris`)
-      return data
+      console.log(`✅ ${favoritesData.length} favoris`)
+
+      if (!favoritesData || favoritesData.length === 0) {
+        return []
+      }
+
+      // Récupérer les IDs des cartes
+      const cardIds = [...new Set(favoritesData.map(card => card.card_id))]
+
+      // Récupérer les prix depuis discovered_cards
+      const { data: discoveredData } = await supabase
+        .from('discovered_cards')
+        .select('id, cardmarket, tcgplayer')
+        .in('id', cardIds)
+
+      // Créer un map pour les données de prix
+      const priceMap = {}
+      if (discoveredData) {
+        discoveredData.forEach(card => {
+          priceMap[card.id] = {
+            cardmarket: card.cardmarket,
+            tcgplayer: card.tcgplayer
+          }
+        })
+      }
+
+      // Enrichir les favoris avec les prix
+      const enrichedData = favoritesData.map(card => {
+        const priceData = priceMap[card.card_id]
+        if (priceData) {
+          return {
+            ...card,
+            cardmarket: priceData.cardmarket,
+            tcgplayer: priceData.tcgplayer
+          }
+        }
+        return card
+      })
+
+      console.log(`💰 ${Object.keys(priceMap).length} favoris enrichis avec les prix`)
+      return enrichedData
     } catch (error) {
       console.error('❌ Erreur getUserFavorites:', error)
       return []
@@ -257,21 +343,61 @@ export class SupabaseCollectionService {
 
   /**
    * Récupérer la wishlist de l'utilisateur
+   * Enrichit les cartes avec les données de prix depuis discovered_cards
    */
   static async getUserWishlist() {
     try {
       const userId = await this.getCurrentUserId()
 
-      const { data, error } = await supabase
+      const { data: wishlistData, error: wishlistError } = await supabase
         .from('user_wishlist')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (wishlistError) throw wishlistError
 
-      console.log(`✅ ${data.length} items dans la wishlist`)
-      return data
+      console.log(`✅ ${wishlistData.length} items dans la wishlist`)
+
+      if (!wishlistData || wishlistData.length === 0) {
+        return []
+      }
+
+      // Récupérer les IDs des cartes
+      const cardIds = [...new Set(wishlistData.map(card => card.card_id))]
+
+      // Récupérer les prix depuis discovered_cards
+      const { data: discoveredData } = await supabase
+        .from('discovered_cards')
+        .select('id, cardmarket, tcgplayer')
+        .in('id', cardIds)
+
+      // Créer un map pour les données de prix
+      const priceMap = {}
+      if (discoveredData) {
+        discoveredData.forEach(card => {
+          priceMap[card.id] = {
+            cardmarket: card.cardmarket,
+            tcgplayer: card.tcgplayer
+          }
+        })
+      }
+
+      // Enrichir la wishlist avec les prix
+      const enrichedData = wishlistData.map(card => {
+        const priceData = priceMap[card.card_id]
+        if (priceData) {
+          return {
+            ...card,
+            cardmarket: priceData.cardmarket,
+            tcgplayer: priceData.tcgplayer
+          }
+        }
+        return card
+      })
+
+      console.log(`💰 ${Object.keys(priceMap).length} items wishlist enrichis avec les prix`)
+      return enrichedData
     } catch (error) {
       console.error('❌ Erreur getUserWishlist:', error)
       return []

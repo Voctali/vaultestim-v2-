@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { NAVIGATION_ITEMS, COLLECTION_QUICK_ITEMS } from '@/constants/navigation'
@@ -12,6 +12,7 @@ export function Sidebar({ isOpen, onToggle }) {
   const [expandedItems, setExpandedItems] = useState({ collection: true })
   const { user, isAuthenticated, isAdmin, isPremium, logout } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const userLevel = user ? getUserLevel(user.cardCount || 0) : null
 
@@ -37,6 +38,11 @@ export function Sidebar({ isOpen, onToggle }) {
       return item.subItems.some(sub => location.pathname === sub.path)
     }
     return location.pathname === item.path
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
   }
 
   return (
@@ -219,7 +225,7 @@ export function Sidebar({ isOpen, onToggle }) {
         <div className="p-3 border-t border-border">
           <Button
             variant="ghost"
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
             <div

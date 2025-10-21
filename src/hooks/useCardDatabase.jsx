@@ -1526,7 +1526,21 @@ export function CardDatabaseProvider({ children }) {
       let processedCount = 0
       let updatedCount = 0
       let errorCount = 0
-      let skippedCount = alreadyMigrated // Commencer avec le nombre déjà migré
+      let skippedCount = 0 // NE PAS initialiser avec alreadyMigrated (évite double comptage)
+
+      // Appeler onProgress avec l'état initial pour afficher la progression de départ
+      const initialProgress = Math.ceil((alreadyMigrated / allCards.length) * 100)
+      if (onProgress) {
+        onProgress({
+          total: allCards.length,
+          processed: 0,
+          updated: 0,
+          skipped: alreadyMigrated,
+          errors: 0,
+          progress: initialProgress,
+          alreadyMigrated: alreadyMigrated
+        })
+      }
 
       // Traiter par batches
       for (let i = 0; i < allCards.length; i += BATCH_SIZE) {
@@ -1615,10 +1629,12 @@ export function CardDatabaseProvider({ children }) {
 
         processedCount += batch.length
 
-        // Calculer la progression RÉELLE
-        // IMPORTANT : processedCount inclut déjà toutes les cartes traitées (migrées + skippées)
-        // Ne PAS ajouter alreadyMigrated car cela causerait un double comptage
-        const progress = Math.min(100, Math.round((processedCount / allCards.length) * 100))
+        // Calculer la progression RÉELLE en incluant les cartes déjà migrées
+        // alreadyMigrated = cartes qui avaient les prix AVANT la migration
+        // processedCount = cartes traitées PENDANT la migration
+        // Total migré = cartes avec prix (alreadyMigrated + updatedCount nouvellement migrées)
+        const totalWithPrices = alreadyMigrated + updatedCount
+        const progress = Math.min(100, Math.ceil((totalWithPrices / allCards.length) * 100))
 
         // Log de progression
         console.log(`🔄 Migration: ${processedCount}/${allCards.length} cartes (${progress}%) | ✅ ${updatedCount} migrées | ⏭️ ${skippedCount} déjà OK | ❌ ${errorCount} erreurs`)

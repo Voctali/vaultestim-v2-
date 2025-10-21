@@ -17,7 +17,8 @@ export function PriceMigrationPanel() {
 
   const handleMigrate = async () => {
     setIsMigrating(true)
-    setProgress({ processed: 0, total: 0, progress: 0, updated: 0, skipped: 0, errors: 0 })
+    // Ne pas réinitialiser à 0 - laisser migratePrices() définir la progression initiale correcte
+    setProgress(null)  // Effacer l'ancienne progression
     setResult(null)
 
     // Créer un signal d'annulation
@@ -48,7 +49,8 @@ export function PriceMigrationPanel() {
 
   const handleRetry = async () => {
     setIsRetrying(true)
-    setProgress({ processed: 0, total: 0, progress: 0, updated: 0, errors: 0, stillWithoutPrices: 0 })
+    // Ne pas réinitialiser à 0 - laisser retryCardsWithoutPrices() définir la progression initiale correcte
+    setProgress(null)  // Effacer l'ancienne progression
     setRetryResult(null)
 
     const signal = { cancelled: false }
