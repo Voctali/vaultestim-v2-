@@ -43,6 +43,5 @@ exports/
 # Vercel
 .vercel
 
-.vercel
-node
-nul
+# Claude Code local settings
+src/.claude/settings.local.json

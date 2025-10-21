@@ -813,11 +813,13 @@ git push github main
 ```bash
 # Si déploiement manuel nécessaire (rare)
 cd /f/Logiciels/Appli\ Vaultestim/vaultestim-v2
-vercel --prod --token 8sBhwNloskY8EsrnuND3glfF
+vercel --prod --token $VERCEL_TOKEN
 
 # Forcer rebuild sans cache
-vercel --prod --force --token 8sBhwNloskY8EsrnuND3glfF
+vercel --prod --force --token $VERCEL_TOKEN
 ```
+
+**⚠️ SÉCURITÉ** : Ne jamais exposer le token dans le code. Configurez la variable d'environnement `VERCEL_TOKEN` dans votre système.
 
 ### Variables d'Environnement Vercel
 Configurer dans le dashboard Vercel :
