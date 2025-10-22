@@ -107,6 +107,21 @@ L'application utilise une architecture en couches de Context API :
    - **SealedProductModal** : Modale d'ajout/édition de produits scellés
    - **SealedProductsManager** : Gestionnaire complet de produits scellés (dans Admin/Base de Données)
    - **Accessible via** : `/produits-scelles` et `/admin/base-donnees`
+33. **⏰ Actualisation Automatique Quotidienne des Prix** - Système intelligent de mise à jour progressive (150 cartes/jour)
+   - **PriceRefreshService** : Service dédié avec priorisation intelligente
+   - **PriceRefreshPanel** : Interface admin pour contrôle manuel et statistiques
+   - **Démarrage automatique** : 5 secondes après le lancement si > 24h depuis dernière actualisation
+   - **Stratégie intelligente** : Priorité aux cartes à forte valeur (> 5€) et consultées récemment
+   - **Batch de 150 cartes/jour** : Évite rate limiting API, cycle complet en ~95 jours (14,234 cartes)
+34. **🌐 Proxy API Production** - Vercel Serverless Function pour contournement CORS en production
+   - **Fichier** : `api/pokemontcg/[...path].js` (Vercel Serverless Function)
+   - **Route** : `/api/pokemontcg/*` → `https://api.pokemontcg.io/*`
+   - **Fonctionnement** : Dev (proxy Vite) + Production (Vercel Function)
+   - **Headers** : CORS, Cache-Control, API Key automatique
+35. **🔤 Traductions Pokémon Étendues** - 21+ nouvelles traductions Gen 7-8 ajoutées
+   - **Gen 7** : gouroutan, quartermac, sovkipou, sarmurai/sarmuraï, bacabouh, trépassable, etc.
+   - **Gen 8** : goupilou, roublenard, charbi, wagomine, monthracite, verpom, etc.
+   - **Variantes accents** : Support trémas et accents (sarmurai + sarmuraï)
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -200,6 +215,24 @@ L'application utilise une architecture en couches de Context API :
 - **Seuil de confiance** : 20% minimum pour sauvegarder (peut être ajusté)
 - **Méthodes de matching** : `auto_attacks` (par attaques), `auto_name` (par nom), `manual` (utilisateur)
 - **Composant UI** : `CardMarketLinks.jsx` avec bouton "Trouver lien direct"
+
+#### PriceRefreshService (Actualisation Automatique des Prix)
+- `autoRefresh(cards, onProgress)` - Actualisation quotidienne automatique (150 cartes/jour)
+- `forceRefreshAll(cards, onProgress, cancelSignal)` - Actualisation forcée de toutes les cartes
+- `selectCardsForRefresh(cards, batchSize)` - Sélection intelligente des cartes à actualiser
+- `calculateRefreshPriority(card)` - Calcul du score de priorité
+- **Configuration** :
+  - `BATCH_SIZE = 150` : Nombre de cartes par actualisation quotidienne
+  - `REFRESH_INTERVAL_MS = 24h` : Intervalle minimum entre actualisations
+  - `MIN_PRICE_THRESHOLD = 0.10€` : Prix minimum pour actualisation
+  - `PRIORITY_PRICE_THRESHOLD = 5.00€` : Seuil pour priorisation haute valeur
+- **Stratégie de priorisation** :
+  - Score basé sur : prix de la carte (40%) + ancienneté données (30%) + consultation récente (30%)
+  - Cartes > 5€ : priorité maximale
+  - Cartes jamais actualisées : priorité élevée
+  - Cartes consultées récemment : bonus de priorité
+- **Composant UI** : `PriceRefreshPanel.jsx` dans Admin → Éditeur de Base de Données
+- **Intégration** : Démarrage automatique 5s après login dans `useCardDatabase.jsx`
 
 ### Système d'Authentification
 - **Authentification** : Supabase Auth avec gestion complète de session
@@ -694,6 +727,44 @@ Si vous quittez, la migration s'arrêtera mais vous pourrez la reprendre à 20%.
 - Mais seulement pour les cartes SANS prix (les autres sont skippées)
 
 ## Debugging et Maintenance
+
+### 🚨 Erreurs de Build Communes
+
+#### **Erreur : Missing comma in array**
+**Symptôme** : Build Vercel échoue avec "Expected ',', got 'string literal'"
+
+**Cause** : Virgule placée dans le commentaire au lieu d'après la valeur
+```javascript
+// ❌ INCORRECT
+'retreat_cost' // Coût de retraite,
+'_price_updated_at', // Champ suivant
+
+// ✅ CORRECT
+'retreat_cost', // Coût de retraite
+'_price_updated_at', // Champ suivant
+```
+
+**Solution** : Toujours placer la virgule AVANT le commentaire, jamais à l'intérieur
+
+#### **Erreur : Proxy API 404 en production**
+**Symptôme** : `GET /api/pokemontcg/v2/cards 404` en production, fonctionne en dev
+
+**Cause** : Le proxy Vite (`vite.config.js`) ne fonctionne qu'en développement
+
+**Solution** : Utiliser Vercel Serverless Function `api/pokemontcg/[...path].js`
+- Déploie automatiquement avec le reste de l'app
+- Gère CORS et transmission API Key
+- Même route `/api/pokemontcg/*` en dev et production
+
+#### **Erreur : Session perdue après refresh**
+**Symptôme** : Navigation tabs disparaissent, utilisateur déconnecté après F5
+
+**Cause** : Cache navigateur contient ancien code avec storage adapter async
+
+**Solution** :
+1. Hard refresh : `Ctrl + Shift + R` (Windows) ou `Cmd + Shift + R` (Mac)
+2. Si insuffisant : Console → `localStorage.clear(); sessionStorage.clear(); location.reload()`
+3. Se reconnecter → Le nouveau storage adapter synchrone sauvegarde correctement
 
 ### 🔍 Outils de Debug
 - **Bouton "Debug DB"** : Vérification état IndexedDB vs React
