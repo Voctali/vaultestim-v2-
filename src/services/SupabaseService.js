@@ -31,7 +31,7 @@ export class SupabaseService {
     'abilities',   // Talents/Capacités
     'weaknesses',  // Faiblesses
     'resistances', // Résistances
-    'retreat_cost' // Coût de retraite,
+    'retreat_cost', // Coût de retraite
     '_price_updated_at', // Timestamp dernière actualisation des prix
     '_last_viewed'  // Timestamp dernière consultation (pour priorisation actualisation)
   ]
