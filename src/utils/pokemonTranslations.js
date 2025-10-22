@@ -998,7 +998,6 @@ export const POKEMON_TRANSLATIONS = {
   'ogerpon-pierre': 'ogerpon',
   'fongus-furie': 'okidogi',
   'fauxpilier': 'munkidori',
-  'denticrisse': 'ogerpon',
   'terapagos': 'terapagos',
   'pêchaminus': 'pecharunt',
 
