@@ -43,15 +43,19 @@ export class MultiApiService {
     // 2. Essayer chaque API dans l'ordre de priorité
     const availableApis = this.getAvailableApis()
     let lastError = null
+    let apiSucceeded = false
 
     for (const apiSource of availableApis) {
       try {
         console.log(`📡 Tentative avec ${apiSource}...`)
         const results = await this.searchWithApi(apiSource, query, limit)
 
+        // Succès - l'API a répondu (même si 0 résultats)
+        apiSucceeded = true
+        this.markApiSuccess(apiSource)
+
         if (results && results.length > 0) {
-          // Succès - mettre à jour le statut et le cache
-          this.markApiSuccess(apiSource)
+          // Des cartes trouvées - mettre en cache
           CacheService.setCacheSearch(query, results)
 
           // Mettre en cache chaque carte individuellement
@@ -63,6 +67,10 @@ export class MultiApiService {
 
           console.log(`✅ Succès avec ${apiSource}: ${results.length} cartes`)
           return results
+        } else {
+          // L'API a répondu mais 0 résultats - ce n'est PAS une erreur
+          console.log(`ℹ️ ${apiSource}: Aucun résultat pour "${query}"`)
+          return []
         }
       } catch (error) {
         console.warn(`⚠️ Échec ${apiSource}:`, error.message)
@@ -71,9 +79,14 @@ export class MultiApiService {
       }
     }
 
-    // 3. Échec total - pas de fallback
-    console.error(`❌ Toutes les APIs ont échoué pour: "${query}"`)
-    throw lastError || new Error('API Pokemon TCG indisponible. Veuillez réessayer plus tard.')
+    // 3. Échec total - toutes les APIs ont échoué (erreurs réseau/serveur)
+    if (!apiSucceeded) {
+      console.error(`❌ Toutes les APIs ont échoué pour: "${query}"`)
+      throw lastError || new Error('API Pokemon TCG indisponible. Veuillez réessayer plus tard.')
+    }
+
+    // Si on arrive ici, les APIs ont répondu mais 0 résultats
+    return []
   }
 
   /**
