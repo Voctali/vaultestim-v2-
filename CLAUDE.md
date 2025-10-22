@@ -122,6 +122,25 @@ L'application utilise une architecture en couches de Context API :
    - **Gen 7** : gouroutan, quartermac, sovkipou, sarmurai/sarmuraï, bacabouh, trépassable, etc.
    - **Gen 8** : goupilou, roublenard, charbi, wagomine, monthracite, verpom, etc.
    - **Variantes accents** : Support trémas et accents (sarmurai + sarmuraï)
+36. **🔧 Gestion des Erreurs API Améliorée** - Différenciation claire entre "0 résultats" et "erreur API"
+   - **MultiApiService** : Détection si l'API répond (même avec 0 résultats) vs vraie erreur réseau/serveur
+   - **Messages clairs** : Plus de faux "API indisponible" quand une recherche ne trouve simplement aucune carte
+   - **Retour [] au lieu d'erreur** : Comportement cohérent pour recherches sans résultats
+37. **📝 Corrections Traductions Pokémon** - Corrections critiques du dictionnaire de traductions
+   - **Type:0 → Type: Null** : Correction espace manquant (`type:null` → `type: null`)
+   - **Variantes Type:0** : Ajout `type zéro`, `type zero` pour recherche flexible
+   - **Denticrisse → Bruxish** : Suppression doublon erroné (`denticrisse: ogerpon`)
+   - **Fichier** : `src/utils/pokemonTranslations.js` (980+ traductions Gen 1-9)
+38. **🔗 Encodage URL Caractères Spéciaux** - Support complet des caractères spéciaux dans noms de cartes
+   - **encodeURIComponent()** : Encodage automatique des query strings pour API Pokemon TCG
+   - **Caractère &** : Correction erreurs 400 pour cartes comme "Gengar & Mimikyu-GX"
+   - **Autres caractères** : Gère également `'`, `"`, espaces, etc.
+   - **Fichier** : `src/services/TCGdxService.js` - méthode `searchCards()`
+39. **📊 Colonnes Supabase Prix Tracking** - Ajout colonnes pour suivi actualisation des prix
+   - **_price_updated_at** : TIMESTAMPTZ - Timestamp dernière actualisation des prix
+   - **_last_viewed** : TIMESTAMPTZ - Timestamp dernière consultation (priorisation)
+   - **Index GIN créés** : Optimisation requêtes de priorisation pour PriceRefreshService
+   - **Table** : `discovered_cards` - Requis pour système actualisation automatique quotidienne
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -785,6 +804,22 @@ Si vous quittez, la migration s'arrêtera mais vous pourrez la reprendre à 20%.
 - **Recherche intelligente** : Filtrage par limite de mots pour éviter faux positifs (Mew vs Mewtwo)
 - **Traductions Pokémon** : Dictionnaire centralisé dans `src/utils/pokemonTranslations.js` - Éviter les doublons
 - **AbortController** : Annulation des recherches pour éviter race conditions et résultats obsolètes
+- **❌ RÉSOLU - "API indisponible" pour 0 résultats** : Faux message d'erreur quand recherche ne trouve aucune carte
+  - **Cause** : `MultiApiService` lançait une exception quand l'API retournait 0 résultats
+  - **Solution** : Différenciation entre "API répond avec 0 résultats" (retour `[]`) et "API en erreur" (exception)
+  - **Fichier** : `src/services/MultiApiService.js` - méthode `searchCards()`
+- **❌ RÉSOLU - Type:0 ne trouve pas Type: Null** : Traduction incorrecte sans espace
+  - **Cause** : `'type:0': 'type:null'` au lieu de `'type: null'` (espace manquant)
+  - **Solution** : Correction traduction + ajout variantes (`type zéro`, `type zero`)
+  - **Fichier** : `src/utils/pokemonTranslations.js` lignes 812-816
+- **❌ RÉSOLU - Denticrisse traduit en Ogerpon** : Doublon erroné écrasait bonne traduction
+  - **Cause** : Deux entrées pour `denticrisse` (ligne 824: bruxish ✅, ligne 1001: ogerpon ❌)
+  - **Solution** : Suppression du doublon incorrect, conservation de `denticrisse → bruxish`
+  - **Fichier** : `src/utils/pokemonTranslations.js`
+- **❌ RÉSOLU - Erreur 400 pour cartes avec &** : "Gengar & Mimikyu-GX" générait Bad Request
+  - **Cause** : Caractère `&` non encodé dans URL cassait la query string
+  - **Solution** : `encodeURIComponent()` pour encoder tous les caractères spéciaux (&, ', ", etc.)
+  - **Fichier** : `src/services/TCGdxService.js` lignes 137-157
 
 #### **Problèmes de Synchronisation**
 - **Multi-device** : Synchronisation Supabase automatique avec cache local pour performance
@@ -796,6 +831,11 @@ Si vous quittez, la migration s'arrêtera mais vous pourrez la reprendre à 20%.
   - **Solution** : `formatCardPrice` extrait prix depuis `cardmarket`/`tcgplayer`, sauvegarde en JSONB
   - **Migration** : Outil admin pour récupérer prix de toutes les cartes existantes
   - **Progression intelligente** : Reprend à X% au lieu de 0% (skip les cartes déjà migrées)
+- **❌ RÉSOLU - Erreur "Could not find '_price_updated_at' column"** : Colonne manquante dans Supabase
+  - **Symptôme** : Erreur 400 lors de sauvegarde cartes avec prix dans `discovered_cards`
+  - **Cause** : Colonnes `_price_updated_at` et `_last_viewed` référencées dans code mais absentes en DB
+  - **Solution** : Exécuter script SQL pour ajouter colonnes + index
+  - **Script** : Voir section "Script SQL Supabase (REQUIS pour gestion des prix)"
 
 #### **🔴 CRITIQUE - Problème de Session Supabase (RÉSOLU)**
 **Symptôme** : Les onglets de navigation disparaissent après actualisation de la page, utilisateur déconnecté automatiquement.
@@ -938,19 +978,34 @@ Si les nouveautés ne s'affichent pas :
 -- Ajouter les colonnes pour les prix
 ALTER TABLE discovered_cards
 ADD COLUMN IF NOT EXISTS cardmarket JSONB,
-ADD COLUMN IF NOT EXISTS tcgplayer JSONB;
+ADD COLUMN IF NOT EXISTS tcgplayer JSONB,
+ADD COLUMN IF NOT EXISTS _price_updated_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS _last_viewed TIMESTAMPTZ;
 
 -- Créer des index pour améliorer les performances
 CREATE INDEX IF NOT EXISTS idx_discovered_cards_cardmarket ON discovered_cards USING GIN (cardmarket);
 CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards USING GIN (tcgplayer);
 
+-- Index pour optimiser les requêtes de priorisation (PriceRefreshService)
+CREATE INDEX IF NOT EXISTS idx_discovered_cards_price_updated
+ON discovered_cards(_price_updated_at)
+WHERE _price_updated_at IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_discovered_cards_last_viewed
+ON discovered_cards(_last_viewed)
+WHERE _last_viewed IS NOT NULL;
+
 -- Commentaires pour documentation
 COMMENT ON COLUMN discovered_cards.cardmarket IS 'Structure complète des prix CardMarket (EUR)';
 COMMENT ON COLUMN discovered_cards.tcgplayer IS 'Structure complète des prix TCGPlayer (USD)';
+COMMENT ON COLUMN discovered_cards._price_updated_at IS 'Timestamp de la dernière actualisation des prix de la carte';
+COMMENT ON COLUMN discovered_cards._last_viewed IS 'Timestamp de la dernière consultation de la carte (pour priorisation)';
 ```
 
 **Vérification** :
-Après exécution, vérifier dans Table Editor que les colonnes `cardmarket` et `tcgplayer` apparaissent avec le type `jsonb`.
+Après exécution, vérifier dans Table Editor que les colonnes suivantes apparaissent :
+- `cardmarket` et `tcgplayer` avec le type `jsonb`
+- `_price_updated_at` et `_last_viewed` avec le type `timestamptz`
 
 ### URL de Production
 - **Domaine personnalisé** : https://vaultestim-v2.vercel.app
