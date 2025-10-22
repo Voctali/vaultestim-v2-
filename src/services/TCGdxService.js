@@ -547,6 +547,9 @@ export class TCGdxService {
       marketPriceDetails: bestPrice || null,
       tcgPlayerPrice: item.tcgplayer || null,
       cardMarketPrice: item.cardmarket || null,
+      // IMPORTANT: Structures complètes pour persistence Supabase (multi-device)
+      cardmarket: item.cardmarket || null, // Structure complète CardMarket (EUR)
+      tcgplayer: item.tcgplayer || null,   // Structure complète TCGPlayer (USD)
       series: correctBlock, // Utiliser le bloc mappé
       // Données de combat (ajoutées automatiquement depuis l'API)
       attacks: item.attacks || [],
