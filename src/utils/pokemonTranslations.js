@@ -805,6 +805,7 @@ export const POKEMON_TRANSLATIONS = {
   'quartermac': 'passimian',
   'sovkipou': 'wimpod',
   'sarmurai': 'golisopod',
+  'sarmuraï': 'golisopod',
   'bacabouh': 'sandygast',
   'trépassable': 'palossand',
   'concombaffe': 'pyukumuku',
