@@ -21,6 +21,7 @@ import { CardPreviewModal } from '@/components/features/explore/CardPreviewModal
 import { DataMigration } from '@/components/features/settings/DataMigration'
 import { DatabaseBackup } from '@/components/features/settings/DatabaseBackup'
 import { PriceMigrationPanel } from '@/components/features/admin/PriceMigrationPanel'
+import { PriceRefreshPanel } from '@/components/features/admin/PriceRefreshPanel'
 import { AttacksMigrationPanel } from '@/components/features/admin/AttacksMigrationPanel'
 import { CardMarketDebugPanel } from '@/components/features/admin/CardMarketDebugPanel'
 import { CardMarketBulkHelper } from '@/components/features/admin/CardMarketBulkHelper'
@@ -892,6 +893,8 @@ export function AdminDatabaseEditor() {
 
       {/* Migration des prix depuis l'API Pokemon TCG */}
       <PriceMigrationPanel />
+      {/* Actualisation automatique quotidienne des prix */}
+      <PriceRefreshPanel />
       {/* Migration des attaques depuis l'API Pokemon TCG */}
       <AttacksMigrationPanel />
       {/* Debug des liens CardMarket */}

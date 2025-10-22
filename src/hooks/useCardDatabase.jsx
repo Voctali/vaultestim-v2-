@@ -7,6 +7,7 @@ import { BackendApiService } from '@/services/BackendApiService'
 import { MigrationService } from '@/services/MigrationService'
 import { config } from '@/lib/config'
 import { PriceUpdateService } from '@/services/PriceUpdateService'
+import { PriceRefreshService } from '@/services/PriceRefreshService'
 import { TCGdxService } from '@/services/TCGdxService'
 import { supabase } from '@/lib/supabaseClient'
 import { setCurrentSession } from '@/lib/sessionStore'
@@ -447,7 +448,22 @@ export function CardDatabaseProvider({ children }) {
             console.warn('⚠️ Erreur synchronisation arrière-plan:', syncError)
             // Non bloquant - l'utilisateur a déjà ses données du cache
           }
-        }, 2000) // Attendre 2s pour ne pas gêner l'affichage initial
+        }, 2000)
+
+        // 1.3 Actualisation automatique des prix (une fois par jour, 150 cartes/jour)
+        setTimeout(async () => {
+          try {
+            console.log('💰 Vérification actualisation automatique des prix...')
+            const allCards = await CardCacheService.getAllCards()
+
+            await PriceRefreshService.autoRefresh(allCards, (progress) => {
+              console.log(`💰 Actualisation prix: ${progress.current}/${progress.total} (${progress.percentage}%) - ${progress.currentCard}`)
+            })
+          } catch (refreshError) {
+            console.warn('⚠️ Erreur actualisation prix:', refreshError)
+            // Non bloquant
+          }
+        }, 5000) // Attendre 5s après le chargement initial // Attendre 2s pour ne pas gêner l'affichage initial
 
       } else {
         // 2. Pas de cache : téléchargement complet depuis Supabase (première fois)
