@@ -277,6 +277,46 @@ L'application utilise une architecture en couches de Context API :
      - Logs détaillés pour debugging (`⚠️ Tentative X/3 échouée, reconnexion...`)
    - **Fichier** : `src/services/CardCacheService.js` - Refactoring complet
    - **Commit** : `e6044d1` - "fix: Correction critique IndexedDB - reconnexion automatique et retry"
+49. **🌐 Fix Proxy API Vercel (404 → 200)** - Correction du catch-all capturant les routes API
+   - **Problème identifié** : Toutes les requêtes API retournaient **404 Not Found** en production
+   - **Symptômes** :
+     - `GET /api/pokemontcg/v2/cards 404 (Not Found)`
+     - Recherches Pokémon impossibles (ex: "Coiffeton" → "quaxly" ✅ traduit mais API inaccessible)
+     - Messages "API Pokemon TCG indisponible" alors que l'API fonctionne
+     - Traductions correctes mais aucune carte trouvée
+   - **Cause racine** : Configuration `vercel.json` incorrecte
+     - Le rewrite catch-all `"/(.*)" → "/index.html"` (ligne 11) capturait **TOUTES les routes**
+     - Y compris `/api/pokemontcg/*` **avant** que le proxy API (ligne 7) ne soit appliqué
+     - Résultat : Vercel redirige `/api/pokemontcg/v2/cards` → `/index.html` (HTML au lieu de JSON)
+   - **Problème historique** : Documenté dans entrée #41 mais jamais résolu correctement
+   - **Corrections appliquées** :
+     - ✅ **Syntaxe moderne rewrites** : `:path*` au lieu de `(.*)`
+       ```json
+       "source": "/api/pokemontcg/:path*",
+       "destination": "https://api.pokemontcg.io/:path*"
+       ```
+     - ✅ **Negative lookahead regex** : `(?!api)` exclut `/api/*` du catch-all SPA
+       ```json
+       "source": "/:path((?!api).*)",
+       "destination": "/index.html"
+       ```
+     - ✅ Suppression de la section `routes` (conflit potentiel avec `rewrites`)
+   - **Comportement après fix** :
+     - `/api/pokemontcg/v2/cards?q=name:quaxly` → Proxy vers `https://api.pokemontcg.io/v2/cards?q=name:quaxly` ✅
+     - `/explorer`, `/collection`, etc. → Redirige vers `/index.html` (SPA React) ✅
+     - `/api/*` (autres routes API) → Non capturées par le catch-all ✅
+   - **Vérification de la fix** :
+     - Status Code : 404 → **200 OK**
+     - Content-Type : `text/html` → **`application/json`**
+     - Réponse : HTML (`<!doctype`) → **JSON valide** (`{"data": [...]}`)
+   - **Impact** :
+     - Recherches Pokémon fonctionnent maintenant en production ! 🎉
+     - "Coiffeton" → "quaxly" → Cartes Quaxly trouvées ✅
+     - "Matourgeon" → "floragato" → Cartes Floragato trouvées ✅
+     - Toutes les traductions françaises opérationnelles
+   - **Fichier** : `vercel.json` lignes 7-12
+   - **Commit** : `d94e93d` - "fix: Correction critique proxy API Vercel (404 → 200)"
+   - **Note** : Ce fix résout définitivement le problème signalé dans l'entrée #41
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
