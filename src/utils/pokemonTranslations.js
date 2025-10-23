@@ -712,7 +712,6 @@ export const POKEMON_TRANSLATIONS = {
   'pandespiègle': 'pancham',
   'pandarbare': 'pangoro',
   'couafarel': 'furfrou',
-  'sucroquin': 'espurr',
   'mistigrix': 'meowstic',
   'psystigri': 'espurr',
   'monorpale': 'honedge',
@@ -872,6 +871,7 @@ export const POKEMON_TRANSLATIONS = {
   'corvaillus': 'corviknight',
   'larvadar': 'blipbug',
   'coléodôme': 'dottler',
+  'coleodome': 'dottler', // Variante sans accents
   'astronelle': 'orbeetle',
   'tournicoton': 'gossifleur',
   'blancoton': 'eldegoss',
@@ -961,7 +961,6 @@ export const POKEMON_TRANSLATIONS = {
   'vrombotor': 'revavroom',
   'motorizard': 'cyclizar',
   'flotillon': 'orthworm',
-  'flotajou': 'panpour',
   'flamenroule': 'clodsire',
   'toutombe': 'farigiraf',
   'hurlurave': 'dudunsparce',
@@ -972,8 +971,8 @@ export const POKEMON_TRANSLATIONS = {
   'taupikeau': 'flutter mane',
   'slitherwing': 'slither wing',
   'ferdeter': 'iron treads',
-  'coléodôme': 'iron bundle',
-  'carmadura': 'iron hands',
+  'hotte-de-fer': 'iron bundle', // Pokémon Paradoxe (ancien Iron Bundle, pas coléodôme!)
+  'garde-de-fer': 'iron hands', // Pokémon Paradoxe (ancien Iron Hands, pas carmadura!)
   'bramboutan': 'iron moth',
   'vert-de-gris': 'iron thorns',
   'frigodo': 'frigibax',
@@ -989,9 +988,10 @@ export const POKEMON_TRANSLATIONS = {
   'fer-de-lance': 'iron valiant',
   'koraidon': 'koraidon',
   'miraidon': 'miraidon',
-  'pohm': 'walking wake',
-  'poltchageist': 'iron leaves',
-  'sinistcha': 'poltchageist',
+  'chien-volant': 'walking wake', // Pokémon Paradoxe DLC
+  'hurle-queue': 'iron leaves', // Pokémon Paradoxe DLC
+  'poltchageist': 'poltchageist',
+  'sinistcha': 'sinistcha',
   'ogerpon': 'ogerpon',
   'ogerpon-puits': 'ogerpon',
   'ogerpon-fourneau': 'ogerpon',

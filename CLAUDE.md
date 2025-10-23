@@ -155,6 +155,19 @@ L'application utilise une architecture en couches de Context API :
      - `vercel.json` : Rewrite direct `/api/pokemontcg/*` remis en place
      - `api/pokemontcg/[...path].js` : Supprimé (non utilisé avec rewrite direct)
    - **Note** : Les Serverless Functions Vercel ne fonctionnent pas comme prévu avec notre config
+42. **🧹 Nettoyage Doublons Traductions** - Correction 9 doublons/erreurs dans dictionnaire Pokémon
+   - **Problème** : Doublons écrasaient bonnes traductions (même bug que denticrisse)
+   - **Corrections appliquées** :
+     - ✅ `coléodôme` → `dottler` (suppression doublon `iron bundle` erroné) + variante sans accents
+     - ✅ `sucroquin` → `swirlix` (suppression doublon `espurr` erroné, déjà `psystigri`)
+     - ✅ `hotte-de-fer` → `iron bundle` (Pokémon Paradoxe, pas coléodôme)
+     - ✅ `garde-de-fer` → `iron hands` (Pokémon Paradoxe, pas carmadura)
+     - ✅ `chien-volant` → `walking wake` (Pokémon Paradoxe DLC, pas pohm)
+     - ✅ `hurle-queue` → `iron leaves` (Pokémon Paradoxe DLC, pas poltchageist)
+     - ✅ `poltchageist` et `sinistcha` → noms corrects
+     - ✅ `flotajou` → doublon supprimé (ligne 964, original ligne 545 OK)
+   - **Fichier** : `src/utils/pokemonTranslations.js` - 9 corrections
+   - **Impact** : Recherches Pokémon Gen 8-9 + Paradoxe maintenant correctes
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
