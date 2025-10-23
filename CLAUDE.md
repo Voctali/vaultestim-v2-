@@ -194,7 +194,7 @@ L'application utilise une architecture en couches de Context API :
      - Sizzlipede/Centiskorch (#850-851): grillepattes, scolocendre
      - Clobbopus/Grapploct (#852-853): poulpaf, krakos
      - Sinistea/Polteageist (#854-855): théffroi, polthégeist
-     - Hatenna line (#856-858): bibichut, chapotus, sorcilusion
+     - Hatenna line (#856-858): bibichut, chapotus, sorcilence
      - Impidimp line (#859-861): grimalin, fourbelin, angoliath
      - Formes Galar (#862-867): ixon, berserkatt, corayôme, palarticho, m. glaquette, tutétékri
      - Alcremie line (#868-869): crèmy, charmilly
