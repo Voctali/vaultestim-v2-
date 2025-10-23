@@ -891,7 +891,7 @@ export const POKEMON_TRANSLATIONS = {
   'polthégeist': 'polteageist',
   'bibichut': 'hatenna',
   'chapotus': 'hattrem',
-  'sorcilusion': 'hatterene',
+  'sorcilence': 'hatterene',
   'grimalin': 'impidimp',
   'fourbelin': 'morgrem',
   'angoliath': 'grimmsnarl',
