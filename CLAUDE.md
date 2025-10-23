@@ -188,6 +188,38 @@ L'application utilise une architecture en couches de Context API :
    - **Placement** : Après nigosier (#845), avant khélocrok (#833)
    - **Fichier** : `src/utils/pokemonTranslations.js` lignes 882-883
    - **Impact** : Recherches "embrochet" (#846) et "barracuda" (#847) trouvent maintenant Arrokuda et Barraskewda
+46. **📚 Extension Massive Dictionnaire Traductions** - Ajout de 75+ traductions Gen 8-9 et corrections
+   - **Traductions Gen 8 ajoutées** (#848-#905) :
+     - Toxel/Toxtricity (#848-849): toxizap, salarsen
+     - Sizzlipede/Centiskorch (#850-851): grillepattes, scolocendre
+     - Clobbopus/Grapploct (#852-853): poulpaf, krakos
+     - Sinistea/Polteageist (#854-855): théffroi, polthégeist
+     - Hatenna line (#856-858): bibichut, chapotus, sorcilusion
+     - Impidimp line (#859-861): grimalin, fourbelin, angoliath
+     - Formes Galar (#862-867): ixon, berserkatt, corayôme, palarticho, m. glaquette, tutétékri
+     - Alcremie line (#868-869): crèmy, charmilly
+     - Divers (#870-884): balinks, wimessir, charibari, pachyradjah, galvagon, galvagla, etc.
+     - Dreepy line (#885-887): fantyrm, dispareptil, lanssorien
+     - Legends Arceus (#899-905): cerbyllin, hachécateur, ursaking, paragruel, farfurex, qwilpik, amovénus
+   - **Corrections Gen 9** (~25 erreurs de mapping) :
+     - terracool/terracruel: toedscool/toedscruel (étaient wiglett/wugtrio ❌)
+     - flotillon: flittle (était orthworm ❌)
+     - ferdeter: orthworm (était iron treads ❌)
+     - flamenroule: flamigo (était clodsire ❌)
+     - toutombe: greavard (était farigiraf ❌)
+     - deusolourdo: dudunsparce (était hurlurave ❌)
+     - + 15 autres corrections critiques
+   - **Traductions Gen 9 ajoutées** :
+     - Formes complètes: forgella, forgelina, tomberro, piétacé, balbalèze, délestin, etc.
+     - Pokémon Paradoxes: fort-ivoire, hurle-queue, fongus-furie, flotte-mèche, rampe-ailes, pelage-sablé, roue-de-fer, paume-de-fer, têtes-de-fer, mite-de-fer, épine-de-fer
+     - Trésors Catastrophes: chongjian, baojian, dinglu, yuyu
+     - DLC Teal Mask & Indigo Disk: serpente-eau, vert-de-fer, pomdramour, théffroyable, félicanis, fortusimia, favianos, pondralugon, pomdorochi, feu-perçant, ire-foudre, roc-de-fer, chef-de-fer, pêchaminusmo
+   - **Résultat** :
+     - **1060 traductions uniques** (vs ~985 avant)
+     - **0 doublons détectés** (vérification script Python)
+     - **Couverture complète** Gen 1-9 incluant tous les DLC
+   - **Fichier** : `src/utils/pokemonTranslations.js`
+   - **Impact** : Toutes les recherches Pokémon Gen 8-9 fonctionnent désormais correctement
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
