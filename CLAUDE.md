@@ -196,7 +196,7 @@ L'application utilise une architecture en couches de Context API :
      - Sinistea/Polteageist (#854-855): théffroi, polthégeist
      - Hatenna line (#856-858): bibichut, chapotus, sorcilence
      - Impidimp line (#859-861): grimalin, fourbelin, angoliath
-     - Formes Galar (#862-867): ixon, berserkatt, corayôme, palarticho, m. glaquette, tutétékri
+     - Formes Galar (#862-867): ixon → galarian obstagoon, berserkatt → galarian perrserker, corayôme → galarian cursola, palarticho → galarian sirfetch'd, m. glaquette → galarian mr. rime, tutétékri → galarian runerigus
      - Alcremie line (#868-869): crèmy, charmilly
      - Divers (#870-884): balinks, wimessir, charibari, pachyradjah, galvagon, galvagla, etc.
      - Dreepy line (#885-887): fantyrm, dispareptil, lanssorien
@@ -220,6 +220,22 @@ L'application utilise une architecture en couches de Context API :
      - **Couverture complète** Gen 1-9 incluant tous les DLC
    - **Fichier** : `src/utils/pokemonTranslations.js`
    - **Impact** : Toutes les recherches Pokémon Gen 8-9 fonctionnent désormais correctement
+47. **🔧 Correction Formes Galar Exclusives** - Ajout préfixe "galarian" pour 6 Pokémon
+   - **Problème identifié** : Recherches "berserkatt", "ixon", "corayôme", etc. ne trouvaient AUCUNE carte
+   - **Cause racine** :
+     - L'API Pokemon TCG utilise le préfixe "Galarian" pour toutes les cartes de ces Pokémon
+     - Exemple : "**Galarian** Perrserker" et NON "Perrserker"
+     - La recherche wildcard `name:perrserker*` ne matche PAS "Galarian Perrserker" (préfixe avant)
+   - **Solution appliquée** : Ajout du préfixe "galarian " dans les traductions de 6 formes Galar exclusives :
+     1. `'ixon'` : obstagoon → **galarian obstagoon** (#862)
+     2. `'berserkatt'` : perrserker → **galarian perrserker** (#863)
+     3. `'corayôme'` : cursola → **galarian cursola** (#864)
+     4. `'palarticho'` : sirfetch'd → **galarian sirfetch'd** (#865)
+     5. `'m. glaquette'` : mr. rime → **galarian mr. rime** (#866)
+     6. `'tutétékri'` : runerigus → **galarian runerigus** (#867)
+   - **Vérification** : Bulbapedia confirme que **TOUTES** les cartes TCG de ces 6 Pokémon utilisent le préfixe "Galarian" sans exception
+   - **Impact** : Les recherches françaises trouvent maintenant correctement les cartes Galar (ex: "berserkatt" → "galarian perrserker" → cartes trouvées ✅)
+   - **Fichier** : `src/utils/pokemonTranslations.js` lignes 898-903
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
