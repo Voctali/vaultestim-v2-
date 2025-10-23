@@ -180,6 +180,14 @@ L'application utilise une architecture en couches de Context API :
    - **Placement** : Après dunaconda (#844), avant khélocrok (#846)
    - **Fichier** : `src/utils/pokemonTranslations.js` ligne 881
    - **Impact** : Recherche "nigosier" trouve maintenant Cramorant (#845)
+45. **➕ Ajout Ligne Évolutive** - Embrochet/Barracuda (Arrokuda/Barraskewda) Gen 8
+   - **Problème signalé** : "Embrochet n'est pas traduit en Arrokuda"
+   - **Solution** : Ajout ligne évolutive complète
+     - `'embrochet': 'arrokuda'` (ligne 882)
+     - `'barracuda': 'barraskewda'` (ligne 883)
+   - **Placement** : Après nigosier (#845), avant khélocrok (#833)
+   - **Fichier** : `src/utils/pokemonTranslations.js` lignes 882-883
+   - **Impact** : Recherches "embrochet" (#846) et "barracuda" (#847) trouvent maintenant Arrokuda et Barraskewda
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
