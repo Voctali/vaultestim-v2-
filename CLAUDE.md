@@ -168,6 +168,12 @@ L'application utilise une architecture en couches de Context API :
      - ✅ `flotajou` → doublon supprimé (ligne 964, original ligne 545 OK)
    - **Fichier** : `src/utils/pokemonTranslations.js` - 9 corrections
    - **Impact** : Recherches Pokémon Gen 8-9 + Paradoxe maintenant correctes
+43. **➕ Ajout Traduction Manquante** - Dunaconda (Sandaconda) Gen 8
+   - **Problème signalé** : "Dunaconda n'est pas traduit en sandaconda"
+   - **Solution** : Ajout `'dunaconda': 'sandaconda'` dans section Gen 8
+   - **Note** : `dunaja` (Silicobra) existait déjà ligne 911
+   - **Fichier** : `src/utils/pokemonTranslations.js` ligne 880
+   - **Impact** : Recherche "dunaconda" trouve maintenant Sandaconda
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
