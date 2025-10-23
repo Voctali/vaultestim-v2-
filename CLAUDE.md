@@ -174,6 +174,12 @@ L'application utilise une architecture en couches de Context API :
    - **Note** : `dunaja` (Silicobra) existait déjà ligne 911
    - **Fichier** : `src/utils/pokemonTranslations.js` ligne 880
    - **Impact** : Recherche "dunaconda" trouve maintenant Sandaconda
+44. **➕ Ajout Traduction Manquante** - Nigosier (Cramorant) Gen 8
+   - **Problème signalé** : "Nigosier n'est pas traduit en Cramorant"
+   - **Solution** : Ajout `'nigosier': 'cramorant'` dans section Gen 8
+   - **Placement** : Après dunaconda (#844), avant khélocrok (#846)
+   - **Fichier** : `src/utils/pokemonTranslations.js` ligne 881
+   - **Impact** : Recherche "nigosier" trouve maintenant Cramorant (#845)
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)

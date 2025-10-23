@@ -878,6 +878,7 @@ export const POKEMON_TRANSLATIONS = {
   'moumouton': 'wooloo',
   'moumouflon': 'dubwool',
   'dunaconda': 'sandaconda',
+  'nigosier': 'cramorant',
   'khélocrok': 'chewtle',
   'torgamord': 'drednaw',
   'voltoutou': 'yamper',
