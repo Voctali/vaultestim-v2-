@@ -146,16 +146,15 @@ L'application utilise une architecture en couches de Context API :
    - **Solution** : Wildcard sans guillemets → `name:pheromosa*` conforme à l'API Pokemon TCG
    - **Impact** : Recherches traduites (ex: "cancrelove" → "pheromosa") fonctionnent maintenant
    - **Fichier** : `src/services/TCGdxService.js` - méthode `searchCards()` ligne 154-156
-41. **⏱️ Amélioration Gestion Timeouts** - Protection contre timeouts excessifs de l'API Pokemon TCG
-   - **Problème** : API Pokemon TCG peut prendre 40-50+ secondes, causant 504 Gateway Timeout
-   - **Solutions appliquées** :
-     - Timeout explicite de 55s dans Vercel Function (marge de 5s pour Vercel maxDuration 60s)
-     - Configuration `maxDuration: 60` pour toutes les functions dans `vercel.json`
-     - Suppression des rewrites qui court-circuitaient la Serverless Function
-     - Gestion propre des AbortError avec message explicite
+41. **🔄 Rollback Proxy API** - Retour au rewrite direct suite problème Serverless Function
+   - **Problème initial** : Tentative d'utiliser Serverless Function pour meilleur contrôle (timeout 60s, logs)
+   - **Problème découvert** : Rewrite catch-all `/(.*) → /index.html` capturait les requêtes API
+   - **Symptôme** : API retournait HTML au lieu de JSON (`Status 200` mais `<!doctype`)
+   - **Solution** : Retour au rewrite direct vers `https://api.pokemontcg.io`
    - **Fichiers** :
-     - `api/pokemontcg/[...path].js` : AbortController + timeout 55s
-     - `vercel.json` : Configuration maxDuration + suppression rewrite conflictuel
+     - `vercel.json` : Rewrite direct `/api/pokemontcg/*` remis en place
+     - `api/pokemontcg/[...path].js` : Supprimé (non utilisé avec rewrite direct)
+   - **Note** : Les Serverless Functions Vercel ne fonctionnent pas comme prévu avec notre config
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)

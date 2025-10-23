@@ -2,12 +2,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 60
-    }
-  },
   "rewrites": [
+    {
+      "source": "/api/pokemontcg/(.*)",
+      "destination": "https://api.pokemontcg.io/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
