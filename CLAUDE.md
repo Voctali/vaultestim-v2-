@@ -236,6 +236,47 @@ L'application utilise une architecture en couches de Context API :
    - **Vérification** : Bulbapedia confirme que **TOUTES** les cartes TCG de ces 6 Pokémon utilisent le préfixe "Galarian" sans exception
    - **Impact** : Les recherches françaises trouvent maintenant correctement les cartes Galar (ex: "berserkatt" → "galarian perrserker" → cartes trouvées ✅)
    - **Fichier** : `src/utils/pokemonTranslations.js` lignes 898-903
+48. **🔧 Correction Critique IndexedDB** - Reconnexion automatique et système de retry
+   - **Problème identifié** : Erreurs répétées `InvalidStateError: The database connection is closing.`
+   - **Symptômes** :
+     - Cache IndexedDB ne se met pas à jour (sauvegarde échoue)
+     - Cartes sauvegardées dans Supabase ✅ mais pas en local ❌
+     - Chargement lent à chaque reconnexion (pas de cache)
+     - Erreurs sporadiques de connexion fermée de manière inattendue
+   - **Causes racines** :
+     - Transactions concurrentes sur connexion fermée
+     - Pas de vérification de validité de connexion
+     - Problèmes multi-onglets (changements de version)
+     - Navigateur ferme la connexion pour économiser ressources
+     - Aucun système de retry en cas d'échec
+   - **Corrections appliquées** :
+     - ✅ Ajout méthode `isConnectionValid()` : Vérifie si connexion DB est vivante
+     - ✅ Reconnexion automatique dans `initDB()` : Détecte et réinitialise connexion fermée
+     - ✅ Event handlers lifecycle : `onclose`, `onversionchange` pour détecter fermetures
+     - ✅ Protection concurrence : Flag `isInitializing` empêche initialisations multiples simultanées
+     - ✅ Handler `onblocked` : Gestion des connexions bloquées (multi-onglets)
+     - ✅ **Système de retry avec backoff exponentiel** :
+       - Méthode `withRetry(operation, maxRetries = 3)` : Wrapper générique pour toutes transactions
+       - Détection erreurs connexion (`InvalidStateError`, message "closing")
+       - Backoff exponentiel : Attente de 100ms, 200ms, 300ms entre tentatives
+       - Réinitialisation connexion automatique avant chaque retry
+       - 3 tentatives maximum avant échec définitif
+     - ✅ Application du retry sur **toutes** les méthodes de transaction :
+       - `getAllCards()` : Lecture cache avec retry
+       - `saveCards()` : Sauvegarde batch avec retry
+       - `deleteCard()` : Suppression avec retry
+       - `clearCache()` : Vidage cache avec retry
+       - `getMetadata()` : Lecture métadonnées avec retry
+       - `setMetadata()` : Sauvegarde métadonnées avec retry
+       - `getCacheStats()` : Statistiques avec retry
+   - **Impact** :
+     - Cache IndexedDB fiable même en cas de fermeture inattendue
+     - Meilleure gestion multi-onglets sans conflits
+     - Performance optimale grâce au cache local fonctionnel
+     - Fallback Supabase si échec après tous les retries
+     - Logs détaillés pour debugging (`⚠️ Tentative X/3 échouée, reconnexion...`)
+   - **Fichier** : `src/services/CardCacheService.js` - Refactoring complet
+   - **Commit** : `e6044d1` - "fix: Correction critique IndexedDB - reconnexion automatique et retry"
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
