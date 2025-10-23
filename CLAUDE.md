@@ -141,6 +141,11 @@ L'application utilise une architecture en couches de Context API :
    - **_last_viewed** : TIMESTAMPTZ - Timestamp dernière consultation (priorisation)
    - **Index GIN créés** : Optimisation requêtes de priorisation pour PriceRefreshService
    - **Table** : `discovered_cards` - Requis pour système actualisation automatique quotidienne
+40. **🔧 Correction Syntaxe Wildcard API** - Fix erreur 400 pour recherches wildcard avec traductions
+   - **Problème** : `name:"pheromosa"*` générait Bad Request 400 (syntaxe invalide)
+   - **Solution** : Wildcard sans guillemets → `name:pheromosa*` conforme à l'API Pokemon TCG
+   - **Impact** : Recherches traduites (ex: "cancrelove" → "pheromosa") fonctionnent maintenant
+   - **Fichier** : `src/services/TCGdxService.js` - méthode `searchCards()` ligne 154-156
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
@@ -820,6 +825,11 @@ Si vous quittez, la migration s'arrêtera mais vous pourrez la reprendre à 20%.
   - **Cause** : Caractère `&` non encodé dans URL cassait la query string
   - **Solution** : `encodeURIComponent()` pour encoder tous les caractères spéciaux (&, ', ", etc.)
   - **Fichier** : `src/services/TCGdxService.js` lignes 137-157
+- **❌ RÉSOLU - Erreur 400 pour recherche wildcard** : Recherches comme "cancrelove" (→ "pheromosa") échouaient avec Bad Request
+  - **Cause** : Syntaxe invalide `name:"pheromosa"*` (guillemets + wildcard incompatibles)
+  - **Solution** : Wildcard sans guillemets → `name:pheromosa*` au lieu de `name:"pheromosa"*`
+  - **Fichier** : `src/services/TCGdxService.js` ligne 154-156
+  - **Syntaxe correcte API** : Exacte `name:"nom"` | Wildcard `name:nom*` (sans guillemets)
 
 #### **Problèmes de Synchronisation**
 - **Multi-device** : Synchronisation Supabase automatique avec cache local pour performance

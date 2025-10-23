@@ -151,8 +151,9 @@ export class TCGdxService {
 
       // 2. Si aucun résultat, essayer avec wildcard
       if (cards.length === 0) {
-        const encodedWildcardQuery = encodeURIComponent(`"${translatedQuery}"*`)
-        const wildcardUrl = `${this.BASE_URL}/cards?q=name:${encodedWildcardQuery}&pageSize=${limit}`
+        // Wildcard : PAS de guillemets (syntaxe API: name:pheromosa* et NON name:"pheromosa"*)
+        const wildcardQuery = encodeURIComponent(translatedQuery) + '*'
+        const wildcardUrl = `${this.BASE_URL}/cards?q=name:${wildcardQuery}&pageSize=${limit}`
         console.log(`🔍 Recherche avec wildcard: "${translatedQuery}*"`)
         const wildcardResult = await this.makeRequestWithRetry(wildcardUrl, 3)
         cards = wildcardResult.data || []
