@@ -880,7 +880,7 @@ export const POKEMON_TRANSLATIONS = {
   'dunaconda': 'sandaconda',
   'nigosier': 'cramorant',
   'embrochet': 'arrokuda',
-  'barracuda': 'barraskewda',
+  'hastacuda': 'barraskewda',
   'toxizap': 'toxel',
   'salarsen': 'toxtricity',
   'grillepattes': 'sizzlipede',
