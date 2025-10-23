@@ -898,6 +898,7 @@ export const POKEMON_TRANSLATIONS = {
   'ixon': 'galarian obstagoon',
   'berserkatt': 'galarian perrserker',
   'corayôme': 'galarian cursola',
+  'corayome': 'galarian cursola', // Variante sans accent
   'palarticho': 'galarian sirfetch\'d',
   'm. glaquette': 'galarian mr. rime',
   'tutétékri': 'galarian runerigus',
