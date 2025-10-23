@@ -35,22 +35,45 @@ export default async function handler(req, res) {
       headers['X-Api-Key'] = process.env.VITE_POKEMON_TCG_API_KEY
     }
 
-    // Faire la requête vers l'API Pokemon TCG
-    const response = await fetch(fullUrl, {
-      method: req.method,
-      headers
-    })
+    // Créer un AbortController avec timeout de 55 secondes
+    // (laisse 5s de marge pour le maxDuration de 60s de Vercel)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 55000)
 
-    // Récupérer le contenu
-    const data = await response.json()
+    try {
+      // Faire la requête vers l'API Pokemon TCG
+      const response = await fetch(fullUrl, {
+        method: req.method,
+        headers,
+        signal: controller.signal
+      })
 
-    // Retourner avec les bons headers CORS
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Api-Key')
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate')
+      clearTimeout(timeout)
 
-    res.status(response.status).json(data)
+      // Récupérer le contenu
+      const data = await response.json()
+
+      // Retourner avec les bons headers CORS
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Api-Key')
+      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate')
+
+      res.status(response.status).json(data)
+
+    } catch (fetchError) {
+      clearTimeout(timeout)
+
+      // Gérer timeout spécifiquement
+      if (fetchError.name === 'AbortError') {
+        console.error('[Proxy] Timeout après 55s')
+        return res.status(504).json({
+          error: 'Gateway Timeout',
+          message: 'L\'API Pokemon TCG met trop de temps à répondre (>55s)'
+        })
+      }
+      throw fetchError
+    }
 
   } catch (error) {
     console.error('[Proxy] Erreur:', error)

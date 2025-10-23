@@ -146,6 +146,16 @@ L'application utilise une architecture en couches de Context API :
    - **Solution** : Wildcard sans guillemets → `name:pheromosa*` conforme à l'API Pokemon TCG
    - **Impact** : Recherches traduites (ex: "cancrelove" → "pheromosa") fonctionnent maintenant
    - **Fichier** : `src/services/TCGdxService.js` - méthode `searchCards()` ligne 154-156
+41. **⏱️ Amélioration Gestion Timeouts** - Protection contre timeouts excessifs de l'API Pokemon TCG
+   - **Problème** : API Pokemon TCG peut prendre 40-50+ secondes, causant 504 Gateway Timeout
+   - **Solutions appliquées** :
+     - Timeout explicite de 55s dans Vercel Function (marge de 5s pour Vercel maxDuration 60s)
+     - Configuration `maxDuration: 60` pour toutes les functions dans `vercel.json`
+     - Suppression des rewrites qui court-circuitaient la Serverless Function
+     - Gestion propre des AbortError avec message explicite
+   - **Fichiers** :
+     - `api/pokemontcg/[...path].js` : AbortController + timeout 55s
+     - `vercel.json` : Configuration maxDuration + suppression rewrite conflictuel
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
