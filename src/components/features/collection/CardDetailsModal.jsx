@@ -369,8 +369,6 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
               <div className="flex flex-wrap gap-3 text-sm">
                 {/* CardMarket - Composant optimisé avec copie et fallback */}
                 <CardMarketLink card={card} />
-                )}
-                )}
               </div>
 
               <div className="text-xs text-muted-foreground">

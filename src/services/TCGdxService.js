@@ -203,10 +203,6 @@ export class TCGdxService {
           console.log(`⚠️ Aucune correspondance valide pour "${translatedQuery}" - ${cards.length} résultats ignorés car non pertinents`)
         }
       }
-      } else if (cards.length === 0 && translatedQuery.includes(' ')) {
-        // Les noms avec espaces ne peuvent utiliser la wildcard (syntaxe API non supportée)
-        console.log()
-
       console.log(`🔍 Total: ${cards.length} cartes pour "${query}"`)
 
       const normalizedCards = this.normalizePokemonTCGData(cards)

@@ -182,8 +182,6 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
               <div className="flex flex-wrap gap-3 text-sm">
                 {/* CardMarket - Composant optimisé avec copie et fallback */}
                 <CardMarketLink card={card} />
-                )}
-                )}
               </div>
             </div>
 

@@ -112,8 +112,6 @@ export function CardPreviewModal({ isOpen, onClose, card, onAddToCollection }) {
               <div className="flex flex-wrap gap-3 text-sm pt-2">
                 {/* CardMarket - Composant optimisé avec copie et fallback */}
                 <CardMarketLink card={card} />
-                )}
-                )}
               </div>
 
               {/* Subtypes */}
