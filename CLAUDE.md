@@ -1001,6 +1001,12 @@ Si vous quittez, la migration s'arrêtera mais vous pourrez la reprendre à 20%.
   - **Solution** : Wildcard sans guillemets → `name:pheromosa*` au lieu de `name:"pheromosa"*`
   - **Fichier** : `src/services/TCGdxService.js` ligne 154-156
   - **Syntaxe correcte API** : Exacte `name:"nom"` | Wildcard `name:nom*` (sans guillemets)
+- **❌ RÉSOLU - Erreur 400 pour wildcard avec espaces** : Recherches de cartes avec espaces ("quaquaval ex") généraient Bad Request lors de la recherche wildcard
+  - **Symptôme** : `GET /api/pokemontcg/v2/cards?q=name:quaquaval%20ex*&pageSize=100 400 (Bad Request)`
+  - **Cause** : La syntaxe wildcard avec espaces `name:quaquaval ex*` est invalide pour l'API Pokemon TCG
+  - **Solution** : Ajouter condition `&& !translatedQuery.includes(' ')` pour skipper wildcard si nom contient un espace
+  - **Fichier** : `src/services/TCGdxService.js` ligne 154
+  - **Comportement** : Pour noms avec espaces, utilise uniquement la recherche exacte (avec guillemets)
 
 #### **Problèmes de Synchronisation**
 - **Multi-device** : Synchronisation Supabase automatique avec cache local pour performance

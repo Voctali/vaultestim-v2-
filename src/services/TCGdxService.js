@@ -149,8 +149,9 @@ export class TCGdxService {
         console.log(`⚠️ Recherche exacte échouée, essai avec wildcard...`)
       }
 
-      // 2. Si aucun résultat, essayer avec wildcard
-      if (cards.length === 0) {
+      // 2. Si aucun résultat, essayer avec wildcard (SEULEMENT si pas d'espace)
+      // IMPORTANT: Les wildcards ne fonctionnent PAS avec les espaces (ex: "quaquaval ex*" = 400 Bad Request)
+      if (cards.length === 0 && !translatedQuery.includes(' ')) {
         // Wildcard : PAS de guillemets (syntaxe API: name:pheromosa* et NON name:"pheromosa"*)
         const wildcardQuery = encodeURIComponent(translatedQuery) + '*'
         const wildcardUrl = `${this.BASE_URL}/cards?q=name:${wildcardQuery}&pageSize=${limit}`
@@ -202,6 +203,9 @@ export class TCGdxService {
           console.log(`⚠️ Aucune correspondance valide pour "${translatedQuery}" - ${cards.length} résultats ignorés car non pertinents`)
         }
       }
+      } else if (cards.length === 0 && translatedQuery.includes(' ')) {
+        // Les noms avec espaces ne peuvent utiliser la wildcard (syntaxe API non supportée)
+        console.log()
 
       console.log(`🔍 Total: ${cards.length} cartes pour "${query}"`)
 

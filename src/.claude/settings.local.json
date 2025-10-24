@@ -82,7 +82,9 @@
       "Bash(start https://vaultestim-v2.vercel.app)",
       "Bash(start chrome --incognito https://vaultestim-v2.vercel.app)",
       "Bash(start https://vaultestim-v2.vercel.app/produits-scelles)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "WebFetch(domain:api.pokemontcg.io)",
+      "Bash(tasklist:*)"
     ],
     "deny": [],
     "ask": []
