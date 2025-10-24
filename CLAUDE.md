@@ -188,7 +188,15 @@ L'application utilise une architecture en couches de Context API :
    - **Placement** : Après nigosier (#845), avant khélocrok (#833)
    - **Fichier** : `src/utils/pokemonTranslations.js` lignes 882-883
    - **Impact** : Recherches "embrochet" (#846) et "hastacuda" (#847) trouvent maintenant Arrokuda et Barraskewda
-46. **📚 Extension Massive Dictionnaire Traductions** - Ajout de 75+ traductions Gen 8-9 et corrections
+46. **➕ Correction Traduction** - Pêchaminus (Pecharunt) Gen 9
+   - **Problème signalé** : "Pêchaminus n'est pas traduit en pecharunt"
+   - **Cause** : Traduction incorrecte `'pêchaminusmo': 'pecharunt'` (avec "mo" à la fin)
+   - **Solution** : Correction du nom français correct + ajout variante sans accent
+     - `'pêchaminus': 'pecharunt'` (nom officiel français)
+     - `'pechaminus': 'pecharunt'` (variante sans accent)
+   - **Fichier** : `src/utils/pokemonTranslations.js` lignes 1090-1091
+   - **Impact** : Recherche "pêchaminus" trouve maintenant Pecharunt
+47. **📚 Extension Massive Dictionnaire Traductions** - Ajout de 75+ traductions Gen 8-9 et corrections
    - **Traductions Gen 8 ajoutées** (#848-#905) :
      - Toxel/Toxtricity (#848-849): toxizap, salarsen
      - Sizzlipede/Centiskorch (#850-851): grillepattes, scolocendre
@@ -213,14 +221,14 @@ L'application utilise une architecture en couches de Context API :
      - Formes complètes: forgella, forgelina, tomberro, piétacé, balbalèze, délestin, etc.
      - Pokémon Paradoxes: fort-ivoire, hurle-queue, fongus-furie, flotte-mèche, rampe-ailes, pelage-sablé, roue-de-fer, paume-de-fer, têtes-de-fer, mite-de-fer, épine-de-fer
      - Trésors Catastrophes: chongjian, baojian, dinglu, yuyu
-     - DLC Teal Mask & Indigo Disk: serpente-eau, vert-de-fer, pomdramour, théffroyable, félicanis, fortusimia, favianos, pondralugon, pomdorochi, feu-perçant, ire-foudre, roc-de-fer, chef-de-fer, pêchaminusmo
+     - DLC Teal Mask & Indigo Disk: serpente-eau, vert-de-fer, pomdramour, théffroyable, félicanis, fortusimia, favianos, pondralugon, pomdorochi, feu-perçant, ire-foudre, roc-de-fer, chef-de-fer, pêchaminus
    - **Résultat** :
      - **1060 traductions uniques** (vs ~985 avant)
      - **0 doublons détectés** (vérification script Python)
      - **Couverture complète** Gen 1-9 incluant tous les DLC
    - **Fichier** : `src/utils/pokemonTranslations.js`
    - **Impact** : Toutes les recherches Pokémon Gen 8-9 fonctionnent désormais correctement
-47. **🔧 Correction Formes Galar Exclusives** - Ajout préfixe "galarian" pour 6 Pokémon
+48. **🔧 Correction Formes Galar Exclusives** - Ajout préfixe "galarian" pour 6 Pokémon
    - **Problème identifié** : Recherches "berserkatt", "ixon", "corayôme", etc. ne trouvaient AUCUNE carte
    - **Cause racine** :
      - L'API Pokemon TCG utilise le préfixe "Galarian" pour toutes les cartes de ces Pokémon
@@ -236,7 +244,7 @@ L'application utilise une architecture en couches de Context API :
    - **Vérification** : Bulbapedia confirme que **TOUTES** les cartes TCG de ces 6 Pokémon utilisent le préfixe "Galarian" sans exception
    - **Impact** : Les recherches françaises trouvent maintenant correctement les cartes Galar (ex: "berserkatt" → "galarian perrserker" → cartes trouvées ✅)
    - **Fichier** : `src/utils/pokemonTranslations.js` lignes 898-903
-48. **🔧 Correction Critique IndexedDB** - Reconnexion automatique et système de retry
+49. **🔧 Correction Critique IndexedDB** - Reconnexion automatique et système de retry
    - **Problème identifié** : Erreurs répétées `InvalidStateError: The database connection is closing.`
    - **Symptômes** :
      - Cache IndexedDB ne se met pas à jour (sauvegarde échoue)
@@ -277,7 +285,7 @@ L'application utilise une architecture en couches de Context API :
      - Logs détaillés pour debugging (`⚠️ Tentative X/3 échouée, reconnexion...`)
    - **Fichier** : `src/services/CardCacheService.js` - Refactoring complet
    - **Commit** : `e6044d1` - "fix: Correction critique IndexedDB - reconnexion automatique et retry"
-49. **🌐 Fix Proxy API Vercel (404 → 200)** - Correction du catch-all capturant les routes API
+50. **🌐 Fix Proxy API Vercel (404 → 200)** - Correction du catch-all capturant les routes API
    - **Problème identifié** : Toutes les requêtes API retournaient **404 Not Found** en production
    - **Symptômes** :
      - `GET /api/pokemontcg/v2/cards 404 (Not Found)`

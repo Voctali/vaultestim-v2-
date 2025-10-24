@@ -1087,7 +1087,8 @@ export const POKEMON_TRANSLATIONS = {
   'roc-de-fer': 'iron boulder',
   'chef-de-fer': 'iron crown',
   'terapagos': 'terapagos',
-  'pêchaminusmo': 'pecharunt',
+  'pêchaminus': 'pecharunt',
+  'pechaminus': 'pecharunt', // Variante sans accent
 
   // Cartes Dresseur (Trainer Cards)
   'aide de nina': 'daisy\'s help',
