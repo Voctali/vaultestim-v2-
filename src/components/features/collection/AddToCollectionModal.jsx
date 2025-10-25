@@ -11,11 +11,13 @@ import { CardMarketLink } from '@/components/features/collection/CardMarketLinks
 import { AVAILABLE_CONDITIONS, translateCondition } from '@/utils/cardConditions'
 import { formatCardPriceWithCondition } from '@/utils/priceFormatter'
 import { translateCardName } from '@/utils/cardTranslations'
-import { ArrowLeft, Plus, ExternalLink, Package } from 'lucide-react'
+import { ArrowLeft, Plus, Minus, Trash2, ExternalLink, Package } from 'lucide-react'
 import { useCollection } from '@/hooks/useCollection.jsx'
+import { useToast } from '@/hooks/useToast'
 
 export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
-  const { collection } = useCollection()
+  const { collection, updateCardQuantity, removeFromCollection } = useCollection()
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     quantity: 1,
     condition: 'near_mint', // État par défaut (Quasi-neuf)
@@ -65,6 +67,70 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
       tcgPlayerPrice: card.tcgPlayerPrice,
       tcgPlayerURL: card.tcgPlayerPrice?.url
     })
+  }
+
+  // Handlers pour modification rapide de quantité
+  const handleIncreaseQuantity = (version, condition) => {
+    if (!card) return
+
+    // Trouver toutes les cartes correspondantes dans la collection
+    const matchingCards = collection.filter(c =>
+      c.card_id === card.id &&
+      c.version === version &&
+      c.condition === condition
+    )
+
+    if (matchingCards.length > 0) {
+      // Augmenter la quantité de la première carte trouvée
+      updateCardQuantity(matchingCards[0].id, (matchingCards[0].quantity || 1) + 1)
+      toast({
+        title: 'Quantité augmentée',
+        description: `${translateCardName(card.name)} (${version}, ${translateCondition(condition)})`,
+        variant: 'success'
+      })
+    }
+  }
+
+  const handleDecreaseQuantity = (version, condition) => {
+    if (!card) return
+
+    const matchingCards = collection.filter(c =>
+      c.card_id === card.id &&
+      c.version === version &&
+      c.condition === condition
+    )
+
+    if (matchingCards.length > 0) {
+      const newQuantity = (matchingCards[0].quantity || 1) - 1
+      if (newQuantity > 0) {
+        updateCardQuantity(matchingCards[0].id, newQuantity)
+        toast({
+          title: 'Quantité diminuée',
+          description: `${translateCardName(card.name)} (${version}, ${translateCondition(condition)})`,
+          variant: 'success'
+        })
+      }
+    }
+  }
+
+  const handleDeleteGroup = (version, condition) => {
+    if (!card) return
+
+    const matchingCards = collection.filter(c =>
+      c.card_id === card.id &&
+      c.version === version &&
+      c.condition === condition
+    )
+
+    if (matchingCards.length > 0) {
+      // Supprimer tous les exemplaires de ce groupe
+      matchingCards.forEach(c => removeFromCollection(c.id))
+      toast({
+        title: 'Exemplaire supprimé',
+        description: `${translateCardName(card.name)} (${version}, ${translateCondition(condition)})`,
+        variant: 'success'
+      })
+    }
   }
 
   const handleSubmit = (e) => {
@@ -186,7 +252,7 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
               </div>
             </div>
 
-            {/* Vos exemplaires (identique à CardDetailsModal) */}
+            {/* Vos exemplaires (avec modification rapide de quantité) */}
             {existingCopies.length > 0 && (
               <div className="space-y-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                 <h3 className="text-lg font-semibold golden-glow">Vos exemplaires ({totalCopies})</h3>
@@ -206,11 +272,46 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
                         </div>
                       </div>
 
-                      {/* Quantité (sans boutons d'action) */}
-                      <div className="flex items-center">
-                        <span className="text-lg font-bold min-w-[2rem] text-center text-blue-400">
-                          ×{copy.quantity}
+                      {/* Boutons d'action (modification rapide) */}
+                      <div className="flex items-center gap-2">
+                        {/* Bouton diminuer ou supprimer */}
+                        {copy.quantity === 1 ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteGroup(copy.version, copy.condition)}
+                            className="h-9 w-9 p-0 hover:bg-red-500/10"
+                            title="Supprimer cet exemplaire"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDecreaseQuantity(copy.version, copy.condition)}
+                            className="h-9 w-9 p-0 hover:bg-accent"
+                            title="Diminuer la quantité"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                        )}
+
+                        {/* Quantité */}
+                        <span className="text-lg font-bold min-w-[2rem] text-center">
+                          {copy.quantity}
                         </span>
+
+                        {/* Bouton augmenter */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleIncreaseQuantity(copy.version, copy.condition)}
+                          className="h-9 w-9 p-0 hover:bg-accent"
+                          title="Augmenter la quantité"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
