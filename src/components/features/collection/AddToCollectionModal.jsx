@@ -186,28 +186,32 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
               </div>
             </div>
 
-            {/* Existing Copies in Collection */}
+            {/* Vos exemplaires (identique à CardDetailsModal) */}
             {existingCopies.length > 0 && (
-              <div className="space-y-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Package className="w-5 h-5 text-blue-400" />
-                  <h3 className="text-sm font-semibold text-blue-400">
-                    Exemplaires en collection ({totalCopies})
-                  </h3>
-                </div>
+              <div className="space-y-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <h3 className="text-lg font-semibold golden-glow">Vos exemplaires ({totalCopies})</h3>
+
                 <div className="space-y-2">
                   {existingCopies.map((copy, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm bg-background/50 p-2 rounded">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="text-xs">
-                          {translateCondition(copy.condition)}
-                        </Badge>
-                        <span className="text-muted-foreground">•</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {copy.version}
-                        </Badge>
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-primary/10 border-primary/30"
+                    >
+                      {/* Drapeau et informations */}
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="text-2xl">🇫🇷</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold">{copy.version}</span>
+                          <span className="text-xs text-muted-foreground">{translateCondition(copy.condition)}</span>
+                        </div>
                       </div>
-                      <span className="font-semibold text-blue-400">x{copy.quantity}</span>
+
+                      {/* Quantité (sans boutons d'action) */}
+                      <div className="flex items-center">
+                        <span className="text-lg font-bold min-w-[2rem] text-center text-blue-400">
+                          ×{copy.quantity}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
