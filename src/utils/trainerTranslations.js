@@ -36,6 +36,7 @@ const TRAINER_TRANSLATIONS = {
   'charme d atalante': 'lisia\'s appeal', // Variante espace
   'charme atalante': 'lisia\'s appeal', // Variante courte
   'atalante': 'lisia', // Nom du personnage seul (carte plus ancienne, Celestial Storm)
+  'tcheren': 'cheren', // Rival de Pokémon Noir et Blanc (Gen 5)
 
   // ========================================
   // OBJETS ET CARTES DRESSEUR
