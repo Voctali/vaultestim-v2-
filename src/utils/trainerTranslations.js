@@ -13,6 +13,9 @@ const TRAINER_TRANSLATIONS = {
   // Johto (Gen 2)
   'albert': 'falkner', // Mauville/Violette - Type Vol
 
+  // Paldea (Gen 9)
+  'alisma': 'geeta', // Maîtresse de la Ligue Pokémon
+
   // ========================================
   // AUTRES DRESSEURS
   // ========================================
