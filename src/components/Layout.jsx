@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, Navigate, useLocation } from 'react-router-dom'
 import { Sidebar } from '@/components/features/navigation/Sidebar'
 import { MobileTabBar } from '@/components/features/navigation/MobileTabBar'
@@ -10,6 +10,17 @@ export function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const { isAuthenticated, isAdmin, loading } = useAuth()
   const location = useLocation()
+
+  // Initialiser Eruda (console mobile) uniquement pour les admins
+  useEffect(() => {
+    if (isAdmin && window.eruda) {
+      window.eruda.init()
+      console.log('🔧 Eruda activé pour admin')
+    } else if (!isAdmin && window.eruda && window.eruda._isInit) {
+      window.eruda.destroy()
+      console.log('🔧 Eruda désactivé (non-admin)')
+    }
+  }, [isAdmin])
 
   if (loading) {
     return (
