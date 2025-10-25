@@ -5,6 +5,7 @@
 
 import { CacheService } from './CacheService'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
+import { translateTrainerName } from '@/utils/trainerTranslations'
 import { translateRarity } from '@/utils/cardConditions'
 
 export class TCGdxService {
@@ -603,8 +604,17 @@ export class TCGdxService {
    * Utilise le dictionnaire centralisé dans pokemonTranslations.js
    */
   static translateToEnglish(frenchName) {
-    // Utiliser le dictionnaire centralisé
-    return translatePokemonName(frenchName)
+    // Essayer d'abord dans les Pokémon
+    const pokemonTranslation = translatePokemonName(frenchName)
+
+    // Si une traduction Pokémon est trouvée (différent du nom original)
+    if (pokemonTranslation !== frenchName) {
+      return pokemonTranslation
+    }
+
+    // Sinon, essayer dans les Dresseurs
+    const trainerTranslation = translateTrainerName(frenchName)
+    return trainerTranslation
   }
 
   /**
