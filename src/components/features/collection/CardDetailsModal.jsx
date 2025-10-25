@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { CardMarketLink } from '@/components/features/collection/CardMarketLinks'
 import { useCollection } from '@/hooks/useCollection.jsx'
-import { formatCardPrice } from '@/utils/priceFormatter'
+import { formatCardPrice, formatCardPriceWithCondition } from '@/utils/priceFormatter'
 import { translateCondition } from '@/utils/cardConditions'
 import { translateCardName } from '@/utils/cardTranslations'
 import { ArrowLeft, Edit2, Save, X, Heart, List, Trash2, ExternalLink, Plus, Minus, Flag } from 'lucide-react'
@@ -283,6 +283,10 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold">{group.version}</span>
                           <span className="text-xs text-muted-foreground">{translateCondition(group.condition)}</span>
+                          {/* Prix selon version et condition */}
+                          <span className="text-xs text-green-500 font-semibold mt-0.5">
+                            {formatCardPriceWithCondition(card, group.condition, 2, group.version)}
+                          </span>
                         </div>
                       </div>
 
@@ -424,6 +428,7 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
                         <SelectItem value="Normale">Normale</SelectItem>
                         <SelectItem value="Reverse Holo">Reverse Holo</SelectItem>
                         <SelectItem value="Holo">Holo</SelectItem>
+                        <SelectItem value="Tampon (logo extension)">Tampon (logo extension)</SelectItem>
                         <SelectItem value="Full Art">Full Art</SelectItem>
                         <SelectItem value="Alternate Art">Alternate Art</SelectItem>
                       </SelectContent>

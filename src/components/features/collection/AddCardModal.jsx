@@ -277,6 +277,7 @@ export function AddCardModal({ isOpen, onClose, onSubmit }) {
                     <SelectItem value="Normale">Normale</SelectItem>
                     <SelectItem value="Reverse Holo">Reverse Holo</SelectItem>
                     <SelectItem value="Holo">Holo</SelectItem>
+                    <SelectItem value="Tampon (logo extension)">Tampon (logo extension)</SelectItem>
                     <SelectItem value="Full Art">Full Art</SelectItem>
                     <SelectItem value="Alternate Art">Alternate Art</SelectItem>
                   </SelectContent>
