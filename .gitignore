@@ -45,3 +45,12 @@ exports/
 
 # Claude Code local settings
 src/.claude/settings.local.json
+
+# Scripts de développement / traductions
+fetch-trainer-cards.js
+fetch-trainer-cards.mjs
+test-translation.js
+test-translation-debug.js
+trainer-cards-list.json
+trainer-translations-template.js
+summary.txt
