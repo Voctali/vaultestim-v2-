@@ -12,6 +12,7 @@ import { BatchSaleModal } from '@/components/features/collection/BatchSaleModal'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { translateCondition } from '@/utils/cardConditions'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
+import { translateCardName } from '@/utils/cardTranslations'
 import {
   Copy,
   Search,
@@ -327,8 +328,8 @@ export function Duplicates() {
 
                     {/* Card Info */}
                     <div className="space-y-2">
-                      <h3 className="font-semibold text-sm golden-glow truncate" title={card.name}>
-                        {card.name}
+                      <h3 className="font-semibold text-sm golden-glow truncate" title={translateCardName(card.name)}>
+                        {translateCardName(card.name)}
                       </h3>
                       <p className="text-xs text-muted-foreground truncate">{card.series}</p>
 
@@ -437,7 +438,7 @@ export function Duplicates() {
                           <div
                             key={index}
                             className="aspect-[3/4] rounded overflow-hidden bg-muted"
-                            title={card.name}
+                            title={translateCardName(card.name)}
                           >
                             <CardImage
                               card={card}

@@ -10,6 +10,7 @@ import { CardImage } from '@/components/features/explore/CardImage'
 import { CardMarketLink } from '@/components/features/collection/CardMarketLinks'
 import { AVAILABLE_CONDITIONS, translateCondition } from '@/utils/cardConditions'
 import { formatCardPriceWithCondition } from '@/utils/priceFormatter'
+import { translateCardName } from '@/utils/cardTranslations'
 import { ArrowLeft, Plus, ExternalLink, Package } from 'lucide-react'
 import { useCollection } from '@/hooks/useCollection.jsx'
 
@@ -142,7 +143,7 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
           <div className="space-y-6">
             {/* Card Info */}
             <div className="space-y-3">
-              <h1 className="text-2xl font-bold golden-glow">{card.name || "Team Rocket's Mewtwo ex"}</h1>
+              <h1 className="text-2xl font-bold golden-glow">{translateCardName(card.name || "Team Rocket's Mewtwo ex")}</h1>
               <p className="text-muted-foreground">
                 {card.set?.name || card.series || "Extension inconnue"} {card.number ? `• #${card.number}` : ''}
               </p>

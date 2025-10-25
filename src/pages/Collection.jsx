@@ -11,6 +11,7 @@ import { CardDetailsModal } from '@/components/features/collection/CardDetailsMo
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { translateCondition } from '@/utils/cardConditions'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
+import { translateCardName } from '@/utils/cardTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
 
 export function Collection() {
@@ -221,7 +222,7 @@ export function Collection() {
 
                 {/* Card Info */}
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm golden-glow">{card.name}</h3>
+                  <h3 className="font-semibold text-sm golden-glow">{translateCardName(card.name)}</h3>
                   <p className="text-xs text-muted-foreground">{card.series}</p>
 
                   <div className="space-y-1">

@@ -15,6 +15,7 @@ import { IndexedDBService } from '@/services/IndexedDBService'
 import { ImageUploadService } from '@/services/ImageUploadService'
 import { buildBlocksHierarchy } from '@/services/BlockHierarchyService'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
+import { translateCardName } from '@/utils/cardTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
@@ -744,8 +745,8 @@ export function Explore() {
 
                 {/* Card Info */}
                 <div className="space-y-1">
-                  <h4 className="font-semibold text-sm golden-glow truncate" title={card.name}>
-                    {card.name}
+                  <h4 className="font-semibold text-sm golden-glow truncate" title={translateCardName(card.name)}>
+                    {translateCardName(card.name)}
                   </h4>
 
                   {/* Informations principales */}

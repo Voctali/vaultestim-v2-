@@ -11,6 +11,7 @@ import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { Heart, List, Copy, Search, Filter, BookOpen } from 'lucide-react'
 import { translateCondition } from '@/utils/cardConditions'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
+import { translateCardName } from '@/utils/cardTranslations'
 
 export function Favorites() {
   const location = useLocation()
@@ -193,7 +194,7 @@ export function Favorites() {
 
                 {/* Card Info */}
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm golden-glow">{card.name}</h3>
+                  <h3 className="font-semibold text-sm golden-glow">{translateCardName(card.name)}</h3>
                   <p className="text-xs text-muted-foreground">{card.series}</p>
 
                   <div className="space-y-1">

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { CardMarketLink } from '@/components/features/collection/CardMarketLinks'
+import { translateCardName } from '@/utils/cardTranslations'
 import { X, Plus, ExternalLink } from 'lucide-react'
 
 export function CardPreviewModal({ isOpen, onClose, card, onAddToCollection }) {
@@ -49,7 +50,7 @@ export function CardPreviewModal({ isOpen, onClose, card, onAddToCollection }) {
           <div className="space-y-6">
             {/* Card Basic Info */}
             <div className="space-y-3">
-              <h1 className="text-2xl font-bold golden-glow">{card.name}</h1>
+              <h1 className="text-2xl font-bold golden-glow">{translateCardName(card.name)}</h1>
 
               {/* Extension et Bloc */}
               <div className="space-y-1">

@@ -8,6 +8,7 @@ import { useCollection } from '@/hooks/useCollection.jsx'
 import { useToast } from '@/hooks/useToast'
 import { TCGdxService } from '@/services/TCGdxService'
 import { formatCardPrice } from '@/utils/priceFormatter'
+import { translateCardName } from '@/utils/cardTranslations'
 import { Heart, List, Plus, Eye, Settings } from 'lucide-react'
 
 export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = true }) {
@@ -291,8 +292,8 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
 
                 {/* Card Info */}
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm golden-glow truncate" title={card.name}>
-                    {card.name}
+                  <h3 className="font-semibold text-sm golden-glow truncate" title={translateCardName(card.name)}>
+                    {translateCardName(card.name)}
                     {card.number && (
                       <span className="text-xs text-muted-foreground ml-1">#{card.number}</span>
                     )}

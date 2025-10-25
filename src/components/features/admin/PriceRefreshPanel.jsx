@@ -214,7 +214,7 @@ export function PriceRefreshPanel() {
             <div className="text-sm space-y-1">
               <div className="font-medium">📊 Stratégie d'actualisation intelligente :</div>
               <ul className="ml-4 space-y-1 text-muted-foreground">
-                <li>• <strong>Automatique</strong> : 150 cartes/jour au démarrage (si > 24h)</li>
+                <li>• <strong>Automatique</strong> : 150 cartes/jour au démarrage (si {'>'} 24h)</li>
                 <li>• <strong>Priorisation</strong> : Cartes à forte valeur et consultées récemment</li>
                 <li>• <strong>Cycle complet</strong> : {Math.ceil(stats.total / 150)} jours pour actualiser toutes les cartes</li>
                 <li>• <strong>Skip</strong> : Cartes &lt; 0.10€ sont moins prioritaires</li>

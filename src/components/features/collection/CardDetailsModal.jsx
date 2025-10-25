@@ -11,6 +11,7 @@ import { CardMarketLink } from '@/components/features/collection/CardMarketLinks
 import { useCollection } from '@/hooks/useCollection.jsx'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { translateCondition } from '@/utils/cardConditions'
+import { translateCardName } from '@/utils/cardTranslations'
 import { ArrowLeft, Edit2, Save, X, Heart, List, Trash2, ExternalLink, Plus, Minus, Flag } from 'lucide-react'
 
 export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [] }) {
@@ -337,7 +338,7 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
           <div className="space-y-6">
             {/* Card Basic Info */}
             <div className="space-y-3">
-              <h1 className="text-2xl font-bold golden-glow">{card.name}</h1>
+              <h1 className="text-2xl font-bold golden-glow">{translateCardName(card.name)}</h1>
               <p className="text-muted-foreground">{card.series}</p>
               <p className="text-sm text-muted-foreground">{card.block}</p>
 
