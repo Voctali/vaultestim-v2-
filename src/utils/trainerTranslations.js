@@ -20,6 +20,7 @@ const TRAINER_TRANSLATIONS = {
   'brome': 'giacomo', // Variante sans accent
   'cassiopée': 'cassiopeia', // Boss Team Star (Poison)
   'cassiopee': 'cassiopeia', // Variante sans accent
+  'clavel': 'clavell', // Directeur de l'Académie Raisin (Paldea)
 
   // ========================================
   // AUTRES DRESSEURS
