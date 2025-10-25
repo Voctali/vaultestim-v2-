@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
+import { translateCardType } from '@/utils/typeTranslations'
 
 export function DatabaseCard({ card, viewMode = 'grid' }) {
   const [showDetails, setShowDetails] = useState(false)
@@ -382,7 +383,7 @@ function DatabaseCardDetails({ card, isOpen, onClose }) {
                   {card.types.map(type => (
                     <div key={type} className="flex items-center gap-2">
                       <span className={`w-4 h-4 rounded-full ${getTypeColor(type)}`} />
-                      <span className="text-sm font-medium">{type}</span>
+                      <span className="text-sm font-medium">{translateCardType(type)}</span>
                     </div>
                   ))}
                 </div>

@@ -16,6 +16,7 @@ import { ImageUploadService } from '@/services/ImageUploadService'
 import { buildBlocksHierarchy } from '@/services/BlockHierarchyService'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
 import { translateCardName } from '@/utils/cardTranslations'
+import { translateCardType } from '@/utils/typeTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
@@ -778,7 +779,7 @@ export function Explore() {
                       <div className="flex flex-wrap gap-1 mt-1">
                         {card.types.slice(0, 2).map((type, i) => (
                           <Badge key={`type-${cardIndex}-${i}-${type}`} variant="outline" className="text-xs py-0">
-                            {type}
+                            {translateCardType(type)}
                           </Badge>
                         ))}
                         {card.types.length > 2 && (

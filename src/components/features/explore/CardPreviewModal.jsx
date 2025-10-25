@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { CardMarketLink } from '@/components/features/collection/CardMarketLinks'
 import { translateCardName } from '@/utils/cardTranslations'
+import { translateCardType } from '@/utils/typeTranslations'
 import { X, Plus, ExternalLink } from 'lucide-react'
 
 export function CardPreviewModal({ isOpen, onClose, card, onAddToCollection }) {
@@ -70,7 +71,7 @@ export function CardPreviewModal({ isOpen, onClose, card, onAddToCollection }) {
                 {card.rarity && <Badge variant="secondary">{card.rarity}</Badge>}
                 {card.supertype && <Badge variant="outline">{card.supertype}</Badge>}
                 {card.types && card.types.length > 0 && card.types.map((type, i) => (
-                  <Badge key={`type-${i}-${type}`} variant="outline">{type}</Badge>
+                  <Badge key={`type-${i}-${type}`} variant="outline">{translateCardType(type)}</Badge>
                 ))}
               </div>
 

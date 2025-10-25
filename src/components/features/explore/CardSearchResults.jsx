@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/useToast'
 import { TCGdxService } from '@/services/TCGdxService'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { translateCardName } from '@/utils/cardTranslations'
+import { translateCardType } from '@/utils/typeTranslations'
 import { Heart, List, Plus, Eye, Settings } from 'lucide-react'
 
 export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = true }) {
@@ -328,7 +329,7 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
                     {/* Types */}
                     {card.typesFormatted && card.typesFormatted.length > 0 && (
                       <div className="text-xs" style={{ color: TCGdxService.getTypeColor(card.typesFormatted[0]) }}>
-                        {card.typesFormatted.join(', ')}
+                        {card.typesFormatted.map(type => translateCardType(type)).join(', ')}
                       </div>
                     )}
 
