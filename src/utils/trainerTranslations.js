@@ -24,6 +24,7 @@ const TRAINER_TRANSLATIONS = {
   'transfert de léo': 'bill\'s transfer',
   'transfert de leo': 'bill\'s transfer', // Variante sans accent
   'charisme de giovanni': 'giovanni\'s charisma',
+  'amis de paldea': 'friends in paldea', // Supporter Gen 9
 
   // ========================================
   // OBJETS ET CARTES DRESSEUR
