@@ -18,6 +18,8 @@ const TRAINER_TRANSLATIONS = {
   'bria': 'briar', // Professeure de l'Académie Myrtille
   'brôme': 'giacomo', // Boss Team Star (DJ)
   'brome': 'giacomo', // Variante sans accent
+  'cassiopée': 'cassiopeia', // Boss Team Star (Poison)
+  'cassiopee': 'cassiopeia', // Variante sans accent
 
   // ========================================
   // AUTRES DRESSEURS
