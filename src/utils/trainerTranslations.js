@@ -32,10 +32,10 @@ const TRAINER_TRANSLATIONS = {
   'amis de paldea': 'friends in paldea', // Supporter Gen 9
   'art secret de jeannine': 'janine\'s secret art', // Fuchsia Gym Leader
   'art secret de janine': 'janine\'s secret art', // Variante orthographe anglaise
-  'charme d\'atalante': 'lisia', // Championne de Concours Hoenn - Carte de 2018 (Celestial Storm)
-  'charme d atalante': 'lisia', // Variante espace
-  'charme atalante': 'lisia', // Variante courte
-  'atalante': 'lisia', // Nom du personnage seul
+  'charme d\'atalante': 'lisia\'s appeal', // Championne de Concours Hoenn - Surging Sparks (SSP)
+  'charme d atalante': 'lisia\'s appeal', // Variante espace
+  'charme atalante': 'lisia\'s appeal', // Variante courte
+  'atalante': 'lisia', // Nom du personnage seul (carte plus ancienne, Celestial Storm)
 
   // ========================================
   // OBJETS ET CARTES DRESSEUR

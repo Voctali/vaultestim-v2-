@@ -134,13 +134,16 @@ export class TCGdxService {
     try {
       let cards = []
 
-      // Encoder le nom de la carte pour gérer les caractères spéciaux (&, ', etc.)
-      const encodedQuery = encodeURIComponent(`"${translatedQuery}"`)
+      // Encoder SEULEMENT la valeur entre guillemets pour gérer les caractères spéciaux (&, ', etc.)
+      // IMPORTANT: Les guillemets ne doivent PAS être encodés pour l'API Pokemon TCG
+      const encodedValue = encodeURIComponent(translatedQuery)
+      const encodedQuery = `"${encodedValue}"`
 
       // 1. Essayer d'abord une recherche exacte (pour éviter pidgeot* qui match pidgeotto)
       // Ajouter des guillemets pour les noms contenant des espaces (ex: "mr. mime")
       const exactUrl = `${this.BASE_URL}/cards?q=name:${encodedQuery}&pageSize=${limit}`
       console.log(`🎯 Tentative recherche exacte: "${translatedQuery}"`)
+      console.log(`📝 URL encodée: ${exactUrl}`)
 
       try {
         const exactResult = await this.makeRequestWithRetry(exactUrl, 2)
