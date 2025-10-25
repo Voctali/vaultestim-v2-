@@ -15,6 +15,7 @@ const TRAINER_TRANSLATIONS = {
 
   // Paldea (Gen 9)
   'alisma': 'geeta', // Maîtresse de la Ligue Pokémon
+  'bria': 'briar', // Professeure de l'Académie Myrtille
 
   // ========================================
   // AUTRES DRESSEURS
