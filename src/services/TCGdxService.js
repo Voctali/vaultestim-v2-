@@ -12,8 +12,12 @@ export class TCGdxService {
   static BASE_URL = '/api/pokemontcg/v2'
   static TIMEOUT = 30000 // 30 secondes
 
+  // Version du cache : incrémenter quand le format de recherche change
+  // Cela invalide automatiquement l'ancien cache sans nécessiter de vider manuellement
+  static CACHE_VERSION = 'v2' // v2: Fix encodage guillemets pour apostrophes (2025-01)
+
   static CACHE_KEYS = {
-    SEARCH: 'tcg_search',
+    SEARCH: 'tcg_search_v2', // Version incluse pour invalider automatiquement
     CARD: 'tcg_card',
     SETS: 'tcg_sets'
   }
