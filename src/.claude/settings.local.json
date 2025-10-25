@@ -84,7 +84,8 @@
       "Bash(start https://vaultestim-v2.vercel.app/produits-scelles)",
       "Bash(git merge:*)",
       "WebFetch(domain:api.pokemontcg.io)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
