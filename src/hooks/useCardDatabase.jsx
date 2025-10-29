@@ -28,7 +28,12 @@ const organizeCardsBySet = (cards) => {
   cards.forEach(card => {
     // Informations de l'extension
     const setId = card.set?.id || `unknown-${card.id || Math.random().toString(36).substr(2, 9)}`
-    const setName = card.set?.name || 'Extension inconnue'
+    let setName = card.set?.name || 'Extension inconnue'
+
+    // Normaliser les noms d'extensions avec conflits connus
+    if (setId === 'svp') {
+      setName = 'Scarlet & Violet Promos' // Nom unifié pour éviter "Black Star Promos" vs "Promos"
+    }
 
     // Déterminer le bloc correct en utilisant TOUJOURS le mapping de TCGdxService
     // Priorité : originalSeries > series > nom de l'extension

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Package, Plus, Minus, Euro } from 'lucide-react'
+import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
 
 /**
  * Modale d'ajout d'un produit scellé à la collection
@@ -47,7 +48,8 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
       market_price: formData.market_price ? parseFloat(formData.market_price) : null,
       cardmarket_id_product: product.id_product,
       cardmarket_id_category: product.id_category,
-      image_url: product.image_url || null
+      // Générer l'URL de l'image CardMarket à partir de l'ID produit
+      image_url: CardMarketSupabaseService.getCardMarketImageUrl(product.id_product)
     }
 
     onSave(productToSave)
@@ -78,9 +80,9 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Aperçu du produit */}
           <div className="flex gap-4 p-4 bg-muted/30 rounded-lg">
-            {product.image_url && (
+            {product.id_product && (
               <img
-                src={product.image_url}
+                src={CardMarketSupabaseService.getCardMarketImageUrl(product.id_product)}
                 alt={product.name}
                 className="w-24 h-24 object-contain bg-white rounded"
                 onError={(e) => { e.target.style.display = 'none' }}

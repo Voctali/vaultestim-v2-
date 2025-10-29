@@ -94,7 +94,7 @@ export class TCGdxService {
         // Chercher un mot-clé dans le nom de l'extension
         for (const [seriesKey, block] of Object.entries(this.SERIES_TO_BLOCK_MAPPING)) {
           if (setName.includes(seriesKey) || seriesKey.includes(setName)) {
-            console.log(`🔍 Bloc détecté depuis nom extension "${setName}": ${block}`)
+            // Log supprimé pour éviter la pollution de console (appelé pour chaque carte)
             return block
           }
         }
