@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ImageUpload } from '@/components/features/ImageUpload'
-import { Package, Euro, Link, Tag, FileText, RefreshCw, Plus, Minus } from 'lucide-react'
+import { Package, Euro, Link, Tag, FileText, RefreshCw, Plus, Minus, Image as ImageIcon } from 'lucide-react'
 import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
 
 const PRODUCT_CATEGORIES = [
@@ -44,6 +44,7 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
 
   const [useFileUpload, setUseFileUpload] = useState(false)
   const [loadingPrice, setLoadingPrice] = useState(false)
+  const [loadingImage, setLoadingImage] = useState(false)
 
   // Charger les données si on édite un produit existant
   useEffect(() => {
@@ -142,6 +143,36 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
       alert('Erreur lors de la récupération du prix')
     } finally {
       setLoadingPrice(false)
+    }
+  }
+
+  const fetchImageFromCardMarket = async () => {
+    if (!formData.cardmarketIdProduct) {
+      alert('Veuillez saisir un ID CardMarket d\'abord')
+      return
+    }
+
+    try {
+      setLoadingImage(true)
+      const imageUrl = await CardMarketSupabaseService.getSealedProductImageUrl(
+        parseInt(formData.cardmarketIdProduct)
+      )
+
+      if (imageUrl) {
+        setFormData(prev => ({
+          ...prev,
+          imageUrl: imageUrl
+        }))
+        setUseFileUpload(false) // Passer en mode URL
+        console.log(`✅ Image récupérée: ${imageUrl}`)
+      } else {
+        alert('Aucune image trouvée pour cet ID CardMarket')
+      }
+    } catch (error) {
+      console.error('❌ Erreur récupération image:', error)
+      alert('Erreur lors de la récupération de l\'image')
+    } finally {
+      setLoadingImage(false)
     }
   }
 
@@ -298,7 +329,7 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
               Image
             </Label>
 
-            <div className="flex gap-2 mb-2">
+            <div className="flex gap-2 mb-2 flex-wrap">
               <Button
                 type="button"
                 variant={!useFileUpload ? 'default' : 'outline'}
@@ -315,7 +346,37 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
               >
                 Upload
               </Button>
+
+              {/* Bouton pour récupérer l'image depuis CardMarket */}
+              {formData.cardmarketIdProduct && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchImageFromCardMarket}
+                  disabled={loadingImage}
+                  className="ml-auto"
+                >
+                  {loadingImage ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                      Chargement...
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-4 h-4 mr-1" />
+                      Récupérer image CardMarket
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
+
+            {formData.cardmarketIdProduct && (
+              <p className="text-xs text-muted-foreground mb-2">
+                💡 Astuce : Cliquez sur "Récupérer image CardMarket" pour obtenir automatiquement l'image du produit
+              </p>
+            )}
 
             {useFileUpload ? (
               <ImageUpload

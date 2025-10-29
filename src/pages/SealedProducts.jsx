@@ -348,12 +348,22 @@ export function SealedProducts() {
                     <Card key={product.id} className="overflow-hidden">
                       <CardContent className="p-4">
                         {/* Image */}
-                        {(product.image_url || product.image_file) && (
+                        {(product.image_url || product.image_file || product.cardmarket_id_product) && (
                           <div className="mb-3">
                             <img
-                              src={product.image_file || product.image_url}
+                              src={
+                                product.image_file ||
+                                product.image_url ||
+                                CardMarketSupabaseService.getCardMarketImageUrl(product.cardmarket_id_product)
+                              }
                               alt={product.name}
                               className="w-full h-40 object-contain bg-slate-100 dark:bg-slate-800 rounded"
+                              onError={(e) => {
+                                // Si l'image CardMarket échoue, cacher l'élément
+                                if (!product.image_file && !product.image_url) {
+                                  e.target.style.display = 'none'
+                                }
+                              }}
                             />
                           </div>
                         )}

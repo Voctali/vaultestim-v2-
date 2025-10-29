@@ -492,6 +492,44 @@ export class CardMarketSupabaseService {
   }
 
   /**
+   * Construire l'URL de l'image CardMarket pour un produit
+   * @param {number} idProduct - ID du produit CardMarket
+   * @returns {string} URL de l'image
+   */
+  static getCardMarketImageUrl(idProduct) {
+    if (!idProduct) return null
+
+    // Format officiel des images CardMarket
+    // https://static.cardmarket.com/img/[lang]/Products/[idProduct].jpg
+    return `https://static.cardmarket.com/img/en/Products/${idProduct}.jpg`
+  }
+
+  /**
+   * Récupérer l'URL de l'image d'un produit scellé
+   * @param {number} idProduct - ID du produit CardMarket
+   * @returns {Promise<string|null>} URL de l'image si disponible
+   */
+  static async getSealedProductImageUrl(idProduct) {
+    try {
+      const imageUrl = this.getCardMarketImageUrl(idProduct)
+
+      // Vérifier que l'image existe en faisant une requête HEAD
+      const response = await fetch(imageUrl, { method: 'HEAD' })
+
+      if (response.ok) {
+        console.log(`✅ Image CardMarket trouvée: ${idProduct}`)
+        return imageUrl
+      } else {
+        console.log(`⚠️ Pas d'image CardMarket pour: ${idProduct}`)
+        return null
+      }
+    } catch (error) {
+      console.error(`❌ Erreur vérification image CardMarket ${idProduct}:`, error)
+      return null
+    }
+  }
+
+  /**
    * Nettoyer toutes les données CardMarket (DANGER!)
    */
   static async clearAllData() {
