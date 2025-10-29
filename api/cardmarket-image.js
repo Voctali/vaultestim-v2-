@@ -21,26 +21,38 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Construire l'URL S3 CardMarket
-    const imageUrl = `https://product-images.s3.cardmarket.com/${category}/${product}/${product}.png`
+    // Essayer d'abord .png, puis .jpg (les produits utilisent l'un ou l'autre)
+    const extensions = ['png', 'jpg']
+    let imageResponse = null
+    let successUrl = null
 
-    console.log(`🖼️ Fetching image: ${imageUrl}`)
+    for (const ext of extensions) {
+      const imageUrl = `https://product-images.s3.cardmarket.com/${category}/${product}/${product}.${ext}`
 
-    // Récupérer l'image avec le referer CardMarket
-    const imageResponse = await fetch(imageUrl, {
-      headers: {
-        'Referer': 'https://www.cardmarket.com/',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      console.log(`🖼️ Trying: ${imageUrl}`)
+
+      imageResponse = await fetch(imageUrl, {
+        headers: {
+          'Referer': 'https://www.cardmarket.com/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      })
+
+      if (imageResponse.ok) {
+        successUrl = imageUrl
+        console.log(`✅ Image found: ${imageUrl}`)
+        break
       }
-    })
+    }
 
-    // Vérifier si l'image existe
+    // Vérifier si l'image a été trouvée
     if (!imageResponse.ok) {
-      console.log(`❌ Image not found: ${imageUrl} (${imageResponse.status})`)
+      console.log(`❌ Image not found for product ${product} (tried .png and .jpg)`)
       return res.status(404).json({
         error: 'Image not found',
-        url: imageUrl,
-        status: imageResponse.status
+        product: product,
+        category: category,
+        tried: extensions.map(ext => `${product}.${ext}`)
       })
     }
 
@@ -50,8 +62,11 @@ export default async function handler(req, res) {
 
     console.log(`✅ Image fetched successfully: ${buffer.length} bytes`)
 
+    // Déterminer le Content-Type basé sur l'URL qui a fonctionné
+    const contentType = successUrl.endsWith('.png') ? 'image/png' : 'image/jpeg'
+
     // Headers de cache pour optimiser les performances
-    res.setHeader('Content-Type', 'image/png')
+    res.setHeader('Content-Type', contentType)
     res.setHeader('Cache-Control', 'public, max-age=86400') // Cache 24h
     res.setHeader('Access-Control-Allow-Origin', '*') // CORS
 
