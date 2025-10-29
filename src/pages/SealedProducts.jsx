@@ -354,7 +354,7 @@ export function SealedProducts() {
                               src={
                                 product.image_file ||
                                 product.image_url ||
-                                CardMarketSupabaseService.getCardMarketImageUrl(product.cardmarket_id_product)
+                                CardMarketSupabaseService.getCardMarketImageUrl(product.cardmarket_id_product, product.cardmarket_id_category)
                               }
                               alt={product.name}
                               className="w-full h-40 object-contain bg-slate-100 dark:bg-slate-800 rounded"

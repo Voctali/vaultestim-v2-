@@ -492,26 +492,52 @@ export class CardMarketSupabaseService {
   }
 
   /**
-   * Construire l'URL de l'image CardMarket pour un produit
+   * Construire l'URL de l'image CardMarket pour un produit scellé
    * @param {number} idProduct - ID du produit CardMarket
-   * @returns {string} URL de l'image
+   * @param {number} idCategory - ID de la catégorie CardMarket (requis pour produits scellés)
+   * @returns {string|null} URL de l'image
    */
-  static getCardMarketImageUrl(idProduct) {
+  static getCardMarketImageUrl(idProduct, idCategory) {
     if (!idProduct) return null
+    if (!idCategory) return null // Requis pour construire l'URL S3
 
-    // Format officiel des images CardMarket
-    // https://static.cardmarket.com/img/[lang]/Products/[idProduct].jpg
-    return `https://static.cardmarket.com/img/en/Products/${idProduct}.jpg`
+    // Format officiel des images de produits scellés CardMarket (S3)
+    // https://product-images.s3.cardmarket.com/{idCategory}/{idProduct}/{idProduct}.png
+    return `https://product-images.s3.cardmarket.com/${idCategory}/${idProduct}/${idProduct}.png`
   }
 
   /**
    * Récupérer l'URL de l'image d'un produit scellé
    * @param {number} idProduct - ID du produit CardMarket
+   * @param {number} idCategory - ID de la catégorie CardMarket (optionnel, sera cherché en base si non fourni)
    * @returns {Promise<string|null>} URL de l'image si disponible
    */
-  static async getSealedProductImageUrl(idProduct) {
+  static async getSealedProductImageUrl(idProduct, idCategory = null) {
     try {
-      const imageUrl = this.getCardMarketImageUrl(idProduct)
+      // Si idCategory n'est pas fourni, le chercher en base
+      if (!idCategory) {
+        console.log(`🔍 Recherche de la catégorie pour le produit ${idProduct}...`)
+        const { data, error } = await supabase
+          .from('cardmarket_nonsingles')
+          .select('id_category')
+          .eq('id_product', idProduct)
+          .single()
+
+        if (error || !data) {
+          console.log(`⚠️ Impossible de trouver la catégorie pour: ${idProduct}`)
+          return null
+        }
+
+        idCategory = data.id_category
+        console.log(`✅ Catégorie trouvée: ${idCategory}`)
+      }
+
+      const imageUrl = this.getCardMarketImageUrl(idProduct, idCategory)
+
+      if (!imageUrl) {
+        console.log(`⚠️ Impossible de construire l'URL image pour: ${idProduct}`)
+        return null
+      }
 
       // Vérifier que l'image existe en faisant une requête HEAD
       const response = await fetch(imageUrl, { method: 'HEAD' })

@@ -48,8 +48,8 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
       market_price: formData.market_price ? parseFloat(formData.market_price) : null,
       cardmarket_id_product: product.id_product,
       cardmarket_id_category: product.id_category,
-      // Générer l'URL de l'image CardMarket à partir de l'ID produit
-      image_url: CardMarketSupabaseService.getCardMarketImageUrl(product.id_product)
+      // Utiliser l'URL d'image du catalogue, ou générer si indisponible
+      image_url: product.image_url || CardMarketSupabaseService.getCardMarketImageUrl(product.id_product, product.id_category)
     }
 
     onSave(productToSave)
@@ -82,7 +82,7 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
           <div className="flex gap-4 p-4 bg-muted/30 rounded-lg">
             {product.id_product && (
               <img
-                src={CardMarketSupabaseService.getCardMarketImageUrl(product.id_product)}
+                src={product.image_url || CardMarketSupabaseService.getCardMarketImageUrl(product.id_product, product.id_category)}
                 alt={product.name}
                 className="w-24 h-24 object-contain bg-white rounded"
                 onError={(e) => { e.target.style.display = 'none' }}
