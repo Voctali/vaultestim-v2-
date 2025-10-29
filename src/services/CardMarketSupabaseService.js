@@ -503,12 +503,9 @@ export class CardMarketSupabaseService {
 
     // Format officiel des images de produits scellés CardMarket (S3)
     // Note: Les images S3 sont protégées par referer (403 sans referer cardmarket.com)
-    // Solution: Utiliser un proxy d'images pour contourner la protection referer
-    const originalUrl = `https://product-images.s3.cardmarket.com/${idCategory}/${idProduct}/${idProduct}.png`
-
-    // Proxy via wsrv.nl (service gratuit spécialisé dans le proxy d'images)
-    // Alternative si wsrv.nl ne fonctionne pas: images.weserv.nl
-    return `https://wsrv.nl/?url=${encodeURIComponent(originalUrl)}`
+    // Solution: Utiliser notre proxy côté serveur (Vercel Function)
+    // La fonction récupère l'image avec le referer CardMarket et la renvoie
+    return `/api/cardmarket-image?category=${idCategory}&product=${idProduct}`
   }
 
   /**
