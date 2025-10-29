@@ -467,7 +467,7 @@ export function SealedProducts() {
                         {/* Lien CardMarket si disponible */}
                         {product.cardmarket_id_product && (
                           <a
-                            href={CardMarketSupabaseService.buildSealedProductUrl(product.cardmarket_id_product, product.name)}
+                            href={CardMarketSupabaseService.buildSealedProductUrl(product.cardmarket_id_product, product.name, product.cardmarket_id_category)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="block mt-2"

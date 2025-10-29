@@ -41,6 +41,7 @@ export class UserSealedProductsService {
           image_url: productData.image_url || null,
           image_file: productData.image_file || null, // Base64 si uploadé
           cardmarket_id_product: productData.cardmarket_id_product || null,
+          cardmarket_id_category: productData.cardmarket_id_category || null,
           category: productData.category || null,
           notes: productData.notes || null,
           quantity: productData.quantity || 1,
