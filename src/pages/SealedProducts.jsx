@@ -351,16 +351,31 @@ export function SealedProducts() {
                         {(product.image_file || product.cardmarket_id_product || product.image_url) && (
                           <div className="mb-3">
                             <img
-                              src={
-                                product.image_file ||
+                              src={(() => {
+                                // Logs de débogage
+                                console.log(`🖼️ Image pour "${product.name}":`, {
+                                  id_product: product.cardmarket_id_product,
+                                  id_category: product.cardmarket_id_category,
+                                  image_url: product.image_url,
+                                  image_file: product.image_file ? 'OUI' : 'NON'
+                                })
+
+                                if (product.image_file) return product.image_file
+
                                 // Prioriser CardMarket si on a les IDs (corrige les anciennes URLs incorrectes)
-                                (product.cardmarket_id_product && product.cardmarket_id_category
-                                  ? CardMarketSupabaseService.getCardMarketImageUrl(product.cardmarket_id_product, product.cardmarket_id_category)
-                                  : product.image_url)
-                              }
+                                if (product.cardmarket_id_product && product.cardmarket_id_category) {
+                                  const url = CardMarketSupabaseService.getCardMarketImageUrl(product.cardmarket_id_product, product.cardmarket_id_category)
+                                  console.log(`✅ URL CardMarket générée:`, url)
+                                  return url
+                                }
+
+                                console.log(`⚠️ Pas d'IDs CardMarket, utilisation image_url:`, product.image_url)
+                                return product.image_url
+                              })()}
                               alt={product.name}
                               className="w-full h-40 object-contain bg-slate-100 dark:bg-slate-800 rounded"
                               onError={(e) => {
+                                console.error(`❌ Erreur chargement image pour "${product.name}":`, e.target.src)
                                 // Si l'image échoue, cacher l'élément
                                 e.target.style.display = 'none'
                               }}
