@@ -370,15 +370,44 @@ export function SealedProducts() {
                           </Badge>
                         )}
 
-                        {/* Prix */}
-                        {product.market_price && (
-                          <div className="flex items-center gap-2 mb-2">
-                            <Euro className="w-4 h-4 text-yellow-500" />
-                            <span className="font-bold text-yellow-500">
-                              {parseFloat(product.market_price).toFixed(2)} €
-                            </span>
-                          </div>
-                        )}
+                        {/* Informations clés */}
+                        <div className="space-y-2 mb-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                          {/* Nombre d'exemplaires */}
+                          {product.quantity && (
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Package className="w-4 h-4" />
+                                <span>Quantité</span>
+                              </div>
+                              <span className="font-semibold">
+                                {product.quantity} {product.quantity > 1 ? 'exemplaires' : 'exemplaire'}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Prix du marché */}
+                          {product.market_price && (
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Euro className="w-4 h-4 text-yellow-500" />
+                                <span>Valeur marché</span>
+                              </div>
+                              <span className="font-bold text-yellow-500">
+                                {parseFloat(product.market_price).toFixed(2)} €
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Valeur totale si plusieurs exemplaires */}
+                          {product.quantity && product.market_price && product.quantity > 1 && (
+                            <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
+                              <span className="text-sm font-medium">Valeur totale</span>
+                              <span className="font-bold text-green-500">
+                                {(parseFloat(product.market_price) * product.quantity).toFixed(2)} €
+                              </span>
+                            </div>
+                          )}
+                        </div>
 
                         {/* Notes */}
                         {product.notes && (
