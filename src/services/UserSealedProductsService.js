@@ -37,12 +37,15 @@ export class UserSealedProductsService {
         .insert({
           user_id: userId,
           name: productData.name,
-          market_price: productData.marketPrice || null,
-          image_url: productData.imageUrl || null,
-          image_file: productData.imageFile || null, // Base64 si uploadé
-          cardmarket_id_product: productData.cardmarketIdProduct || null,
+          market_price: productData.market_price || null,
+          image_url: productData.image_url || null,
+          image_file: productData.image_file || null, // Base64 si uploadé
+          cardmarket_id_product: productData.cardmarket_id_product || null,
           category: productData.category || null,
-          notes: productData.notes || null
+          notes: productData.notes || null,
+          quantity: productData.quantity || 1,
+          condition: productData.condition || 'Impeccable',
+          purchase_price: productData.purchase_price || null
         })
         .select()
         .single()

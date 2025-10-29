@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ImageUpload } from '@/components/features/ImageUpload'
-import { Package, Euro, Link, Tag, FileText, RefreshCw } from 'lucide-react'
+import { Package, Euro, Link, Tag, FileText, RefreshCw, Plus, Minus } from 'lucide-react'
 import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
 
 const PRODUCT_CATEGORIES = [
@@ -22,6 +22,12 @@ const PRODUCT_CATEGORIES = [
   'Other'
 ]
 
+const CONDITION_OPTIONS = [
+  'Impeccable',
+  'Défaut léger',
+  'Abîmé'
+]
+
 export function SealedProductModal({ isOpen, onClose, onSave, product = null }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -30,7 +36,10 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
     imageFile: null,
     cardmarketIdProduct: '',
     category: '',
-    notes: ''
+    notes: '',
+    quantity: 1,
+    condition: 'Impeccable',
+    purchasePrice: ''
   })
 
   const [useFileUpload, setUseFileUpload] = useState(false)
@@ -46,7 +55,10 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
         imageFile: product.image_file || null,
         cardmarketIdProduct: product.cardmarket_id_product || '',
         category: product.category || '',
-        notes: product.notes || ''
+        notes: product.notes || '',
+        quantity: product.quantity || 1,
+        condition: product.condition || 'Impeccable',
+        purchasePrice: product.purchase_price || ''
       })
       setUseFileUpload(!!product.image_file)
     } else {
@@ -58,7 +70,10 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
         imageFile: null,
         cardmarketIdProduct: '',
         category: '',
-        notes: ''
+        notes: '',
+        quantity: 1,
+        condition: 'Impeccable',
+        purchasePrice: ''
       })
       setUseFileUpload(false)
     }
@@ -73,18 +88,28 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
       return
     }
 
-    // Préparer les données
+    // Préparer les données avec les bons noms de colonnes (snake_case pour Supabase)
     const productData = {
       name: formData.name.trim(),
-      marketPrice: formData.marketPrice ? parseFloat(formData.marketPrice) : null,
-      imageUrl: useFileUpload ? null : (formData.imageUrl || null),
-      imageFile: useFileUpload ? formData.imageFile : null,
-      cardmarketIdProduct: formData.cardmarketIdProduct ? parseInt(formData.cardmarketIdProduct) : null,
+      market_price: formData.marketPrice ? parseFloat(formData.marketPrice) : null,
+      image_url: useFileUpload ? null : (formData.imageUrl || null),
+      image_file: useFileUpload ? formData.imageFile : null,
+      cardmarket_id_product: formData.cardmarketIdProduct ? parseInt(formData.cardmarketIdProduct) : null,
       category: formData.category || null,
-      notes: formData.notes.trim() || null
+      notes: formData.notes.trim() || null,
+      quantity: parseInt(formData.quantity) || 1,
+      condition: formData.condition || 'Impeccable',
+      purchase_price: formData.purchasePrice ? parseFloat(formData.purchasePrice) : null
     }
 
     onSave(productData)
+  }
+
+  const handleQuantityChange = (delta) => {
+    setFormData(prev => ({
+      ...prev,
+      quantity: Math.max(1, (parseInt(prev.quantity) || 1) + delta)
+    }))
   }
 
   const handleImageUpload = (file, dataUrl) => {
@@ -169,6 +194,84 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Nombre d'exemplaires */}
+          <div>
+            <Label className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Nombre d'exemplaires
+            </Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => handleQuantityChange(-1)}
+                disabled={formData.quantity <= 1}
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <Input
+                type="number"
+                min="1"
+                value={formData.quantity}
+                onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                className="text-center w-20"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => handleQuantityChange(1)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* État du produit */}
+          <div>
+            <Label htmlFor="condition" className="flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              État du produit
+            </Label>
+            <Select
+              value={formData.condition}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, condition: value }))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CONDITION_OPTIONS.map(cond => (
+                  <SelectItem key={cond} value={cond}>{cond}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              L'état du scellé et de l'emballage
+            </p>
+          </div>
+
+          {/* Prix d'achat */}
+          <div>
+            <Label htmlFor="purchasePrice" className="flex items-center gap-2">
+              <Euro className="w-4 h-4" />
+              Prix d'achat (optionnel)
+            </Label>
+            <Input
+              id="purchasePrice"
+              type="number"
+              step="0.01"
+              value={formData.purchasePrice}
+              onChange={(e) => setFormData(prev => ({ ...prev, purchasePrice: e.target.value }))}
+              placeholder="Ex: 89.99"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Le prix que vous avez payé pour ce produit
+            </p>
           </div>
 
           {/* Prix du marché */}
