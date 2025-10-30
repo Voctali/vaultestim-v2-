@@ -189,13 +189,16 @@ export class CardMarketSupabaseService {
 
   /**
    * Obtenir le prix pour un produit
+   * @param {number} idProduct - ID du produit CardMarket
+   * @param {number} languageId - ID de la langue (1=Anglais, 2=Français, 3=Allemand, etc.)
    */
-  static async getPriceForProduct(idProduct) {
+  static async getPriceForProduct(idProduct, languageId = 2) {
     const { data, error } = await supabase
       .from('cardmarket_prices')
       .select('*')
       .eq('id_product', idProduct)
-      .single()
+      .eq('id_language', languageId) // Filtrer par langue française (2) par défaut
+      .maybeSingle() // maybeSingle au lieu de single pour gérer le cas où il n'y a pas de prix
 
     if (error) {
       if (error.code !== 'PGRST116') { // PGRST116 = not found
@@ -211,9 +214,10 @@ export class CardMarketSupabaseService {
    * Obtenir les prix pour plusieurs produits en une seule requête
    * Optimisation : évite de faire des milliers de requêtes individuelles
    * @param {Array<number>} productIds - Liste des IDs de produits
+   * @param {number} languageId - ID de la langue (1=Anglais, 2=Français, 3=Allemand, etc.)
    * @returns {Map<number, object>} Map avec id_product -> prix
    */
-  static async getPricesForProducts(productIds) {
+  static async getPricesForProducts(productIds, languageId = 2) {
     if (!productIds || productIds.length === 0) {
       return new Map()
     }
@@ -229,6 +233,7 @@ export class CardMarketSupabaseService {
         .from('cardmarket_prices')
         .select('*')
         .in('id_product', batch)
+        .eq('id_language', languageId) // Filtrer par langue française (2) par défaut
 
       if (error) {
         console.error('❌ Erreur récupération prix batch:', error)
