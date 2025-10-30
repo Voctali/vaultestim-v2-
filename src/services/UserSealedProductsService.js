@@ -46,14 +46,15 @@ export class UserSealedProductsService {
           notes: productData.notes || null,
           quantity: productData.quantity || 1,
           condition: productData.condition || 'Impeccable',
-          purchase_price: productData.purchase_price || null
+          purchase_price: productData.purchase_price || null,
+          language: productData.language || 'fr' // Par défaut français
         })
         .select()
         .single()
 
       if (error) throw error
 
-      console.log(`✅ Produit scellé ajouté: ${productData.name}`)
+      console.log(`✅ Produit scellé ajouté: ${productData.name} (langue: ${productData.language || 'fr'})`)
       return data
     } catch (error) {
       console.error('❌ Erreur ajout produit scellé:', error)
@@ -205,8 +206,16 @@ export class UserSealedProductsService {
         const product = products[i]
 
         try {
-          // Récupérer le prix depuis CardMarket
-          const priceData = await CardMarketSupabaseService.getPriceForProduct(product.cardmarket_id_product)
+          // Obtenir l'ID de langue pour ce produit (par défaut français)
+          const languageId = CardMarketSupabaseService.getLanguageId(product.language || 'fr')
+
+          console.log(`🌐 Récupération prix pour ${product.name} en ${product.language || 'fr'} (ID: ${languageId})`)
+
+          // Récupérer le prix depuis CardMarket avec la langue du produit
+          const priceData = await CardMarketSupabaseService.getPriceForProduct(
+            product.cardmarket_id_product,
+            languageId
+          )
 
           if (priceData?.avg) {
             const newPrice = parseFloat(priceData.avg)
@@ -219,10 +228,12 @@ export class UserSealedProductsService {
               })
 
               updated++
-              console.log(`✅ Prix mis à jour: ${product.name} (${oldPrice}€ → ${newPrice}€)`)
+              console.log(`✅ Prix mis à jour: ${product.name} (${oldPrice}€ → ${newPrice}€) [${product.language || 'fr'}]`)
             } else {
-              console.log(`⏭️ Prix inchangé: ${product.name} (${newPrice}€)`)
+              console.log(`⏭️ Prix inchangé: ${product.name} (${newPrice}€) [${product.language || 'fr'}]`)
             }
+          } else {
+            console.log(`⚠️ Aucun prix trouvé pour ${product.name} en ${product.language || 'fr'}`)
           }
         } catch (error) {
           errors++

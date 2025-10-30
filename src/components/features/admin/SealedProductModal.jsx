@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ImageUpload } from '@/components/features/ImageUpload'
 import { Package, Euro, Link, Tag, FileText, RefreshCw, Plus, Minus, Image as ImageIcon } from 'lucide-react'
-import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
+import { CardMarketSupabaseService, LANGUAGE_LABELS } from '@/services/CardMarketSupabaseService'
 
 const PRODUCT_CATEGORIES = [
   'Booster Pack',
@@ -39,7 +39,8 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
     notes: '',
     quantity: 1,
     condition: 'Impeccable',
-    purchasePrice: ''
+    purchasePrice: '',
+    language: 'fr' // Par défaut français
   })
 
   const [useFileUpload, setUseFileUpload] = useState(false)
@@ -59,7 +60,8 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
         notes: product.notes || '',
         quantity: product.quantity || 1,
         condition: product.condition || 'Impeccable',
-        purchasePrice: product.purchase_price || ''
+        purchasePrice: product.purchase_price || '',
+        language: product.language || 'fr'
       })
       setUseFileUpload(!!product.image_file)
     } else {
@@ -74,7 +76,8 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
         notes: '',
         quantity: 1,
         condition: 'Impeccable',
-        purchasePrice: ''
+        purchasePrice: '',
+        language: 'fr'
       })
       setUseFileUpload(false)
     }
@@ -100,7 +103,8 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
       notes: formData.notes.trim() || null,
       quantity: parseInt(formData.quantity) || 1,
       condition: formData.condition || 'Impeccable',
-      purchase_price: formData.purchasePrice ? parseFloat(formData.purchasePrice) : null
+      purchase_price: formData.purchasePrice ? parseFloat(formData.purchasePrice) : null,
+      language: formData.language || 'fr'
     }
 
     onSave(productData)
@@ -125,8 +129,14 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
 
     try {
       setLoadingPrice(true)
+
+      // Obtenir l'ID de langue pour la langue sélectionnée
+      const languageId = CardMarketSupabaseService.getLanguageId(formData.language)
+      console.log(`🌐 Récupération du prix en ${formData.language} (ID: ${languageId})`)
+
       const priceData = await CardMarketSupabaseService.getPriceForProduct(
-        parseInt(formData.cardmarketIdProduct)
+        parseInt(formData.cardmarketIdProduct),
+        languageId
       )
 
       if (priceData?.avg) {
@@ -134,9 +144,9 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
           ...prev,
           marketPrice: parseFloat(priceData.avg).toFixed(2)
         }))
-        console.log(`✅ Prix récupéré: ${priceData.avg}€`)
+        console.log(`✅ Prix récupéré: ${priceData.avg}€ [${formData.language}]`)
       } else {
-        alert('Aucun prix trouvé pour cet ID CardMarket')
+        alert(`Aucun prix trouvé pour cet ID CardMarket en ${LANGUAGE_LABELS[formData.language] || formData.language}`)
       }
     } catch (error) {
       console.error('❌ Erreur récupération prix:', error)
@@ -225,6 +235,29 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Langue du produit */}
+          <div>
+            <Label htmlFor="language" className="flex items-center gap-2">
+              🌐 Langue du produit
+            </Label>
+            <Select
+              value={formData.language}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, language: value }))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Sélectionner une langue" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
+                  <SelectItem key={code} value={code}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              💡 Les prix CardMarket seront récupérés pour la langue sélectionnée
+            </p>
           </div>
 
           {/* Nombre d'exemplaires */}

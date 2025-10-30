@@ -5,7 +5,57 @@
 
 import { supabase } from '@/lib/supabaseClient'
 
+/**
+ * Mapping des codes de langue vers les IDs CardMarket
+ */
+export const CARDMARKET_LANGUAGE_IDS = {
+  'en': 1,  // Anglais
+  'fr': 2,  // Français
+  'de': 3,  // Allemand
+  'es': 4,  // Espagnol
+  'it': 5   // Italien
+}
+
+/**
+ * Mapping inversé : ID vers code de langue
+ */
+export const CARDMARKET_LANGUAGE_CODES = {
+  1: 'en',
+  2: 'fr',
+  3: 'de',
+  4: 'es',
+  5: 'it'
+}
+
+/**
+ * Labels des langues pour l'interface utilisateur
+ */
+export const LANGUAGE_LABELS = {
+  'fr': 'Français',
+  'en': 'Anglais',
+  'de': 'Allemand',
+  'es': 'Espagnol',
+  'it': 'Italien'
+}
+
 export class CardMarketSupabaseService {
+  /**
+   * Convertir un code de langue (ex: 'fr') en ID CardMarket (ex: 2)
+   * @param {string} languageCode - Code langue (fr, en, de, es, it)
+   * @returns {number} ID CardMarket
+   */
+  static getLanguageId(languageCode) {
+    return CARDMARKET_LANGUAGE_IDS[languageCode?.toLowerCase()] || 2 // Par défaut français
+  }
+
+  /**
+   * Convertir un ID CardMarket en code de langue
+   * @param {number} languageId - ID CardMarket
+   * @returns {string} Code langue
+   */
+  static getLanguageCode(languageId) {
+    return CARDMARKET_LANGUAGE_CODES[languageId] || 'fr' // Par défaut français
+  }
   /**
    * Importer les données depuis les fichiers JSON vers Supabase
    * ATTENTION: Cette fonction doit être exécutée UNE SEULE FOIS par un admin
@@ -76,6 +126,7 @@ export class CardMarketSupabaseService {
           jsonFiles.prices.priceGuides.map(p => ({
             id_product: p.idProduct,
             id_category: p.idCategory,
+            id_language: p.idLanguage || 2, // Par défaut français (2) si non spécifié
             avg: p.avg,
             low: p.low,
             trend: p.trend,
