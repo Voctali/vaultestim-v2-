@@ -1092,7 +1092,7 @@ export const POKEMON_TRANSLATIONS = {
 
   // Dresseurs Paldea (Gen 9)
   'colza': 'brassius', // Champion d'Alfornada (Artiste)
-  'clove': 'kofu', // Champion de Levalendura (Chef)
+  'clove': 'clive', // Champion Pokemon (Elektrik)
 
 }
 
