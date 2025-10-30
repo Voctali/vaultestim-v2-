@@ -1104,6 +1104,10 @@ export const POKEMON_TRANSLATIONS = {
   "decodage de decryptomane": "ciphermaniac's codebreaking", // Variante sans accents
   "dévouement de bianca": "bianca's devotion", // Carte dresseur
   "devouement de bianca": "bianca's devotion", // Variante sans accents
+  'dracéna': 'drasna', // Conseil des 4 Kalos
+  'dracena': 'drasna', // Variante sans accent
+  "élève de paldea": "paldean student", // Carte dresseur Paldea
+  "eleve de paldea": "paldean student", // Variante sans accents
 
 }
 
