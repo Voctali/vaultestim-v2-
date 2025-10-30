@@ -90,7 +90,8 @@ export class CardMarketMatchingService {
           bestMatch.id_product,
           bestMatch.matchScore,
           cardAttacks.length > 0 ? 'auto_attacks' : 'auto_name',
-          false // is_sealed_product
+          false, // is_sealed_product
+          bestMatch.name // cardmarketName - pour construire l'URL de recherche
         )
 
         console.log(`💾 Match sauvegardé: ${cardId} → ${bestMatch.id_product} (score: ${(bestMatch.matchScore * 100).toFixed(1)}%)`)

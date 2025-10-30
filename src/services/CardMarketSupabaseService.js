@@ -336,13 +336,14 @@ export class CardMarketSupabaseService {
   /**
    * Sauvegarder un matching utilisateur
    */
-  static async saveUserMatch(userId, cardId, cardmarketIdProduct, matchScore, matchMethod = 'auto_attacks', isSealedProduct = false) {
+  static async saveUserMatch(userId, cardId, cardmarketIdProduct, matchScore, matchMethod = 'auto_attacks', isSealedProduct = false, cardmarketName = null) {
     const { data, error } = await supabase
       .from('user_cardmarket_matches')
       .upsert({
         user_id: userId,
         card_id: cardId,
         cardmarket_id_product: cardmarketIdProduct,
+        cardmarket_name: cardmarketName, // Nom de la carte sur CardMarket (pour construire l'URL de recherche)
         match_score: matchScore,
         match_method: matchMethod,
         is_sealed_product: isSealedProduct

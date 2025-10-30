@@ -43,9 +43,11 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
   let isDirect = false
   let isMatchedDirect = false
 
-  if (cardMarketMatch) {
-    // Utiliser le matching Supabase (meilleur!)
-    cardMarketUrl = CardMarketSupabaseService.buildDirectUrl(cardMarketMatch.cardmarket_id_product)
+  if (cardMarketMatch && cardMarketMatch.cardmarket_name) {
+    // Utiliser le matching Supabase avec le NOM de la carte CardMarket (plus fiable que l'ID pour les singles)
+    // Recherche par nom exact entre guillemets pour éviter les résultats parasites
+    const searchQuery = encodeURIComponent(`"${cardMarketMatch.cardmarket_name}"`)
+    cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${searchQuery}&language=2`
     isDirect = true
     isMatchedDirect = true
   } else if (card.cardmarket?.url) {
@@ -53,8 +55,12 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
     cardMarketUrl = card.cardmarket.url
     isDirect = true
   } else {
-    // Fallback: recherche générique
-    cardMarketUrl = buildCardMarketUrl(card, 'auto')
+    // Fallback: recherche générique avec langue française
+    const fallbackUrl = buildCardMarketUrl(card, 'auto')
+    // Ajouter le paramètre language si pas déjà présent
+    cardMarketUrl = fallbackUrl.includes('?')
+      ? `${fallbackUrl}&language=2`
+      : `${fallbackUrl}?language=2`
     isDirect = false
   }
 
