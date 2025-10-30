@@ -1096,6 +1096,8 @@ export const POKEMON_TRANSLATIONS = {
   'okuba': 'larry', // Dresseur Okuba (Paradox Rift)
   "compétence d'okuba": "larry's skill", // Carte dresseur compétence
   "competence d'okuba": "larry's skill", // Variante sans accent
+  'mortimer': 'morty', // Dresseur Mortimer (Champion Rosalia)
+  "conviction de mortimer": "morty's conviction", // Carte dresseur conviction
 
 }
 
