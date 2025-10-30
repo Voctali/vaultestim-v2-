@@ -1099,7 +1099,9 @@ export const POKEMON_TRANSLATIONS = {
   'mortimer': 'morty', // Dresseur Mortimer (Champion Rosalia)
   "conviction de mortimer": "morty's conviction", // Carte dresseur conviction
   'cuisinier': 'cook', // Carte dresseur Cuisinier
-  'cyano': 'cyrano', // Dresseur Cyano
+  'cyano': 'cyrano', // Dresseur Cyrano
+  "décodage de décryptomane": "ciphermaniac's codebreaking", // Carte dresseur
+  "decodage de decryptomane": "ciphermaniac's codebreaking", // Variante sans accents
 
 }
 
