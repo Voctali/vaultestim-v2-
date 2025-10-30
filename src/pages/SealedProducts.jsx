@@ -5,16 +5,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
-import { Package, Search, Plus, Edit3, Trash2, Euro, RefreshCw, TrendingUp, TrendingDown, AlertCircle, BarChart3, ExternalLink } from 'lucide-react'
+import { Package, Search, Plus, Edit3, Trash2, Euro, RefreshCw, TrendingUp, TrendingDown, AlertCircle, BarChart3, ExternalLink, ShoppingCart } from 'lucide-react'
 import { UserSealedProductsService } from '@/services/UserSealedProductsService'
 import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
 import { SealedProductModal } from '@/components/features/admin/SealedProductModal'
 import { PriceHistoryModal } from '@/components/features/admin/PriceHistoryModal'
+import { SealedProductSaleModal } from '@/components/features/collection/SealedProductSaleModal'
 import { useAuth } from '@/hooks/useAuth'
+import { useSealedProducts } from '@/hooks/useSealedProducts'
 
 export function SealedProducts() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { createSealedProductSale, refreshData } = useSealedProducts()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -25,6 +28,8 @@ export function SealedProducts() {
   const [priceAlerts, setPriceAlerts] = useState([])
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [historyProduct, setHistoryProduct] = useState(null)
+  const [showSaleModal, setShowSaleModal] = useState(false)
+  const [sellingProduct, setSellingProduct] = useState(null)
 
   // Charger les produits
   useEffect(() => {
@@ -131,6 +136,29 @@ export function SealedProducts() {
     } catch (error) {
       console.error('❌ Erreur sauvegarde:', error)
       alert('Erreur lors de la sauvegarde du produit')
+    }
+  }
+
+  const handleSell = (product) => {
+    setSellingProduct(product)
+    setShowSaleModal(true)
+  }
+
+  const handleSaleSubmit = async (saleData) => {
+    try {
+      await createSealedProductSale(saleData)
+      setShowSaleModal(false)
+      setSellingProduct(null)
+
+      // Recharger les produits depuis le service pour obtenir les quantités à jour
+      await loadProducts()
+      // Recharger les données du contexte
+      await refreshData()
+
+      alert('Vente enregistrée avec succès ! 🎉')
+    } catch (error) {
+      console.error('❌ Erreur vente produit:', error)
+      alert('Erreur lors de l\'enregistrement de la vente')
     }
   }
 
@@ -432,6 +460,16 @@ export function SealedProducts() {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => handleSell(product)}
+                              className="flex-1 text-green-500 hover:text-green-600 border-green-500/20"
+                            >
+                              <ShoppingCart className="h-3 w-3 mr-1" />
+                              Vendre
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleEdit(product)}
                               className="flex-1"
                             >
@@ -507,6 +545,17 @@ export function SealedProducts() {
           setHistoryProduct(null)
         }}
         product={historyProduct}
+      />
+
+      {/* Modal de vente */}
+      <SealedProductSaleModal
+        isOpen={showSaleModal}
+        onClose={() => {
+          setShowSaleModal(false)
+          setSellingProduct(null)
+        }}
+        onSubmit={handleSaleSubmit}
+        product={sellingProduct}
       />
     </div>
   )

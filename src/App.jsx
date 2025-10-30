@@ -25,6 +25,7 @@ import { MigrateToSupabase } from '@/pages/MigrateToSupabase'
 import { ImportBackup } from '@/pages/ImportBackup'
 import { AuthProvider } from '@/hooks/useAuth'
 import { CollectionProvider } from '@/hooks/useCollection.jsx'
+import { SealedProductsProvider } from '@/hooks/useSealedProducts.jsx'
 import { CardDatabaseProvider } from '@/hooks/useCardDatabase.jsx'
 import { SettingsProvider } from '@/hooks/useSettings'
 import { FriendsProvider } from '@/hooks/useFriends'
@@ -43,10 +44,11 @@ function AppContent() {
     <ToastProvider>
       <AuthProvider>
         <CollectionProvider>
-          <CardDatabaseProvider>
-            <SettingsProvider>
-              <FriendsProvider>
-                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
+          <SealedProductsProvider>
+            <CardDatabaseProvider>
+              <SettingsProvider>
+                <FriendsProvider>
+                  <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
@@ -76,10 +78,11 @@ function AppContent() {
                     <Route path="admin/systeme" element={<AdminSystem />} />
                   </Route>
                 </Routes>
-              </div>
-              </FriendsProvider>
-            </SettingsProvider>
-          </CardDatabaseProvider>
+                </div>
+                </FriendsProvider>
+              </SettingsProvider>
+            </CardDatabaseProvider>
+          </SealedProductsProvider>
         </CollectionProvider>
       </AuthProvider>
     </ToastProvider>

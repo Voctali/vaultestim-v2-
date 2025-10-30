@@ -3,19 +3,24 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/useAuth'
 import { useCollection } from '@/hooks/useCollection.jsx'
+import { useSealedProducts } from '@/hooks/useSealedProducts.jsx'
 import { getUserLevel } from '@/constants/userLevels'
 import { Plus, Settings, Clock, Target, TrendingUp, Package } from 'lucide-react'
 import { translateCondition } from '@/utils/cardConditions'
+import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
 
 export function Dashboard() {
   const { user } = useAuth()
   const { getStats, recentAdditions, getMostValuedCards } = useCollection()
+  const { getStats: getSealedStats, getMostValuedProducts } = useSealedProducts()
 
   if (!user) return null
 
   const collectionStats = getStats()
+  const sealedStats = getSealedStats()
   const userLevel = getUserLevel(collectionStats.totalCards || 0)
-  const mostValuedCards = getMostValuedCards(1)
+  const mostValuedCards = getMostValuedCards(5)
+  const mostValuedSealedProducts = getMostValuedProducts(5)
 
   const stats = [
     {
@@ -41,10 +46,10 @@ export function Dashboard() {
     },
     {
       title: 'PRODUITS SCELLÉS',
-      value: '0',
+      value: sealedStats.totalProducts.toString(),
       icon: '📦',
       color: '#10B981',
-      change: null
+      change: `${sealedStats.totalMarketValue}€ de valeur`
     }
   ]
 
@@ -181,75 +186,121 @@ export function Dashboard() {
 
         {/* Right Column */}
         <div className="space-y-6">
-          {/* Most Valuable Cards */}
+          {/* Top 5 Cartes */}
           <Card className="golden-border card-hover">
             <CardHeader>
               <CardTitle className="flex items-center justify-between golden-glow">
                 <span className="flex items-center">
-                  ⭐ Cartes les plus valorisées
+                  ⭐ Top 5 Cartes
                 </span>
-                <span className="text-xs text-muted-foreground">Limite</span>
+                <span className="text-xs text-muted-foreground">Les plus valorisées</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {mostValuedCards.length > 0 ? (
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-accent/30">
-                    <div className="w-12 h-16 bg-gradient-to-br from-yellow-100 to-orange-100 rounded overflow-hidden flex-shrink-0">
-                      {mostValuedCards[0].image || mostValuedCards[0].images?.small ? (
-                        <img
-                          src={mostValuedCards[0].image || mostValuedCards[0].images?.small}
-                          alt={mostValuedCards[0].name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.style.display = 'none'
-                            e.target.nextSibling.style.display = 'flex'
-                          }}
-                        />
-                      ) : null}
-                      <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground" style={{ display: mostValuedCards[0].image || mostValuedCards[0].images?.small ? 'none' : 'flex' }}>
-                        🔥
+                  mostValuedCards.map((card, index) => (
+                    <div key={card.id} className="flex items-center space-x-3 p-2 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-100 to-orange-100 flex items-center justify-center flex-shrink-0 font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <div className="w-10 h-14 bg-gradient-to-br from-yellow-100 to-orange-100 rounded overflow-hidden flex-shrink-0">
+                        {card.image || card.images?.small ? (
+                          <img
+                            src={card.image || card.images?.small}
+                            alt={card.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center text-xs">
+                            🔥
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="font-medium text-foreground text-sm truncate">{card.name}</h5>
+                        <p className="text-xs text-muted-foreground truncate">{card.rarity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-green-500 text-sm">{card.marketPrice || card.value}€</p>
                       </div>
                     </div>
-                    <div className="flex-1">
-                      <h5 className="font-medium text-foreground">{mostValuedCards[0].name}</h5>
-                      <p className="text-xs text-muted-foreground">{mostValuedCards[0].rarity}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-500">{mostValuedCards[0].marketPrice || mostValuedCards[0].value}€</p>
-                    </div>
-                  </div>
+                  ))
                 ) : (
-                  <div className="flex items-center space-x-3 p-3 rounded-lg bg-accent/30">
-                    <div className="w-12 h-16 bg-gradient-to-br from-yellow-100 to-orange-100 rounded overflow-hidden flex-shrink-0">
-                      <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                        📦
-                      </div>
+                  <div className="text-center py-8">
+                    <div className="w-12 h-16 bg-gradient-to-br from-yellow-100 to-orange-100 rounded mx-auto mb-2 flex items-center justify-center">
+                      📦
                     </div>
-                    <div className="flex-1">
-                      <h5 className="font-medium text-foreground">Aucune carte</h5>
-                      <p className="text-xs text-muted-foreground">Ajoutez des cartes à votre collection</p>
-                    </div>
+                    <h5 className="font-medium text-foreground">Aucune carte</h5>
+                    <p className="text-xs text-muted-foreground">Ajoutez des cartes à votre collection</p>
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
 
-                <div className="p-4 border border-dashed border-border rounded-lg text-center">
-                  <Package className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <h4 className="font-semibold golden-glow">Voir toutes vos cartes valorisées</h4>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Vous avez {collectionStats.totalCards} cartes valorisées au total.
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Passez à Premium pour les voir toutes !
-                  </p>
-                  <Button size="sm" className="mt-3 bg-yellow-500 hover:bg-yellow-600">
-                    <span className="mr-1">👑</span>
-                    Passer à Premium
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    À partir de 6.99€/mois • Annulable à tout moment
-                  </p>
-                </div>
+          {/* Top 5 Produits Scellés */}
+          <Card className="golden-border card-hover">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between golden-glow">
+                <span className="flex items-center">
+                  📦 Top 5 Produits Scellés
+                </span>
+                <span className="text-xs text-muted-foreground">Les plus valorisés</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {mostValuedSealedProducts.length > 0 ? (
+                  mostValuedSealedProducts.map((product, index) => (
+                    <div key={product.id} className="flex items-center space-x-3 p-2 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center flex-shrink-0 font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded overflow-hidden flex-shrink-0">
+                        {product.image_file || product.cardmarket_id_product || product.image_url ? (
+                          <img
+                            src={
+                              product.image_file ||
+                              (product.cardmarket_id_product && product.cardmarket_id_category
+                                ? CardMarketSupabaseService.getCardMarketImageUrl(product.cardmarket_id_product, product.cardmarket_id_category)
+                                : product.image_url)
+                            }
+                            alt={product.name}
+                            className="w-full h-full object-contain bg-white"
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center text-xs">
+                            📦
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="font-medium text-foreground text-sm truncate">{product.name}</h5>
+                        <p className="text-xs text-muted-foreground">
+                          {product.quantity && product.quantity > 1 ? `x${product.quantity}` : ''}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-purple-500 text-sm">{parseFloat(product.market_price || 0).toFixed(2)}€</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-blue-100 rounded mx-auto mb-2 flex items-center justify-center">
+                      📦
+                    </div>
+                    <h5 className="font-medium text-foreground">Aucun produit</h5>
+                    <p className="text-xs text-muted-foreground">Ajoutez des produits scellés à votre collection</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

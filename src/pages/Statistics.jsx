@@ -4,18 +4,32 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { BarChart, ShoppingCart, Euro, TrendingUp, Target, Package, TrendingDown, RotateCcw } from 'lucide-react'
 import { useCollection } from '@/hooks/useCollection.jsx'
+import { useSealedProducts } from '@/hooks/useSealedProducts.jsx'
 import { AllSalesModal } from '@/components/features/statistics/AllSalesModal'
 
 export function Statistics() {
   const { collection, getStats, getSalesStats, getRecentSales, cancelSale, sales } = useCollection()
+  const { getStats: getSealedStats, getSalesStats: getSealedSalesStats, getRecentSales: getRecentSealedSales, cancelSealedProductSale } = useSealedProducts()
   const [showAllSalesModal, setShowAllSalesModal] = useState(false)
   const stats = getStats()
   const salesStats = getSalesStats()
   const recentSales = getRecentSales(8)
 
+  // Statistiques produits scellés
+  const sealedStats = getSealedStats()
+  const sealedSalesStats = getSealedSalesStats()
+  const recentSealedSales = getRecentSealedSales(8)
+
   const handleCancelSale = (sale) => {
     if (window.confirm(`Êtes-vous sûr de vouloir annuler cette vente ? ${sale.type === 'card' ? 'La carte' : 'Le lot'} sera restauré${sale.type === 'batch' ? '' : ''} dans votre collection.`)) {
       cancelSale(sale)
+      alert('Vente annulée avec succès !')
+    }
+  }
+
+  const handleCancelSealedSale = (sale) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir annuler cette vente ? Le produit sera restauré dans votre collection.`)) {
+      cancelSealedProductSale(sale)
       alert('Vente annulée avec succès !')
     }
   }
@@ -212,10 +226,170 @@ export function Statistics() {
         </div>
       </div>
 
-      {/* 8 Dernières Ventes */}
+      {/* Statistiques de Produits Scellés */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4 golden-glow">Statistiques de Produits Scellés</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Produits en Collection */}
+          <Card className="golden-border card-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-1">Produits en Collection</p>
+                  <p className="text-3xl font-bold text-purple-500">
+                    {sealedStats.totalProducts}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Total d'exemplaires</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <Package className="w-6 h-6 text-purple-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Valeur d'Achat */}
+          <Card className="golden-border card-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-1">Valeur d'Achat</p>
+                  <p className="text-3xl font-bold text-green-500">
+                    {sealedStats.totalPurchaseValue}€
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Prix total d'achat</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                  <Euro className="w-6 h-6 text-green-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Valeur de Marché */}
+          <Card className="golden-border card-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-1">Valeur de Marché</p>
+                  <p className="text-3xl font-bold text-blue-500">
+                    {sealedStats.totalMarketValue}€
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Valeur actuelle du marché</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-6 h-6 text-blue-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Plus-Value Totale */}
+          <Card className="golden-border card-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-1">Plus-Value Totale</p>
+                  <p className={`text-3xl font-bold ${parseFloat(sealedStats.plusValue) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {parseFloat(sealedStats.plusValue) >= 0 ? '+' : ''}{sealedStats.plusValue}€
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Marché - Achat {parseFloat(sealedStats.plusValuePercentage) >= 0 ? '+' : ''}{sealedStats.plusValuePercentage}%
+                  </p>
+                </div>
+                <div className={`w-12 h-12 rounded-full ${parseFloat(sealedStats.plusValue) >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'} flex items-center justify-center flex-shrink-0`}>
+                  {parseFloat(sealedStats.plusValue) >= 0 ? (
+                    <TrendingUp className="w-6 h-6 text-green-500" />
+                  ) : (
+                    <TrendingDown className="w-6 h-6 text-red-500" />
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* 8 Dernières Ventes de Produits Scellés */}
       <Card className="golden-border">
         <CardHeader>
-          <CardTitle className="golden-glow">8 Dernières Ventes</CardTitle>
+          <CardTitle className="golden-glow">8 Dernières Ventes de Produits Scellés</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Date</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Produit</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Quantité</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Montant</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Profit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentSealedSales.length > 0 ? (
+                  recentSealedSales.map((sale) => (
+                    <tr key={sale.id} className="border-b border-border hover:bg-accent/30 transition-colors">
+                      <td className="py-3 px-4 text-sm">{sale.displayDate}</td>
+                      <td className="py-3 px-4">
+                        <div>
+                          <p className="text-sm font-medium">{sale.product_name}</p>
+                          {sale.buyer && sale.buyer !== 'Non spécifié' && (
+                            <p className="text-xs text-muted-foreground">Acheteur: {sale.buyer}</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant="secondary" className="bg-purple-500/20 text-purple-400">
+                          x{sale.quantity}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-sm font-semibold">{sale.sale_price}€</td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-right">
+                            <p className={`text-sm font-semibold ${parseFloat(sale.profit) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {parseFloat(sale.profit) >= 0 ? '+' : ''}{sale.profit}€
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {parseFloat(sale.profitPercentage) >= 0 ? '+' : ''}{sale.profitPercentage}%
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCancelSealedSale(sale)}
+                            className="border-orange-500/20 hover:bg-orange-500/10"
+                            title="Annuler cette vente"
+                          >
+                            <RotateCcw className="w-4 h-4 text-orange-500" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center py-12">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <Package className="w-16 h-16 mb-4 opacity-50" />
+                        <p className="text-lg font-medium">Aucune vente enregistrée</p>
+                        <p className="text-sm">Vendez vos produits scellés depuis la page "Produits Scellés" pour voir vos statistiques</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 8 Dernières Ventes de Cartes */}
+      <Card className="golden-border">
+        <CardHeader>
+          <CardTitle className="golden-glow">8 Dernières Ventes de Cartes</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
