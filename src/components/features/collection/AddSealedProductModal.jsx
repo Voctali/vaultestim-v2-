@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Package, Plus, Minus, Euro } from 'lucide-react'
-import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
+import { CardMarketSupabaseService, LANGUAGE_LABELS } from '@/services/CardMarketSupabaseService'
 
 /**
  * Modale d'ajout d'un produit scellé à la collection
@@ -18,7 +18,8 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
     condition: 'Impeccable',
     notes: '',
     purchase_price: '',
-    market_price: product?.price || ''
+    market_price: product?.price || '',
+    language: 'fr' // Par défaut français
   })
 
   // Réinitialiser le formulaire quand le produit change
@@ -29,7 +30,8 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
         condition: 'Impeccable',
         notes: '',
         purchase_price: '',
-        market_price: product.price || ''
+        market_price: product.price || '',
+        language: 'fr' // Par défaut français
       })
     }
   }, [product])
@@ -48,6 +50,7 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
       market_price: formData.market_price ? parseFloat(formData.market_price) : null,
       cardmarket_id_product: product.id_product,
       cardmarket_id_category: product.id_category,
+      language: formData.language || 'fr', // Langue du produit
       // Utiliser l'URL d'image du catalogue, ou générer si indisponible
       image_url: product.image_url || CardMarketSupabaseService.getCardMarketImageUrl(product.id_product, product.id_category)
     }
@@ -150,6 +153,29 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
             </Select>
             <p className="text-xs text-muted-foreground">
               L'état du scellé et de l'emballage
+            </p>
+          </div>
+
+          {/* Langue du produit */}
+          <div className="space-y-2">
+            <Label htmlFor="language" className="flex items-center gap-2">
+              🌐 Langue du produit
+            </Label>
+            <Select
+              value={formData.language}
+              onValueChange={(value) => setFormData({ ...formData, language: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une langue" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
+                  <SelectItem key={code} value={code}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              💡 Les prix CardMarket affichés correspondent à cette langue
             </p>
           </div>
 
