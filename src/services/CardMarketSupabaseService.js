@@ -521,33 +521,17 @@ export class CardMarketSupabaseService {
   }
 
   static buildDirectUrl(idProduct, isSealedProduct = false, productName = null, categoryId = null, languageCode = 'fr') {
-    // Format CardMarket : /en/Pokemon/Products/[Catégorie]/[Nom-Slugifié]?language=X
-    // Exemples :
-    //   - /Products/Boosters/Destined-Rivals-Booster?language=2
-    //   - /Products/Elite-Trainer-Boxes/Black-Bolt-Elite-Trainer-Box?language=2
-
     // Convertir le code langue en ID CardMarket
     const languageId = this.getLanguageId(languageCode)
-    const languageParam = `?language=${languageId}`
 
-    if (isSealedProduct && productName && categoryId) {
-      const categoryPath = this.CATEGORY_URL_MAPPING[categoryId]
-
-      if (categoryPath) {
-        const slug = this.slugifyForCardMarket(productName)
-
-        // Si le slug est vide (trop de caractères spéciaux supprimés), utiliser le fallback
-        if (slug && slug.length > 0) {
-          return `https://www.cardmarket.com/en/Pokemon/Products/${categoryPath}/${slug}${languageParam}`
-        }
-      }
-    }
-
-    // Fallback : URL de recherche si on n'a pas toutes les infos
+    // Pour les produits scellés, TOUJOURS utiliser l'URL de recherche
+    // Car les URLs directes sont fragiles (CardMarket change les slugs/structure)
+    // L'URL de recherche par ID produit est plus fiable et redirige toujours vers le bon produit
     if (isSealedProduct) {
       return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&searchInSealedProducts=true&language=${languageId}`
     }
 
+    // Pour les cartes singles (non scellés)
     return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&language=${languageId}`
   }
 
