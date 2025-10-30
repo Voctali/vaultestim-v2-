@@ -1098,6 +1098,7 @@ export const POKEMON_TRANSLATIONS = {
   "competence d'okuba": "larry's skill", // Variante sans accent
   'mortimer': 'morty', // Dresseur Mortimer (Champion Rosalia)
   "conviction de mortimer": "morty's conviction", // Carte dresseur conviction
+  'cuisinier': 'cook', // Carte dresseur Cuisinier
 
 }
 
