@@ -1117,8 +1117,9 @@ export const POKEMON_TRANSLATIONS = {
   'éra': 'katy', // Dresseur Paldea
   'era': 'katy', // Variante sans accent
   'erio': 'atticus', // Team Star Poison Crew
-  "esprit combatif d'iris": "iris's fighting spirit" // Champion Unys (Dragon),
-  "esprit vif de lem": "clemont's quick wit" // Champion Illumina (Électrik)
+  "esprit combatif d'iris": "iris's fighting spirit", // Champion Unys (Dragon)
+  "esprit vif de lem": "clemont's quick wit", // Champion Illumina (Électrik)
+  "aventure de luth": "ethan's adventure" // Héros Pokémon Or/Argent
 
 }
 
