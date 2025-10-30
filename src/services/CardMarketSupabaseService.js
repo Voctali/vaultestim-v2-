@@ -514,27 +514,31 @@ export class CardMarketSupabaseService {
       .replace(/^-+|-+$/g, '')
   }
 
-  static buildDirectUrl(idProduct, isSealedProduct = false, productName = null, categoryId = null) {
-    // Format CardMarket : /en/Pokemon/Products/[Catégorie]/[Nom-Slugifié]
+  static buildDirectUrl(idProduct, isSealedProduct = false, productName = null, categoryId = null, languageCode = 'fr') {
+    // Format CardMarket : /en/Pokemon/Products/[Catégorie]/[Nom-Slugifié]?language=X
     // Exemples :
-    //   - /Products/Boosters/Destined-Rivals-Booster
-    //   - /Products/Elite-Trainer-Boxes/Black-Bolt-Elite-Trainer-Box
+    //   - /Products/Boosters/Destined-Rivals-Booster?language=2
+    //   - /Products/Elite-Trainer-Boxes/Black-Bolt-Elite-Trainer-Box?language=2
+
+    // Convertir le code langue en ID CardMarket
+    const languageId = this.getLanguageId(languageCode)
+    const languageParam = `?language=${languageId}`
 
     if (isSealedProduct && productName && categoryId) {
       const categoryPath = this.CATEGORY_URL_MAPPING[categoryId]
 
       if (categoryPath) {
         const slug = this.slugifyForCardMarket(productName)
-        return `https://www.cardmarket.com/en/Pokemon/Products/${categoryPath}/${slug}`
+        return `https://www.cardmarket.com/en/Pokemon/Products/${categoryPath}/${slug}${languageParam}`
       }
     }
 
     // Fallback : URL de recherche si on n'a pas toutes les infos
     if (isSealedProduct) {
-      return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&searchInSealedProducts=true`
+      return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&searchInSealedProducts=true&language=${languageId}`
     }
 
-    return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}`
+    return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&language=${languageId}`
   }
 
   /**
@@ -542,9 +546,10 @@ export class CardMarketSupabaseService {
    * @param {number} idProduct - ID du produit CardMarket
    * @param {string} productName - Nom du produit
    * @param {number} categoryId - ID de la catégorie (optionnel)
+   * @param {string} languageCode - Code langue (fr, en, de, es, it) - défaut: 'fr'
    */
-  static buildSealedProductUrl(idProduct, productName = null, categoryId = null) {
-    return this.buildDirectUrl(idProduct, true, productName, categoryId)
+  static buildSealedProductUrl(idProduct, productName = null, categoryId = null, languageCode = 'fr') {
+    return this.buildDirectUrl(idProduct, true, productName, categoryId, languageCode)
   }
 
   /**

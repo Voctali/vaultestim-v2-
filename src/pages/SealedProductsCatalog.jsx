@@ -297,7 +297,7 @@ export function SealedProductsCatalog() {
 
                           {/* Lien CardMarket */}
                           <a
-                            href={CardMarketSupabaseService.buildSealedProductUrl(product.id_product, product.name, product.id_category)}
+                            href={CardMarketSupabaseService.buildSealedProductUrl(product.id_product, product.name, product.id_category, 'fr')}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="block"
