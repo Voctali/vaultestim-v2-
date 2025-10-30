@@ -21,6 +21,8 @@ const TRAINER_TRANSLATIONS = {
   'cassiopée': 'cassiopeia', // Boss Team Star (Poison)
   'cassiopee': 'cassiopeia', // Variante sans accent
   'clavel': 'clavell', // Directeur de l'Académie Raisin (Paldea)
+  'colza': 'brassius', // Champion d'Arène Paldea (Type Plante)
+  'clove': 'clive', // Identité secrète de Clavel (Directeur déguisé)
 
   // ========================================
   // AUTRES DRESSEURS
