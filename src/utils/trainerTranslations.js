@@ -39,6 +39,10 @@ const TRAINER_TRANSLATIONS = {
   'neflie': 'eri', // Variante sans accent
   'nérine': 'amarys', // Conseil des 4 Académie Myrtille (Type Acier) - Stellar Crown
   'nerine': 'amarys', // Variante sans accent
+  'ortiga': 'ortega', // Boss Team Star Fée (Ruchbah Squad) - Paldea
+  'pania': 'penny', // Boss de Team Star (vraie identité de Cassiopée) - Paldea
+  'pepper': 'arven', // Ami du protagoniste (quête des Herbes Mystérieuses) - Paldea
+  'popi': 'poppy', // Membre du Conseil des 4 Paldea (Type Acier)
 
   // Hisui / Sinnoh (Legends: Arceus)
   'nacchara': 'irida', // Cheffe du Clan Perle - Astral Radiance
@@ -47,6 +51,7 @@ const TRAINER_TRANSLATIONS = {
   // Unys / Unova (Gen 5)
   'clown': 'harlequin', // Classe de Dresseur - White Flare
   'ludvina': 'hilda', // Protagoniste de Pokémon Noir et Blanc
+  'oryse': 'fennel', // Scientifique spécialiste des rêves Pokémon - Unys
 
   // ========================================
   // CARTES SUPPORTER GÉNÉRALES
@@ -68,9 +73,17 @@ const TRAINER_TRANSLATIONS = {
   'guide d\'exploration': 'explorer\'s guidance', // Temporal Forces - Scarlet & Violet
   'guide d exploration': 'explorer\'s guidance', // Variante sans apostrophe
   'juge': 'judge', // Carte Supporter classique - Multiple rééditions
+  'ordres du boss': 'boss\'s orders', // Carte Supporter classique - Multiple rééditions
   'intendant': 'caretaker', // Carte Supporter
   'lithia': 'perrin', // Photographe - Twilight Masquerade
   'machinations de xanthin': 'xerosic\'s machinations', // Carte signature - XY Phantom Forces
+  'sœur parasol': 'parasol lady', // Classe de dresseuse - Carte Supporter
+  'soeur parasol': 'parasol lady', // Variante sans accent
+  'petite frappe': 'ruffian', // Classe de dresseur - Carte Supporter
+  'plan de n': 'n\'s plan', // Carte signature de N (Team Plasma) - Unova
+  'plan du professeur turum': 'professor turo\'s scenario', // Professeur de Paldea (Pokémon Écarlate)
+  'vitalité de la professeure olim': 'professor sada\'s vitality', // Professeure de Paldea (Pokémon Violet)
+  'recherches professorales': 'professor\'s research', // Carte Supporter classique - Multiple rééditions
 
   // ========================================
   // OBJETS ET CARTES DRESSEUR
@@ -82,6 +95,7 @@ const TRAINER_TRANSLATIONS = {
   'gros ballon': 'big air balloon',
   'vieil ambre ancien': 'antique old amber',
   'fossile nautile ancien': 'antique helix fossil',
+  'planche de sauvetage': 'rescue board', // Objet Dresseur
   'sac de menzi': 'nemona\'s backpack' // Objet Paldea - Paldean Fates
 }
 
