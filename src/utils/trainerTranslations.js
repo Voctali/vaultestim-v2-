@@ -81,7 +81,8 @@ const TRAINER_TRANSLATIONS = {
   'piste cyclable': 'cycling road',
   'gros ballon': 'big air balloon',
   'vieil ambre ancien': 'antique old amber',
-  'fossile nautile ancien': 'antique helix fossil'
+  'fossile nautile ancien': 'antique helix fossil',
+  'sac de menzi': 'nemona\'s backpack' // Objet Paldea - Paldean Fates
 }
 
 /**

@@ -92,7 +92,10 @@
       "Bash(powershell -Command:*)",
       "Bash(for file in Collection.jsx Favorites.jsx Duplicates.jsx)",
       "Bash(do)",
-      "Bash(done)"
+      "Bash(done)",
+      "WebFetch(domain:www.jcc.pokemon.tf)",
+      "Bash(Get-Content \"F:\\Logiciels\\Appli Vaultestim\\vaultestim-v2\\src\\utils\\trainerTranslations.js\")",
+      "Bash(Select-Object -Last 5)"
     ],
     "deny": [],
     "ask": []

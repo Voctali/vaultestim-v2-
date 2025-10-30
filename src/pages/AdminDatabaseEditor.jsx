@@ -26,6 +26,7 @@ import { AttacksMigrationPanel } from '@/components/features/admin/AttacksMigrat
 import { CardMarketDebugPanel } from '@/components/features/admin/CardMarketDebugPanel'
 import { CardMarketBulkHelper } from '@/components/features/admin/CardMarketBulkHelper'
 import { SealedProductsManager } from '@/components/features/admin/SealedProductsManager'
+import { SetImportPanel } from '@/components/features/admin/SetImportPanel'
 
 export function AdminDatabaseEditor() {
   const { discoveredCards, seriesDatabase, isLoading } = useCardDatabase()
@@ -883,6 +884,8 @@ export function AdminDatabaseEditor() {
       {/* Affichage selon l'onglet sélectionné */}
       {mainTab === 'sealed-products' ? (
         <SealedProductsManager />
+      {/* Import automatique d'extensions */}
+      <SetImportPanel />
       ) : (
         <>
           {/* Migration des données IndexedDB → Backend */}
