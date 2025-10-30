@@ -1090,7 +1090,13 @@ export const POKEMON_TRANSLATIONS = {
   'pêchaminus': 'pecharunt',
   'pechaminus': 'pecharunt', // Variante sans accent
 
+  // Dresseurs Paldea (Gen 9)
+  'colza': 'brassius', // Champion d'Alfornada (Artiste)
+  'clove': 'kofu', // Champion de Levalendura (Chef)
+
 }
+
+
 
 export function translatePokemonName(frenchName) {
   const name = frenchName.toLowerCase().trim()
