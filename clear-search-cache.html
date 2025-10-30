@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vider le cache de recherche</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    button {
+      background: #D4AF37;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #C5A028;
+    }
+    .success {
+      background: #2ecc71;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 20px;
+      display: none;
+    }
+    .info {
+      background: #3498db;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧹 Vider le cache de recherche VaultEstim</h1>
+  
+  <div class="info">
+    <strong>ℹ️ Information :</strong> Ce script vide le cache des recherches de cartes (tcg_search + vaultestim_search_cache). 
+    Les traductions récemment ajoutées (Clove, Colza) seront ainsi prises en compte.
+  </div>
+
+  <button onclick="clearSearchCache()">Vider le cache de recherche</button>
+  <button onclick="clearAllCache()">Vider TOUT le cache (recherche + cartes)</button>
+  
+  <div class="success" id="message"></div>
+
+  <script>
+    function showMessage(text) {
+      const msg = document.getElementById('message');
+      msg.textContent = text;
+      msg.style.display = 'block';
+      setTimeout(() => {
+        msg.style.display = 'none';
+      }, 5000);
+    }
+
+    function clearSearchCache() {
+      let count = 0;
+      const keys = Object.keys(localStorage);
+      
+      keys.forEach(key => {
+        if (key.includes('tcg_search') || key.includes('vaultestim_search_cache')) {
+          localStorage.removeItem(key);
+          count++;
+        }
+      });
+      
+      showMessage(`✅ ${count} entrées de cache de recherche supprimées. Rechargez la page pour tester les nouvelles traductions !`);
+      console.log(`🧹 ${count} clés de cache de recherche supprimées`);
+    }
+
+    function clearAllCache() {
+      let count = 0;
+      const keys = Object.keys(localStorage);
+      
+      keys.forEach(key => {
+        if (key.includes('tcg_') || key.includes('vaultestim_')) {
+          localStorage.removeItem(key);
+          count++;
+        }
+      });
+      
+      showMessage(`✅ ${count} entrées de cache supprimées. Rechargez la page pour tout recharger !`);
+      console.log(`🧹 ${count} clés de cache supprimées`);
+    }
+  </script>
+</body>
+</html>
