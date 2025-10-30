@@ -492,6 +492,7 @@ export class CardMarketSupabaseService {
    * Slugifier un nom de produit pour CardMarket
    * Format CardMarket : mots avec majuscules séparés par des tirets
    * Exemple : "Black Bolt Elite Trainer Box" → "Black-Bolt-Elite-Trainer-Box"
+   * Exemple : "Pokémon GO: Premium Collection—Radiant Eevee" → "Pokemon-GO-Premium-Collection-Radiant-Eevee"
    */
   static slugifyForCardMarket(text) {
     if (!text) return ''
@@ -499,9 +500,14 @@ export class CardMarketSupabaseService {
     return text
       .toString()
       .trim()
+      // Normaliser les caractères accentués (é → e, à → a, etc.)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
       // Supprimer les parenthèses et leur contenu
       .replace(/\s*\([^)]*\)/g, '')
-      // Remplacer les caractères spéciaux (sauf espaces et tirets) par des espaces
+      // Remplacer les tirets cadratins (—, –) et deux-points par des espaces
+      .replace(/[—–:]/g, ' ')
+      // Remplacer les autres caractères spéciaux (sauf espaces et tirets normaux) par des espaces
       .replace(/[^\w\s-]/g, ' ')
       // Remplacer les espaces multiples par un seul
       .replace(/\s+/g, ' ')
