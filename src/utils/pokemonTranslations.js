@@ -1113,7 +1113,9 @@ export const POKEMON_TRANSLATIONS = {
   "engouement de la mc": "emcee's hype", // Carte dresseur
   "engouement de la MC": "emcee's hype", // Variante avec majuscule
   "entraînement de karatéka": "black belt's training", // Carte dresseur
-  "entrainement de karateka": "black belt's training" // Variante sans accents
+  "entrainement de karateka": "black belt's training", // Variante sans accents
+  'éra': 'katy', // Dresseur Paldea
+  'era': 'katy' // Variante sans accent
 
 }
 
