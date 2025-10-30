@@ -2,6 +2,22 @@
 
 ## Problème : Le sélecteur de langue n'apparaît pas dans la modale
 
+### ⚠️ Important : Deux modales différentes
+
+L'application utilise **deux modales différentes** pour les produits scellés :
+
+1. **SealedProductModal** (Admin)
+   - Utilisée dans `/produits-scelles` → Bouton "Ajouter un produit"
+   - Pour créer des produits personnalisés manuellement
+   - ✅ Sélecteur de langue ajouté
+
+2. **AddSealedProductModal** (Catalogue)
+   - Utilisée dans le catalogue CardMarket
+   - Bouton "Ajouter à ma collection" sur les cartes produits
+   - ✅ Sélecteur de langue ajouté
+
+**Les deux modales ont maintenant le sélecteur de langue !**
+
 ### Causes possibles
 
 1. **Cache du navigateur** - Le fichier JavaScript ancien est encore en cache
