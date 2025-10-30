@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { SupabaseCollectionService } from '@/services/SupabaseCollectionService'
 import { supabase } from '@/lib/supabaseClient'
+import { getNumericPrice } from '@/utils/priceFormatter'
 
 const CollectionContext = createContext()
 
@@ -249,7 +250,7 @@ export function CollectionProvider({ children }) {
   const getStats = () => {
     const totalCards = collection.length
     const totalValue = collection.reduce((sum, card) => {
-      const marketPrice = parseFloat(card.marketPrice || card.value || '0')
+      const marketPrice = getNumericPrice(card) // Utilise la même logique que l'affichage
       const quantity = parseInt(card.quantity || 1)
       return sum + (marketPrice * quantity)
     }, 0)
@@ -283,8 +284,8 @@ export function CollectionProvider({ children }) {
   const getMostValuedCards = (limit = 5) => {
     return [...collection]
       .sort((a, b) => {
-        const valueA = parseFloat(a.marketPrice || a.value || '0')
-        const valueB = parseFloat(b.marketPrice || b.value || '0')
+        const valueA = getNumericPrice(a) // Utilise la même logique que l'affichage
+        const valueB = getNumericPrice(b) // Utilise la même logique que l'affichage
         return valueB - valueA
       })
       .slice(0, limit)

@@ -233,3 +233,42 @@ export function formatCardPriceWithCondition(card, condition, decimals = 2, vers
 export function getCurrencySymbol(currency = 'EUR') {
   return CURRENCY_SYMBOLS[currency] || currency
 }
+
+/**
+ * Extrait le prix numérique d'une carte (sans formatage)
+ * Utilise la même logique que formatCardPrice mais retourne un nombre
+ * @param {object} card - La carte
+ * @returns {number} - Prix numérique ou 0 si non trouvé
+ */
+export function getNumericPrice(card) {
+  if (!card) return 0
+
+  let price = null
+
+  // Priorité 1 : Prix direct
+  price = card.marketPrice || card.value || null
+
+  // Priorité 2 : Chercher dans les structures de l'API Pokemon TCG
+  if (!price) {
+    // Priorité 2a : CardMarket (EUR)
+    if (card.cardmarket?.prices?.averageSellPrice) {
+      price = card.cardmarket.prices.averageSellPrice
+    }
+    // Priorité 2b : TCGPlayer (USD) - Ordre : holofoil, normal, reverse
+    else if (card.tcgplayer?.prices?.holofoil?.market) {
+      price = card.tcgplayer.prices.holofoil.market
+    }
+    else if (card.tcgplayer?.prices?.normal?.market) {
+      price = card.tcgplayer.prices.normal.market
+    }
+    else if (card.tcgplayer?.prices?.reverseHolofoil?.market) {
+      price = card.tcgplayer.prices.reverseHolofoil.market
+    }
+    else if (card.tcgplayer?.prices?.['1stEditionHolofoil']?.market) {
+      price = card.tcgplayer.prices['1stEditionHolofoil'].market
+    }
+  }
+
+  const numPrice = parseFloat(price)
+  return isNaN(numPrice) ? 0 : numPrice
+}
