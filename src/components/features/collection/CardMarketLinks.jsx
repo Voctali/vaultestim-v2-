@@ -43,19 +43,17 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
   let isDirect = false
   let isMatchedDirect = false
 
-  if (cardMarketMatch && cardMarketMatch.cardmarket_name) {
+  if (cardMarketMatch && cardMarketMatch.cardmarket_name && cardMarketMatch.match_score >= 0.5) {
     // Utiliser le matching Supabase avec le NOM de la carte CardMarket (plus fiable que l'ID pour les singles)
     // Recherche par nom exact entre guillemets pour éviter les résultats parasites
+    // SEULEMENT si le score est suffisamment élevé (≥ 50%)
     const searchQuery = encodeURIComponent(`"${cardMarketMatch.cardmarket_name}"`)
     cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${searchQuery}&language=2`
     isDirect = true
     isMatchedDirect = true
-  } else if (card.cardmarket?.url) {
-    // Utiliser l'URL de l'API Pokemon TCG
-    cardMarketUrl = card.cardmarket.url
-    isDirect = true
   } else {
     // Fallback: recherche générique avec langue française
+    // Note: On n'utilise JAMAIS card.cardmarket.url car ces liens de l'API sont souvent cassés ou lents
     const fallbackUrl = buildCardMarketUrl(card, 'auto')
     // Ajouter le paramètre language si pas déjà présent
     cardMarketUrl = fallbackUrl.includes('?')
