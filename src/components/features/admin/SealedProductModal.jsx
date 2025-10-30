@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +29,9 @@ const CONDITION_OPTIONS = [
 ]
 
 export function SealedProductModal({ isOpen, onClose, onSave, product = null }) {
+  // Mémoïser les options de langue pour éviter recalcul à chaque render
+  const languageOptions = useMemo(() => Object.entries(LANGUAGE_LABELS), [])
+
   const [formData, setFormData] = useState({
     name: '',
     marketPrice: '',
@@ -250,7 +253,7 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
                 <SelectValue placeholder="Sélectionner une langue" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
+                {languageOptions.map(([code, label]) => (
                   <SelectItem key={code} value={code}>{label}</SelectItem>
                 ))}
               </SelectContent>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +21,9 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
     market_price: product?.price || '',
     language: 'fr' // Par défaut français
   })
+
+  // Mémoïser les options de langue pour éviter recalcul à chaque render
+  const languageOptions = useMemo(() => Object.entries(LANGUAGE_LABELS), [])
 
   // Réinitialiser le formulaire quand le produit change
   useEffect(() => {
@@ -169,7 +172,7 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
                 <SelectValue placeholder="Sélectionner une langue" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
+                {languageOptions.map(([code, label]) => (
                   <SelectItem key={code} value={code}>{label}</SelectItem>
                 ))}
               </SelectContent>
