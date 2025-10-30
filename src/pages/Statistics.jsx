@@ -45,6 +45,16 @@ export function Statistics() {
     ? (parseFloat(stats.totalValue) / stats.totalCards).toFixed(2)
     : '0.00'
 
+  // Statistiques de ventes combinées (cartes + produits scellés)
+  const combinedSalesStats = {
+    totalSales: salesStats.totalSales + sealedSalesStats.totalSales,
+    totalRevenue: (parseFloat(salesStats.totalRevenue) + parseFloat(sealedSalesStats.totalRevenue)).toFixed(2),
+    totalProfit: (parseFloat(salesStats.totalProfit) + parseFloat(sealedSalesStats.totalProfit)).toFixed(2),
+    averageSalePrice: (salesStats.totalSales + sealedSalesStats.totalSales) > 0
+      ? ((parseFloat(salesStats.totalRevenue) + parseFloat(sealedSalesStats.totalRevenue)) / (salesStats.totalSales + sealedSalesStats.totalSales)).toFixed(2)
+      : '0.00'
+  }
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -75,9 +85,11 @@ export function Statistics() {
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-1">Total des Ventes</p>
                   <p className="text-3xl font-bold golden-glow">
-                    {salesStats.totalSales} <span className="text-sm text-muted-foreground">({salesStats.cardSales}x + {salesStats.batchSales}📦)</span>
+                    {combinedSalesStats.totalSales}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Cartes + Lots de</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {salesStats.totalSales} cartes + {sealedSalesStats.totalSales} produits
+                  </p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                   <ShoppingCart className="w-6 h-6 text-green-500" />
@@ -93,9 +105,11 @@ export function Statistics() {
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-1">Chiffre d'Affaires</p>
                   <p className="text-3xl font-bold text-blue-500">
-                    {salesStats.totalRevenue}€
+                    {combinedSalesStats.totalRevenue}€
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Cartes + Lots de</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {salesStats.totalRevenue}€ cartes + {sealedSalesStats.totalRevenue}€ produits
+                  </p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
                   <Euro className="w-6 h-6 text-blue-500" />
@@ -111,9 +125,11 @@ export function Statistics() {
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-1">Profit Total</p>
                   <p className="text-3xl font-bold text-green-500">
-                    {salesStats.totalProfit}€
+                    {combinedSalesStats.totalProfit}€
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Bénéfice Net</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {salesStats.totalProfit}€ cartes + {sealedSalesStats.totalProfit}€ produits
+                  </p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
                   <TrendingUp className="w-6 h-6 text-green-500" />
@@ -129,9 +145,9 @@ export function Statistics() {
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground mb-1">Prix Moyen</p>
                   <p className="text-3xl font-bold text-purple-500">
-                    {salesStats.averageSalePrice}€
+                    {combinedSalesStats.averageSalePrice}€
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Par vente</p>
+                  <p className="text-xs text-muted-foreground mt-1">Par vente (toutes catégories)</p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
                   <Target className="w-6 h-6 text-purple-500" />
