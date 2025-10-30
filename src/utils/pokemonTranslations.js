@@ -1119,7 +1119,7 @@ export const POKEMON_TRANSLATIONS = {
   'erio': 'atticus', // Team Star Poison Crew
   "esprit combatif d'iris": "iris's fighting spirit", // Champion Unys (Dragon)
   "esprit vif de lem": "clemont's quick wit", // Champion Illumina (Électrik)
-  "aventure de luth": "ethan's adventure" // Héros Pokémon Or/Argent,
+  "aventure de luth": "ethan's adventure", // Héros Pokémon Or/Argent
   "exploration de pierre": "brock's scouting" // Champion Argenta (Roche)
 
 }
