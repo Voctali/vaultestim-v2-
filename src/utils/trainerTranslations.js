@@ -30,6 +30,15 @@ const TRAINER_TRANSLATIONS = {
   'laïm': 'ryme', // Champion d'Arène Paldea (Type Spectre) - Obsidian Flames
   'laim': 'ryme', // Variante sans tréma
   'mashynn': 'iono', // Champion d'Arène Paldea (Type Électrique) - Paldea Evolved
+  'meloco': 'mela', // Boss Team Star Feu (Schedar Squad) - Paradox Rift
+  'menzi': 'nemona', // Rivale principale Paldea - Paldean Fates
+  'milio et naire': 'billy & o\'nare', // Duo Kanto - Carte Supporter
+  'mimosa': 'miriam', // Infirmière de l'Académie - Scarlet & Violet
+  'mora': 'raifort', // Professeur d'Histoire de l'Académie - Twilight Masquerade / Prismatic Evolutions
+  'nèflie': 'eri', // Boss Team Star Combat (Caph Squad) - Paldean Fates
+  'neflie': 'eri', // Variante sans accent
+  'nérine': 'amarys', // Conseil des 4 Académie Myrtille (Type Acier) - Stellar Crown
+  'nerine': 'amarys', // Variante sans accent
 
   // Hisui / Sinnoh (Legends: Arceus)
   'nacchara': 'irida', // Cheffe du Clan Perle - Astral Radiance
