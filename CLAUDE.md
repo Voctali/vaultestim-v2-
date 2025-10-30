@@ -436,6 +436,35 @@ L'application utilise une architecture en couches de Context API :
      - ✅ Évite les faux positifs pour tous les noms courts de dresseurs (ex: "eri", "mela", "iono")
    - **Commit** : `[hash]` - "fix: Recherche Dresseurs par mot complet - évite faux positifs (eri ≠ Erika)"
 
+54. **🎴 Enrichissement Traductions Dresseurs (14 nouvelles)** - Support étendu cartes Trainer/Supporter françaises
+   - **Traductions ajoutées** :
+     - **Paldea (Gen 9)** :
+       - `'ortiga': 'ortega'` - Boss Team Star Fée (Ruchbah Squad)
+       - `'pania': 'penny'` - Boss de Team Star (vraie identité de Cassiopée)
+       - `'pepper': 'arven'` - Ami du protagoniste (quête Herbes Mystérieuses)
+       - `'popi': 'poppy'` - Membre du Conseil des 4 Paldea (Type Acier)
+     - **Unys/Unova (Gen 5)** :
+       - `'oryse': 'fennel'` - Scientifique spécialiste des rêves Pokémon
+     - **Cartes Supporter classiques** :
+       - `'ordres du boss': 'boss\'s orders'` - Carte très populaire en compétition
+       - `'recherches professorales': 'professor\'s research'` - Carte Supporter essentielle
+       - `'plan de n': 'n\'s plan'` - Carte signature de N (Team Plasma)
+     - **Cartes Professeurs Paldea** :
+       - `'plan du professeur turum': 'professor turo\'s scenario'` - Pokémon Écarlate
+       - `'vitalité de la professeure olim': 'professor sada\'s vitality'` - Pokémon Violet
+     - **Classes de dresseurs** :
+       - `'sœur parasol': 'parasol lady'` + variante sans accent `'soeur parasol'`
+       - `'petite frappe': 'ruffian'` - Classe de dresseur
+     - **Objets Dresseur** :
+       - `'planche de sauvetage': 'rescue board'` - Carte Outil
+   - **Fichier modifié** : `src/utils/trainerTranslations.js`
+   - **Impact** :
+     - ✅ Recherche de cartes Trainer/Supporter en français dans toutes les collections
+     - ✅ Support des personnages majeurs de Paldea (Team Star, Professeurs, Conseil des 4)
+     - ✅ Cartes Supporter compétitives accessibles en français
+     - ✅ Total : **40+ traductions de dresseurs** disponibles (26 précédentes + 14 nouvelles)
+   - **Commit** : `3c371d3` - "feat: Ajout de 14 traductions de dresseurs français → anglais"
+
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
 - **Ma Collection** - Gestion des cartes possédées
