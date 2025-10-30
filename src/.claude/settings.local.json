@@ -85,7 +85,14 @@
       "Bash(git merge:*)",
       "WebFetch(domain:api.pokemontcg.io)",
       "Bash(tasklist:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git restore:*)",
+      "Bash(start:*)",
+      "Bash(echo:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(for file in Collection.jsx Favorites.jsx Duplicates.jsx)",
+      "Bash(do)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
