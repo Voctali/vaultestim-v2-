@@ -1111,7 +1111,9 @@ export const POKEMON_TRANSLATIONS = {
   'élige': 'dendra', // Professeur Paldea
   'elige': 'dendra', // Variante sans accent
   "engouement de la mc": "emcee's hype", // Carte dresseur
-  "engouement de la MC": "emcee's hype" // Variante avec majuscule
+  "engouement de la MC": "emcee's hype", // Variante avec majuscule
+  "entraînement de karatéka": "black belt's training", // Carte dresseur
+  "entrainement de karateka": "black belt's training" // Variante sans accents
 
 }
 
