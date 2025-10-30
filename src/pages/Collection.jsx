@@ -67,7 +67,19 @@ export function Collection() {
     if (translatedSearch === searchLower) {
       translatedSearch = translateTrainerName(searchLower)
     }
-    const matchesTranslated = translatedSearch !== searchLower && cardNameLower.includes(translatedSearch)
+    // Recherche par mot complet pour éviter faux positifs (ex: "eri" ne doit PAS matcher "Erika")
+    const matchesTranslated = translatedSearch !== searchLower && (
+      cardNameLower === translatedSearch || // Exact match
+      cardNameLower.startsWith(translatedSearch + ' ') || // "eri " au début
+      cardNameLower.includes(' ' + translatedSearch + ' ') || // " eri " au milieu
+      cardNameLower.endsWith(' ' + translatedSearch) // " eri" à la fin
+    )
+    const matchesTranslated = translatedSearch !== searchLower && (
+      cardNameLower === translatedSearch || // Exact match
+      cardNameLower.startsWith(translatedSearch + ' ') || // "eri " au début
+      cardNameLower.includes(' ' + translatedSearch + ' ') || // " eri " au milieu
+      cardNameLower.endsWith(' ' + translatedSearch) // " eri" à la fin
+    )
 
     const matchesSearch = matchesEnglish || matchesTranslated
     const matchesRarity = filters.rarity === 'all' || card.rarity === filters.rarity

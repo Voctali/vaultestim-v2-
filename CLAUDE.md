@@ -350,6 +350,91 @@ L'application utilise une architecture en couches de Context API :
      - Meilleure organisation pour maintenance future
    - **Fichier** : `src/utils/trainerTranslations.js` - 11 nouvelles entrées
    - **Total traductions** : ~28 traductions de cartes Dresseur + ~10 objets
+52. **📦 Système d'Import Automatique d'Extensions** - Import en masse de toutes les cartes d'une extension en un clic
+   - **Problème initial** : Nécessité de rechercher manuellement chaque carte pour peupler "Explorer les séries"
+   - **Solution implémentée** :
+     - **SetImportService** : Service d'import automatique depuis l'API Pokemon TCG
+       - `getAllSets()` : Liste toutes les extensions disponibles (triées par date)
+       - `importSetCards(setId)` : Import complet d'une extension avec pagination
+       - `getSetInfo(setId)` : Récupère les détails d'une extension
+       - Support AbortSignal pour annulation en cours d'import
+       - Pagination automatique (max 250 cartes/page)
+     - **SetImportPanel** : Interface Admin complète et intuitive
+       - Select avec liste de toutes les extensions (~100+ extensions)
+       - Filtre par série (Scarlet & Violet, Sword & Shield, Sun & Moon, etc.)
+       - Affichage des infos de l'extension (nom, série, nombre de cartes, date de sortie)
+       - Logo de l'extension si disponible
+       - Barre de progression temps réel pendant l'import
+       - Bouton "Annuler" pour stopper l'import en cours
+       - Messages de statut détaillés (succès/erreur/annulé)
+       - Avertissement pour ne pas quitter pendant l'import
+       - Badge "Extension à venir" pour les sorties futures
+     - **Intégration AdminDatabaseEditor** : Nouveau panneau dans Admin → Base de Données
+   - **Fonctionnement** :
+     1. Admin sélectionne une extension dans la liste déroulante
+     2. Affichage des infos de l'extension (ex: "Paldean Fates - 193 cartes")
+     3. Clic sur "Importer l'extension"
+     4. Import automatique de toutes les cartes (60-200+ cartes en 5-10 secondes)
+     5. Ajout dans `discovered_cards` (base commune visible par tous)
+     6. Mise à jour de `seriesDatabase` (organisation par extensions)
+   - **Cas d'usage typique** :
+     - Extension à venir "ME02 Flammes Fantasmagoriques" (sortie 14 novembre)
+     - Admin ouvre Admin → Base de Données → Import Automatique d'Extension
+     - Sélectionne "ME02" dans la liste (dès que l'API a les données)
+     - Un clic → Toutes les cartes importées et disponibles dans "Explorer les séries"
+   - **Avantages** :
+     - ✅ **Gain de temps massif** : Un clic au lieu de 50+ recherches manuelles
+     - ✅ **Exhaustif** : Garantit que TOUTES les cartes sont importées
+     - ✅ **Partagé** : Base commune → tous les utilisateurs en profitent
+     - ✅ **Préparation** : Import possible avant sortie officielle (si API a les données)
+     - ✅ **Flexible** : Importe n'importe quelle extension (ancienne ou nouvelle)
+   - **Traduction ajoutée** : `sac de menzi` → `nemona's backpack` (Paldean Fates)
+   - **Fichiers créés** :
+     - `src/services/SetImportService.js` (210 lignes)
+     - `src/components/features/admin/SetImportPanel.jsx` (330 lignes)
+   - **Impact** : Import d'extensions nouvellement sorties en quelques secondes au lieu de plusieurs heures de recherches manuelles
+
+53. **🔍 Fix Recherche Dresseurs - Word Boundary** - Recherche par mot complet pour éviter faux positifs
+   - **Problème signalé** : Recherche de "nèflie" retourne 23 cartes non pertinentes (cartes "Erika" au lieu de "Eri")
+   - **Exemple du bug** :
+     - Utilisateur recherche "nèflie" (Boss Team Star Combat - Paldea)
+     - Traduction : `'nèflie': 'eri'`
+     - Recherche API : `name:eri*` (wildcard) → retourne 42 cartes
+     - Résultats affichés : 23-42 cartes incluant "**Eri**ka" (faux positifs) au lieu de seulement "**Eri**" (correct)
+   - **Cause racine** :
+     - Filtrage local avec `.includes()` dans 4 fichiers
+     - `cardNameLower.includes('eri')` matche "**Eri**" ✅ ET "**Eri**ka" ❌
+     - Confusion entre deux personnages distincts :
+       - **Eri** (Nèflie) = Boss Team Star Combat de Paldea (Gen 9) - 4 cartes
+       - **Erika** = Championne d'arène de Céladopole (Gen 1) - 30+ cartes
+   - **Tests API effectués** :
+     - Recherche wildcard `name:eri*` → 42 cartes (Eri + Erika)
+     - Recherche exacte `name:"eri"` → 4 cartes (seulement Eri) ✅
+   - **Solution implémentée** : Recherche par **mot complet** avec word boundaries
+     ```javascript
+     // AVANT (ligne 169 dans Explore.jsx)
+     const matchesTranslated = translatedSearch !== searchLower &&
+       cardNameLower.includes(translatedSearch)
+
+     // APRÈS - Recherche par mot complet
+     const matchesTranslated = translatedSearch !== searchLower && (
+       cardNameLower === translatedSearch ||                    // Exact match: "eri"
+       cardNameLower.startsWith(translatedSearch + ' ') ||      // Début: "eri sv5-146"
+       cardNameLower.includes(' ' + translatedSearch + ' ') ||  // Milieu: "supporter eri sv5"
+       cardNameLower.endsWith(' ' + translatedSearch)           // Fin: "trainer eri"
+     )
+     ```
+   - **Fichiers modifiés** :
+     - `src/pages/Explore.jsx` (ligne 169)
+     - `src/pages/Collection.jsx` (ligne 70)
+     - `src/pages/Favorites.jsx` (ligne 100)
+     - `src/pages/Duplicates.jsx` (ligne 59)
+   - **Impact** :
+     - ✅ "nèflie" → trouve maintenant 4 cartes "Eri" (correct)
+     - ✅ "nèflie" → ne matche PLUS les 23 cartes "Erika" (faux positifs éliminés)
+     - ✅ Fix appliqué à toutes les pages de recherche (cohérence globale)
+     - ✅ Évite les faux positifs pour tous les noms courts de dresseurs (ex: "eri", "mela", "iono")
+   - **Commit** : `[hash]` - "fix: Recherche Dresseurs par mot complet - évite faux positifs (eri ≠ Erika)"
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
