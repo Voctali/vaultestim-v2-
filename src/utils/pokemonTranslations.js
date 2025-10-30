@@ -1108,6 +1108,10 @@ export const POKEMON_TRANSLATIONS = {
   'dracena': 'drasna', // Variante sans accent
   "élève de paldea": "paldean student", // Carte dresseur Paldea
   "eleve de paldea": "paldean student", // Variante sans accents
+  'élige': 'dendra', // Professeur Paldea
+  'elige': 'dendra', // Variante sans accent
+  "engouement de la mc": "emcee's hype", // Carte dresseur
+  "engouement de la MC": "emcee's hype" // Variante avec majuscule
 
 }
 
