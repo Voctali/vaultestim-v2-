@@ -391,7 +391,6 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
                 value={formData.imageUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
                 placeholder="https://example.com/image.jpg (optionnel)"
-                required={false}
               />
             )}
 
