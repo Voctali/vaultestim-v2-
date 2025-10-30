@@ -40,6 +40,7 @@ const TRAINER_TRANSLATIONS = {
   'charme atalante': 'lisia\'s appeal', // Variante courte
   'atalante': 'lisia', // Nom du personnage seul (carte plus ancienne, Celestial Storm)
   'tcheren': 'cheren', // Rival de Pokémon Noir et Blanc (Gen 5)
+  'gamin': 'youngster', // Dresseur classe Gamin - Scarlet & Violet
 
   // ========================================
   // OBJETS ET CARTES DRESSEUR
