@@ -529,7 +529,11 @@ export class CardMarketSupabaseService {
 
       if (categoryPath) {
         const slug = this.slugifyForCardMarket(productName)
-        return `https://www.cardmarket.com/en/Pokemon/Products/${categoryPath}/${slug}${languageParam}`
+
+        // Si le slug est vide (trop de caractères spéciaux supprimés), utiliser le fallback
+        if (slug && slug.length > 0) {
+          return `https://www.cardmarket.com/en/Pokemon/Products/${categoryPath}/${slug}${languageParam}`
+        }
       }
     }
 
