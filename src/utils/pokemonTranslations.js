@@ -1,4 +1,4 @@
-// Dictionnaire de traduction Français → Anglais pour les noms de Pokémon
+﻿// Dictionnaire de traduction Français → Anglais pour les noms de Pokémon
 // Utilisé pour rechercher les cartes TCG avec l'API en anglais
 
 export const POKEMON_TRANSLATIONS = {
@@ -1115,7 +1115,8 @@ export const POKEMON_TRANSLATIONS = {
   "entraînement de karatéka": "black belt's training", // Carte dresseur
   "entrainement de karateka": "black belt's training", // Variante sans accents
   'éra': 'katy', // Dresseur Paldea
-  'era': 'katy' // Variante sans accent
+  'era': 'katy', // Variante sans accent
+  'erio': 'atticus' // Team Star Poison Crew
 
 }
 
