@@ -1116,7 +1116,8 @@ export const POKEMON_TRANSLATIONS = {
   "entrainement de karateka": "black belt's training", // Variante sans accents
   'éra': 'katy', // Dresseur Paldea
   'era': 'katy', // Variante sans accent
-  'erio': 'atticus' // Team Star Poison Crew
+  'erio': 'atticus', // Team Star Poison Crew
+  "esprit combatif d'iris": "iris's fighting spirit" // Champion Unys (Dragon)
 
 }
 
