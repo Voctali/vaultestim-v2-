@@ -26,9 +26,14 @@ const TRAINER_TRANSLATIONS = {
   'hassa': 'hassel', // Membre du Conseil des 4 Paldea (Type Dragon) - Twilight Masquerade
   'irido': 'drayton', // Membre du Conseil des 4 de l'Académie Myrtille - Surging Sparks
   'kassis': 'kieran', // Rival de l'extension Teal Mask - Scarlet & Violet
+  'kombu': 'kofu', // Champion d'Arène Paldea (Type Eau) - Stellar Crown
+  'laïm': 'ryme', // Champion d'Arène Paldea (Type Spectre) - Obsidian Flames
+  'laim': 'ryme', // Variante sans tréma
+  'mashynn': 'iono', // Champion d'Arène Paldea (Type Électrique) - Paldea Evolved
 
   // Hisui / Sinnoh (Legends: Arceus)
   'nacchara': 'irida', // Cheffe du Clan Perle - Astral Radiance
+  'lucio': 'lucian', // Membre du Conseil des 4 Sinnoh (Type Psy) - Twilight Masquerade
 
   // Unys / Unova (Gen 5)
   'clown': 'harlequin', // Classe de Dresseur - White Flare
@@ -55,6 +60,8 @@ const TRAINER_TRANSLATIONS = {
   'guide d exploration': 'explorer\'s guidance', // Variante sans apostrophe
   'juge': 'judge', // Carte Supporter classique - Multiple rééditions
   'intendant': 'caretaker', // Carte Supporter
+  'lithia': 'perrin', // Photographe - Twilight Masquerade
+  'machinations de xanthin': 'xerosic\'s machinations', // Carte signature - XY Phantom Forces
 
   // ========================================
   // OBJETS ET CARTES DRESSEUR
