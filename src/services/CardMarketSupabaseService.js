@@ -492,7 +492,8 @@ export class CardMarketSupabaseService {
    * Slugifier un nom de produit pour CardMarket
    * Format CardMarket : mots avec majuscules séparés par des tirets
    * Exemple : "Black Bolt Elite Trainer Box" → "Black-Bolt-Elite-Trainer-Box"
-   * Exemple : "Pokémon GO: Premium Collection—Radiant Eevee" → "Pokemon-GO-Premium-Collection-Radiant-Eevee"
+   * Exemple : "Pokémon GO: Premium Collection—Radiant Eevee" → "Pokemon-GO-Premium-CollectionRadiant-Eevee"
+   * Note : Les tirets cadratins (—) sont supprimés sans espace, collant les mots
    */
   static slugifyForCardMarket(text) {
     if (!text) return ''
@@ -505,8 +506,11 @@ export class CardMarketSupabaseService {
       .replace(/[\u0300-\u036f]/g, '')
       // Supprimer les parenthèses et leur contenu
       .replace(/\s*\([^)]*\)/g, '')
-      // Remplacer les tirets cadratins (—, –) et deux-points par des espaces
-      .replace(/[—–:]/g, ' ')
+      // SUPPRIMER les tirets cadratins (—, –) sans les remplacer par un espace
+      // Exemple: "Collection—Radiant" → "CollectionRadiant"
+      .replace(/[—–]/g, '')
+      // Supprimer les deux-points
+      .replace(/:/g, '')
       // Remplacer les autres caractères spéciaux (sauf espaces et tirets normaux) par des espaces
       .replace(/[^\w\s-]/g, ' ')
       // Remplacer les espaces multiples par un seul
@@ -523,15 +527,28 @@ export class CardMarketSupabaseService {
   static buildDirectUrl(idProduct, isSealedProduct = false, productName = null, categoryId = null, languageCode = 'fr') {
     // Convertir le code langue en ID CardMarket
     const languageId = this.getLanguageId(languageCode)
+    const languageParam = `?language=${languageId}`
 
-    // Pour les produits scellés, TOUJOURS utiliser l'URL de recherche
-    // Car les URLs directes sont fragiles (CardMarket change les slugs/structure)
-    // L'URL de recherche par ID produit est plus fiable et redirige toujours vers le bon produit
+    // Pour les produits scellés, essayer de construire l'URL directe avec slug
+    if (isSealedProduct && productName && categoryId) {
+      const categoryPath = this.CATEGORY_URL_MAPPING[categoryId]
+
+      if (categoryPath) {
+        const slug = this.slugifyForCardMarket(productName)
+
+        // Si le slug est valide, utiliser l'URL directe
+        if (slug && slug.length > 0) {
+          return `https://www.cardmarket.com/en/Pokemon/Products/${categoryPath}/${slug}${languageParam}`
+        }
+      }
+    }
+
+    // Fallback : URL de recherche si on n'a pas toutes les infos ou si slug invalide
     if (isSealedProduct) {
       return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&searchInSealedProducts=true&language=${languageId}`
     }
 
-    // Pour les cartes singles (non scellés)
+    // Pour les cartes singles
     return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&language=${languageId}`
   }
 
