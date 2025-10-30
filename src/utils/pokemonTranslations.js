@@ -1093,6 +1093,9 @@ export const POKEMON_TRANSLATIONS = {
   // Dresseurs Paldea (Gen 9)
   'colza': 'brassius', // Champion d'Alfornada (Artiste)
   'clove': 'clive', // Champion Pokemon (Elektrik)
+  'okuba': 'larry', // Dresseur Okuba (Paradox Rift)
+  'compétence d'okuba': 'larry's skill', // Carte dresseur compétence
+  'competence d'okuba': 'larry's skill', // Variante sans accent
 
 }
 
