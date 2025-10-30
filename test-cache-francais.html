@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cache - Système de Langue Français</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        .subtitle {
+            text-align: center;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        .test-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .success {
+            background: rgba(16, 185, 129, 0.3);
+            border: 2px solid #10b981;
+        }
+        .error {
+            background: rgba(239, 68, 68, 0.3);
+            border: 2px solid #ef4444;
+        }
+        .info {
+            background: rgba(59, 130, 246, 0.3);
+            border: 2px solid #3b82f6;
+        }
+        button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        .instructions li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🧪 Test du Cache Navigateur</h1>
+        <p class="subtitle">Vérification du système de langue français CardMarket</p>
+
+        <div id="results"></div>
+
+        <button onclick="runTests()">🔄 Relancer les tests</button>
+
+        <div class="instructions">
+            <h3>📋 Si les tests échouent :</h3>
+            <ol>
+                <li><strong>Hard Refresh</strong> : Appuyez sur <code>Ctrl + Shift + R</code></li>
+                <li><strong>Vider le cache</strong> :
+                    <ul>
+                        <li>Chrome/Edge : F12 → Clic droit sur rafraîchir → "Vider le cache et actualiser de manière forcée"</li>
+                        <li>Firefox : <code>Ctrl + Shift + Delete</code> → Cocher "Cache" → "Effacer maintenant"</li>
+                    </ul>
+                </li>
+                <li><strong>Navigation privée</strong> : Testez l'app en mode incognito (<code>Ctrl + Shift + N</code>)</li>
+                <li><strong>Redémarrez le navigateur</strong> complètement</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function slugifyForCardMarket(text) {
+            if (!text) return ''
+
+            return text
+                .toString()
+                .trim()
+                .normalize('NFD')  // 🆕 Normalisation des accents
+                .replace(/[\u0300-\u036f]/g, '')  // Suppression diacritiques
+                .replace(/\s*\([^)]*\)/g, '')
+                .replace(/[—–:]/g, ' ')  // 🆕 Gestion tirets longs et deux-points
+                .replace(/[^\w\s-]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .replace(/\s/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-+|-+$/g, '')
+        }
+
+        function buildUrlWithLanguage(idProduct, productName, categoryId, languageCode) {
+            const slug = slugifyForCardMarket(productName)
+            const languageId = languageCode === 'fr' ? 2 : 1
+            const baseUrl = 'https://www.cardmarket.com/en/Pokemon/Products/Box-Sets'
+
+            // 🆕 Vérification que le slug n'est pas vide
+            if (slug && slug.length > 0) {
+                return `${baseUrl}/${slug}?language=${languageId}`
+            } else {
+                // Fallback vers recherche
+                return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&language=${languageId}`
+            }
+        }
+
+        function runTests() {
+            const resultsDiv = document.getElementById('results')
+            resultsDiv.innerHTML = ''
+
+            let allPassed = true
+
+            // Test 1 : Slugification avec accents
+            const testName = 'Pokémon GO: Premium Collection—Radiant Eevee'
+            const expectedSlug = 'Pokemon-GO-Premium-Collection-Radiant-Eevee'
+            const actualSlug = slugifyForCardMarket(testName)
+
+            const test1Passed = actualSlug === expectedSlug
+            allPassed = allPassed && test1Passed
+
+            resultsDiv.innerHTML += `
+                <div class="test-result ${test1Passed ? 'success' : 'error'}">
+                    ${test1Passed ? '✅' : '❌'} <strong>Test 1 : Slugification des accents</strong><br>
+                    Nom testé : <code>${testName}</code><br>
+                    Attendu : <code>${expectedSlug}</code><br>
+                    Obtenu : <code>${actualSlug}</code><br>
+                    ${test1Passed ? '✨ Le nouveau code est chargé !' : '⚠️ Ancien code détecté - cache à vider'}
+                </div>
+            `
+
+            // Test 2 : URL avec paramètre language
+            const testUrl = buildUrlWithLanguage(123456, testName, 1, 'fr')
+            const hasLanguageParam = testUrl.includes('?language=2')
+            const hasSlug = testUrl.includes('Pokemon-GO-Premium-Collection-Radiant-Eevee')
+
+            const test2Passed = hasLanguageParam && hasSlug
+            allPassed = allPassed && test2Passed
+
+            resultsDiv.innerHTML += `
+                <div class="test-result ${test2Passed ? 'success' : 'error'}">
+                    ${test2Passed ? '✅' : '❌'} <strong>Test 2 : URL CardMarket complète</strong><br>
+                    URL générée :<br>
+                    <code style="word-break: break-all; display: block; margin: 5px 0;">${testUrl}</code><br>
+                    Contient <code>?language=2</code> : ${hasLanguageParam ? '✅' : '❌'}<br>
+                    Contient le slug complet : ${hasSlug ? '✅' : '❌'}
+                </div>
+            `
+
+            // Test 3 : Normalisation NFD (détection du nouveau code)
+            const testAccent = 'é'.normalize('NFD')
+            const hasNormalize = typeof String.prototype.normalize === 'function'
+
+            resultsDiv.innerHTML += `
+                <div class="test-result ${hasNormalize ? 'success' : 'error'}">
+                    ${hasNormalize ? '✅' : '❌'} <strong>Test 3 : Support NFD Normalization</strong><br>
+                    La méthode <code>normalize('NFD')</code> est ${hasNormalize ? 'disponible' : 'indisponible'}
+                </div>
+            `
+
+            // Résultat final
+            if (allPassed && hasNormalize) {
+                resultsDiv.innerHTML += `
+                    <div class="test-result success">
+                        🎉 <strong>TOUS LES TESTS RÉUSSIS !</strong><br>
+                        Le nouveau code est correctement chargé.<br>
+                        Vous pouvez maintenant utiliser l'application normalement.
+                    </div>
+                `
+            } else {
+                resultsDiv.innerHTML += `
+                    <div class="test-result error">
+                        ⚠️ <strong>CACHE À VIDER</strong><br>
+                        Le navigateur utilise encore l'ancien code JavaScript.<br>
+                        Suivez les instructions ci-dessous pour vider le cache.
+                    </div>
+                `
+            }
+        }
+
+        // Lancer les tests au chargement de la page
+        window.addEventListener('DOMContentLoaded', runTests)
+    </script>
+</body>
+</html>
