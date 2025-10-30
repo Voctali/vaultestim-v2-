@@ -1102,6 +1102,8 @@ export const POKEMON_TRANSLATIONS = {
   'cyano': 'cyrano', // Dresseur Cyrano
   "décodage de décryptomane": "ciphermaniac's codebreaking", // Carte dresseur
   "decodage de decryptomane": "ciphermaniac's codebreaking", // Variante sans accents
+  "dévouement de bianca": "bianca's devotion", // Carte dresseur
+  "devouement de bianca": "bianca's devotion", // Variante sans accents
 
 }
 
