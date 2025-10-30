@@ -15,6 +15,8 @@ import { IndexedDBService } from '@/services/IndexedDBService'
 import { ImageUploadService } from '@/services/ImageUploadService'
 import { buildBlocksHierarchy } from '@/services/BlockHierarchyService'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
+import { translateTrainerName } from '@/utils/trainerTranslations'
+import { translateTrainerName } from '@/utils/trainerTranslations'
 import { translateCardName } from '@/utils/cardTranslations'
 import { translateCardType } from '@/utils/typeTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
@@ -159,8 +161,12 @@ export function Explore() {
           // Recherche directe dans le nom anglais de la carte
           const matchesEnglish = cardNameLower.includes(searchLower)
 
-          // Si l'utilisateur recherche en français, traduire vers l'anglais
-          const translatedSearch = translatePokemonName(searchLower)
+          // Si l'utilisateur recherche en français, traduire vers l'anglais (Pokémon OU Dresseur)
+          let translatedSearch = translatePokemonName(searchLower)
+          // Si pas de traduction Pokémon trouvée, essayer les dresseurs
+          if (translatedSearch === searchLower) {
+            translatedSearch = translateTrainerName(searchLower)
+          }
           const matchesTranslated = translatedSearch !== searchLower && cardNameLower.includes(translatedSearch)
 
           return matchesEnglish || matchesTranslated

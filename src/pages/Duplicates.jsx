@@ -12,6 +12,7 @@ import { BatchSaleModal } from '@/components/features/collection/BatchSaleModal'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { translateCondition } from '@/utils/cardConditions'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
+import { translateTrainerName } from '@/utils/trainerTranslations'
 import { translateCardName } from '@/utils/cardTranslations'
 import {
   Copy,
@@ -51,7 +52,10 @@ export function Duplicates() {
       const matchesEnglish = cardNameLower.includes(searchLower)
 
       // Si l'utilisateur recherche en français, traduire vers l'anglais
-      const translatedSearch = translatePokemonName(searchLower)
+      let translatedSearch = translatePokemonName(searchLower)
+      if (translatedSearch === searchLower) {
+        translatedSearch = translateTrainerName(searchLower)
+      }
       const matchesTranslated = translatedSearch !== searchLower && cardNameLower.includes(translatedSearch)
 
       return matchesEnglish || matchesTranslated

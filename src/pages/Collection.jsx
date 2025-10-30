@@ -11,6 +11,7 @@ import { CardDetailsModal } from '@/components/features/collection/CardDetailsMo
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { translateCondition } from '@/utils/cardConditions'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
+import { translateTrainerName } from '@/utils/trainerTranslations'
 import { translateCardName } from '@/utils/cardTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
 
@@ -62,7 +63,10 @@ export function Collection() {
     const matchesEnglish = cardNameLower.includes(searchLower)
 
     // Si l'utilisateur recherche en français, traduire vers l'anglais
-    const translatedSearch = translatePokemonName(searchLower)
+    let translatedSearch = translatePokemonName(searchLower)
+    if (translatedSearch === searchLower) {
+      translatedSearch = translateTrainerName(searchLower)
+    }
     const matchesTranslated = translatedSearch !== searchLower && cardNameLower.includes(translatedSearch)
 
     const matchesSearch = matchesEnglish || matchesTranslated
