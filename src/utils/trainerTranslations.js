@@ -23,9 +23,19 @@ const TRAINER_TRANSLATIONS = {
   'clavel': 'clavell', // Directeur de l'Académie Raisin (Paldea)
   'colza': 'brassius', // Champion d'Arène Paldea (Type Plante)
   'clove': 'clive', // Identité secrète de Clavel (Directeur déguisé)
+  'hassa': 'hassel', // Membre du Conseil des 4 Paldea (Type Dragon) - Twilight Masquerade
+  'irido': 'drayton', // Membre du Conseil des 4 de l'Académie Myrtille - Surging Sparks
+  'kassis': 'kieran', // Rival de l'extension Teal Mask - Scarlet & Violet
+
+  // Hisui / Sinnoh (Legends: Arceus)
+  'nacchara': 'irida', // Cheffe du Clan Perle - Astral Radiance
+
+  // Unys / Unova (Gen 5)
+  'clown': 'harlequin', // Classe de Dresseur - White Flare
+  'ludvina': 'hilda', // Protagoniste de Pokémon Noir et Blanc
 
   // ========================================
-  // AUTRES DRESSEURS
+  // CARTES SUPPORTER GÉNÉRALES
   // ========================================
 
   'aide de nina': 'daisy\'s help',
@@ -41,6 +51,10 @@ const TRAINER_TRANSLATIONS = {
   'atalante': 'lisia', // Nom du personnage seul (carte plus ancienne, Celestial Storm)
   'tcheren': 'cheren', // Rival de Pokémon Noir et Blanc (Gen 5)
   'gamin': 'youngster', // Dresseur classe Gamin - Scarlet & Violet
+  'guide d\'exploration': 'explorer\'s guidance', // Temporal Forces - Scarlet & Violet
+  'guide d exploration': 'explorer\'s guidance', // Variante sans apostrophe
+  'juge': 'judge', // Carte Supporter classique - Multiple rééditions
+  'intendant': 'caretaker', // Carte Supporter
 
   // ========================================
   // OBJETS ET CARTES DRESSEUR

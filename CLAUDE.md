@@ -325,6 +325,31 @@ L'application utilise une architecture en couches de Context API :
    - **Fichier** : `vercel.json` lignes 7-12
    - **Commit** : `d94e93d` - "fix: Correction critique proxy API Vercel (404 → 200)"
    - **Note** : Ce fix résout définitivement le problème signalé dans l'entrée #41
+51. **🎴 Enrichissement Traductions Dresseurs** - Ajout de 11 nouvelles traductions françaises de cartes Trainer/Supporter
+   - **Traductions Paldea ajoutées** (Gen 9 - Scarlet & Violet) :
+     - `hassa` → `hassel` : Membre du Conseil des 4 (Type Dragon) - Twilight Masquerade
+     - `irido` → `drayton` : Membre du Conseil des 4 Académie Myrtille - Surging Sparks
+     - `kassis` → `kieran` : Rival de l'extension Teal Mask
+   - **Traductions Hisui ajoutées** (Legends: Arceus) :
+     - `nacchara` → `irida` : Cheffe du Clan Perle - Astral Radiance
+   - **Traductions Unova ajoutées** (Gen 5) :
+     - `clown` → `harlequin` : Classe de Dresseur - White Flare
+     - `ludvina` → `hilda` : Protagoniste de Pokémon Noir et Blanc
+   - **Cartes Supporter générales** :
+     - `guide d'exploration` → `explorer's guidance` : Temporal Forces (⭐ carte demandée)
+     - `guide d exploration` → `explorer's guidance` : Variante sans apostrophe
+     - `juge` → `judge` : Carte Supporter classique avec multiples rééditions
+     - `intendant` → `caretaker` : Carte Supporter
+   - **Organisation améliorée** :
+     - Nouvelle section "CARTES SUPPORTER GÉNÉRALES" au lieu de "AUTRES DRESSEURS"
+     - Regroupement géographique par région (Paldea, Hisui, Unova)
+     - Commentaires détaillés avec nom d'extension TCG
+   - **Impact** :
+     - Recherches françaises de cartes Dresseur maintenant fonctionnelles
+     - Support complet Scarlet & Violet (Gen 9)
+     - Meilleure organisation pour maintenance future
+   - **Fichier** : `src/utils/trainerTranslations.js` - 11 nouvelles entrées
+   - **Total traductions** : ~28 traductions de cartes Dresseur + ~10 objets
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
