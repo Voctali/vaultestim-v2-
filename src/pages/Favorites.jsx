@@ -90,7 +90,12 @@ export function Favorites() {
     const cardNameLower = card.name.toLowerCase()
 
     // Recherche directe dans le nom anglais de la carte
-    const matchesEnglish = cardNameLower.includes(searchLower)
+    const matchesEnglish = (
+      cardNameLower === searchLower ||
+      cardNameLower.startsWith(searchLower + ' ') ||
+      cardNameLower.includes(' ' + searchLower + ' ') ||
+      cardNameLower.endsWith(' ' + searchLower)
+    )
 
     // Si l'utilisateur recherche en français, traduire vers l'anglais
     let translatedSearch = translatePokemonName(searchLower)

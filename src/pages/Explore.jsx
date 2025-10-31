@@ -157,8 +157,13 @@ export function Explore() {
           // Recherche bilingue : français et anglais
           const cardNameLower = card.name.toLowerCase()
 
-          // Recherche directe dans le nom anglais de la carte
-          const matchesEnglish = cardNameLower.includes(searchLower)
+          // Recherche directe dans le nom anglais de la carte (par mot complet)
+          const matchesEnglish = (
+            cardNameLower === searchLower || // Exact match
+            cardNameLower.startsWith(searchLower + ' ') || // Debut: "taro "
+            cardNameLower.includes(' ' + searchLower + ' ') || // Milieu: " taro "
+            cardNameLower.endsWith(' ' + searchLower) // Fin: " taro"
+          )
 
           // Si l'utilisateur recherche en français, traduire vers l'anglais (Pokémon OU Dresseur)
           let translatedSearch = translatePokemonName(searchLower)
