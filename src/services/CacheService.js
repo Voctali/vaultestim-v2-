@@ -373,7 +373,18 @@ export class CacheService {
     }
 
     // Nettoyer aussi les cache de recherche spécifiques
-    const searchCachesToClean = ['dracaufeu', 'charizard', 'amphinobi', 'greninja', 'fezandipiti', 'lépidonille', 'lepidonille', 'pérégrain', 'peregrain', 'scatterbug', 'spewpa', 'flabébé', 'flabebe', 'arven', 'pepper', 'jasmine\'s gaze', 'regard de jasmine']
+    const searchCachesToClean = [
+      'dracaufeu', 'charizard', 'amphinobi', 'greninja', 'fezandipiti',
+      'lépidonille', 'lepidonille', 'pérégrain', 'peregrain', 'scatterbug', 'spewpa',
+      'flabébé', 'flabebe', 'arven', 'pepper',
+      'jasmine\'s gaze', 'regard de jasmine',
+      // Team Rocket members
+      'team rocket\'s proton', 'lance de la team rocket',
+      'team rocket\'s archer', 'amos de la team rocket',
+      'team rocket\'s ariana', 'ariane de la team rocket',
+      'team rocket\'s petrel', 'lambda de la team rocket',
+      'team rocket\'s giovanni', 'giovanni de la team rocket'
+    ]
     searchCachesToClean.forEach(searchTerm => {
       const cacheKey = `${this.CACHE_KEYS.SEARCH_RESULTS}_${searchTerm}`
       if (localStorage.getItem(cacheKey)) {
