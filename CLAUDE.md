@@ -465,6 +465,32 @@ L'application utilise une architecture en couches de Context API :
      - ✅ Total : **40+ traductions de dresseurs** disponibles (26 précédentes + 14 nouvelles)
    - **Commit** : `3c371d3` - "feat: Ajout de 14 traductions de dresseurs français → anglais"
 
+55. **🔧 Fix Cache Obsolète Recherche Arven/Pepper** - Invalidation automatique cache au démarrage
+  - **Problème signalé** : Recherche "Pepper" (→ "Arven") retourne seulement 7 cartes au lieu de 15
+  - **Carte manquante** : Arven #166/198 de Scarlet & Violet (SV1) introuvable
+  - **Cause racine** :
+    - Cache localStorage contenait une version obsolète de la recherche "arven"
+    - Cache créé quand seulement 7 cartes Arven existaient dans l'API
+    - Les 8 nouvelles cartes Arven ajoutées depuis ne sont jamais apparues (cache TTL 15min)
+  - **Investigation** :
+    - Vérification API : 15 cartes Arven existent réellement (3 dans SV1 : #166, #235, #249)
+    - Analyse CacheService : TTL de 15 minutes pour recherches (ligne 19)
+    - Analyse TCGdxService : Clé cache `tcg_search_v2_arven_500` (ligne 130)
+    - Problème : Cache valide pendant 15min, mais version obsolète avec 7 cartes au lieu de 15
+  - **Solution implémentée** :
+    - Ajout de "arven" et "pepper" à la liste de nettoyage automatique (ligne 376)
+    - Nettoyage des deux systèmes de cache :
+      1. `vaultestim_search_cache_arven` (CacheService)
+      2. `tcg_search_v2_arven_*` (TCGdxService) - nouveau bloc lignes 385-395
+    - Invalidation automatique au prochain chargement de la page
+  - **Fichier modifié** : `src/services/CacheService.js` (lignes 376, 385-395)
+  - **Impact** :
+    - ✅ Les 15 cartes Arven sont maintenant trouvables (incluant #166/198 SV1)
+    - ✅ Pas besoin de vider manuellement le cache via `/clean-storage.html`
+    - ✅ Correction automatique au prochain F5 après déploiement
+    - ✅ Recherches "pepper" et "arven" retournent les résultats complets
+  - **Commit** : `89e76ae` - "fix: Invalidation cache recherche Arven/Pepper au démarrage"
+
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
 - **Ma Collection** - Gestion des cartes possédées
