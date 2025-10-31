@@ -98,6 +98,11 @@ const TRAINER_TRANSLATIONS = {
   'charisme de giovanni': 'giovanni\'s charisma',
   'amis de paldea': 'friends in paldea', // Supporter Gen 9
   'ambition de cynthia': 'cynthia\'s ambition', // Maîtresse de la Ligue Sinnoh - Carte Supporter
+  'amis de galar': 'friends in galar', // Supporter Gen 8
+  'amis de hisui': 'friends in hisui', // Supporter Hisui (Legends Arceus)
+  'amis de sinnoh': 'friends in sinnoh', // Supporter Sinnoh (Gen 4)
+  'apia': 'honey', // Personnage Sinnoh
+  'armand': 'riley', // Aura Guardian - Sinnoh
   'art secret de jeannine': 'janine\'s secret art', // Fuchsia Gym Leader
   'art secret de janine': 'janine\'s secret art', // Variante orthographe anglaise
   'charme d\'atalante': 'lisia\'s appeal', // Championne de Concours Hoenn - Surging Sparks (SSP)
