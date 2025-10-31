@@ -56,6 +56,9 @@ const TRAINER_TRANSLATIONS = {
   'sbire team star': 'team star grunt', // Variante courte
   'taro': 'lacey', // Conseil des 4 Académie Myrtille (DLC Indigo Disk) - Paldea
 
+  'thaïm': 'tyme', // Championne d'Arène Paldea (Type Roche) - Professeure de Mathématiques
+  'thaim': 'tyme', // Variante sans tréma
+  'tully': 'tulip', // Championne d'Arène Paldea (Type Psy) - Influenceuse
   // Hisui / Sinnoh (Legends: Arceus)
   'nacchara': 'irida', // Cheffe du Clan Perle - Astral Radiance
   'lucio': 'lucian', // Membre du Conseil des 4 Sinnoh (Type Psy) - Twilight Masquerade
@@ -71,6 +74,11 @@ const TRAINER_TRANSLATIONS = {
   // CARTES SUPPORTER GÉNÉRALES
   // ========================================
 
+  'amos de la team rocket': 'team rocket\'s archer', // Général de la Team Rocket - Johto
+  'ariane de la team rocket': 'team rocket\'s ariana', // Générale de la Team Rocket - Johto
+  'giovanni de la team rocket': 'team rocket\'s giovanni', // Chef de la Team Rocket - Kanto
+  'lambda de la team rocket': 'team rocket\'s petrel', // Général de la Team Rocket - Johto
+  'lance de la team rocket': 'team rocket\'s proton', // Général de la Team Rocket - Johto
   'aide de nina': 'daisy\'s help',
   'transfert de léo': 'bill\'s transfer',
   'transfert de leo': 'bill\'s transfer', // Variante sans accent
@@ -100,6 +108,8 @@ const TRAINER_TRANSLATIONS = {
   'recherches professorales': 'professor\'s research', // Carte Supporter classique - Multiple rééditions
   'soutien de néphie': 'lana\'s aid', // Capitaine d'Épreuve Alola (Type Eau)
   'soutien de nephie': 'lana\'s aid', // Variante sans accent
+  'ténacité de nikolaï': 'colress\'s tenacity', // Scientifique Team Plasma - Unys
+  'tenacite de nikolai': 'colress\'s tenacity', // Variante sans accents
   'surfeur': 'surfer', // Classe de dresseur
 
   // ========================================
