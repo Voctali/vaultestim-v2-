@@ -108,6 +108,7 @@ const TRAINER_TRANSLATIONS = {
   'attention de tcheren': 'cheren\'s care', // Carte Supporter Unova (Gen 5)
   'ball masqué': 'ball guy', // Personnage Galar (Gen 8)
   'barista': 'café master', // Classe de personnage
+  'bastien': 'brawly', // Champion d'Arène Myokara Hoenn (Type Combat)
   'art secret de jeannine': 'janine\'s secret art', // Fuchsia Gym Leader
   'art secret de janine': 'janine\'s secret art', // Variante orthographe anglaise
   'charme d\'atalante': 'lisia\'s appeal', // Championne de Concours Hoenn - Surging Sparks (SSP)
