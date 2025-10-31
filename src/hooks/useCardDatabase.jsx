@@ -539,6 +539,12 @@ export function CardDatabaseProvider({ children }) {
     try {
       console.log(`🔍 Recherche optimisée: "${query}"`)
 
+      // Traduire la query pour les APIs (Pokémon + Dresseurs)
+      const translatedQuery = TCGdxService.translateToEnglish(query.toLowerCase().trim())
+      if (translatedQuery !== query.toLowerCase().trim()) {
+        console.log(`🌐 Traduction appliquée: "${query}" → "${translatedQuery}"`)
+      }
+
       // Vérifier si la recherche a été annulée
       if (abortSignal?.aborted) {
         console.log('🛑 Recherche annulée par l\'utilisateur')
@@ -566,7 +572,7 @@ export function CardDatabaseProvider({ children }) {
             if (abortSignal?.aborted) return
 
             console.log(`🔍 Recherche API en arrière-plan pour découvrir de nouvelles cartes...`)
-            const apiResults = await MultiApiService.searchCards(query, 500)
+            const apiResults = await MultiApiService.searchCards(translatedQuery, 500)
 
             // Vérifier l'annulation après la recherche
             if (abortSignal?.aborted) return
@@ -590,8 +596,8 @@ export function CardDatabaseProvider({ children }) {
       }
 
       // 2. Recherche directe avec RapidAPI
-      console.log(`📡 Recherche avec APIs distantes: "${query}"`)
-      const apiResults = await MultiApiService.searchCards(query, 500)
+      console.log(`📡 Recherche avec APIs distantes: "${query}" → "${translatedQuery}"`)
+      const apiResults = await MultiApiService.searchCards(translatedQuery, 500)
 
       // Vérifier l'annulation après la recherche API
       if (abortSignal?.aborted) {
