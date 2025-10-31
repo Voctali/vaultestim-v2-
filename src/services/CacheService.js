@@ -373,12 +373,24 @@ export class CacheService {
     }
 
     // Nettoyer aussi les cache de recherche spécifiques
-    const searchCachesToClean = ['dracaufeu', 'charizard', 'amphinobi', 'greninja', 'fezandipiti', 'lépidonille', 'lepidonille', 'pérégrain', 'peregrain', 'scatterbug', 'spewpa', 'flabébé', 'flabebe']
+    const searchCachesToClean = ['dracaufeu', 'charizard', 'amphinobi', 'greninja', 'fezandipiti', 'lépidonille', 'lepidonille', 'pérégrain', 'peregrain', 'scatterbug', 'spewpa', 'flabébé', 'flabebe', 'arven', 'pepper']
     searchCachesToClean.forEach(searchTerm => {
       const cacheKey = `${this.CACHE_KEYS.SEARCH_RESULTS}_${searchTerm}`
       if (localStorage.getItem(cacheKey)) {
         keysToRemove.push(cacheKey)
         console.log(`🧹 Suppression cache recherche "${searchTerm}" pour rafraîchissement`)
+      }
+    })
+
+    // Nettoyer aussi les caches TCGdxService (préfixe tcg_search_v2_)
+    searchCachesToClean.forEach(searchTerm => {
+      // Chercher toutes les clés qui commencent par tcg_search_v2_<searchTerm>_
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && (key.startsWith(`tcg_search_v2_${searchTerm}_`) || key === `tcg_search_v2_${searchTerm}`)) {
+          keysToRemove.push(key)
+          console.log(`🧹 Suppression cache TCGdx "${searchTerm}" pour rafraîchissement`)
+        }
       }
     })
 
