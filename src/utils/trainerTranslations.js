@@ -114,6 +114,15 @@ const TRAINER_TRANSLATIONS = {
   'belila': 'zisu', // Variante sans accent
   'ornithologue': 'bird keeper', // Classe de dresseur
   'canon': 'beauty', // Classe de dresseuse
+  'capitaine d\'équipe blanche': 'blanche', // Leader Team Mystic - Pokémon GO
+  'capitaine d\'équipe candela': 'candela', // Leader Team Valor - Pokémon GO
+  'capitaine d\'équipe spark': 'spark', // Leader Team Instinct - Pokémon GO
+  'cardus': 'thorton', // Factory Head - Frontier de Combat Sinnoh (Gen 4)
+  'carolina': 'skyla', // Championne d'Arène Méanville Unova (Type Vol)
+  'chaz': 'gordie', // Champion d'Arène Galar (Type Roche)
+  'concentration de cornélia': "korrina's focus", // Championne d'Arène Relifac-le-Haut Kalos (Type Combat)
+  'conviction de marion': "karen's conviction", // Membre du Conseil des 4 Johto (Type Ténèbres)
+  'copieuse': 'copycat', // Carte Supporter classique
   'art secret de jeannine': 'janine\'s secret art', // Fuchsia Gym Leader
   'art secret de janine': 'janine\'s secret art', // Variante orthographe anglaise
   'charme d\'atalante': 'lisia\'s appeal', // Championne de Concours Hoenn - Surging Sparks (SSP)
