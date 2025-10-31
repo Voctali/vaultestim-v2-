@@ -113,6 +113,7 @@ const TRAINER_TRANSLATIONS = {
   'bélila': 'zisu', // Capitaine de sécurité Hisui (Legends Arceus)
   'belila': 'zisu', // Variante sans accent
   'ornithologue': 'bird keeper', // Classe de dresseur
+  'canon': 'beauty', // Classe de dresseuse
   'art secret de jeannine': 'janine\'s secret art', // Fuchsia Gym Leader
   'art secret de janine': 'janine\'s secret art', // Variante orthographe anglaise
   'charme d\'atalante': 'lisia\'s appeal', // Championne de Concours Hoenn - Surging Sparks (SSP)
