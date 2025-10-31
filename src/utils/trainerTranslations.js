@@ -21,7 +21,9 @@ const TRAINER_TRANSLATIONS = {
   'brome': 'giacomo', // Variante sans accent
   'cassiopée': 'cassiopeia', // Boss Team Star (Poison)
   'cassiopee': 'cassiopeia', // Variante sans accent
-  'cayenn': 'katy', // Championne d'Arène Paldea (Type Insecte)
+  'cayenn': 'rika', // Conseil des 4 Paldea (Type Sol)
+  'éra': 'katy', // Championne d'Arène Sevaro Paldea (Type Insecte)
+  'era': 'katy', // Variante sans accent
   'clavel': 'clavell', // Directeur de l'Académie Raisin (Paldea)
   'colza': 'brassius', // Champion d'Arène Paldea (Type Plante)
   'clove': 'clive', // Identité secrète de Clavel (Directeur déguisé)
