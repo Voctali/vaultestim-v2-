@@ -14,6 +14,13 @@ const TRAINER_TRANSLATIONS = {
   'albert': 'falkner', // Mauville/Violette - Type Vol
   'regard de jasmine': 'jasmine\'s gaze', // Championne d'Arène Oliville (Type Acier)
 
+
+  // Hoenn (Gen 3)
+  'adriane': 'flannery', // Championne d'Arène Vermilava (Type Feu)
+
+  // Galar (Gen 8)
+  'alba minçalor': 'cara liss', // Scientifique - Restauration de fossiles
+  'alba mincalor': 'cara liss', // Variante sans cédille
   // Paldea (Gen 9)
   'alisma': 'geeta', // Maîtresse de la Ligue Pokémon
   'bria': 'briar', // Professeure de l'Académie Myrtille
@@ -60,6 +67,7 @@ const TRAINER_TRANSLATIONS = {
   'thaim': 'tyme', // Variante sans tréma
   'tully': 'tulip', // Championne d'Arène Paldea (Type Psy) - Influenceuse
   // Hisui / Sinnoh (Legends: Arceus)
+  'adamantin': 'adaman', // Chef du Clan Diamant - Astral Radiance
   'nacchara': 'irida', // Cheffe du Clan Perle - Astral Radiance
   'lucio': 'lucian', // Membre du Conseil des 4 Sinnoh (Type Psy) - Twilight Masquerade
   'pierrick': 'roark', // Champion d'Arène Charbourg Sinnoh (Type Roche)
@@ -79,6 +87,7 @@ const TRAINER_TRANSLATIONS = {
   'giovanni de la team rocket': 'team rocket\'s giovanni', // Chef de la Team Rocket - Kanto
   'lambda de la team rocket': 'team rocket\'s petrel', // Général de la Team Rocket - Johto
   'lance de la team rocket': 'team rocket\'s proton', // Général de la Team Rocket - Johto
+  'admin rocket': 'rocket\'s admin', // Admin générique de la Team Rocket
   'aide de nina': 'daisy\'s help',
   'transfert de léo': 'bill\'s transfer',
   'transfert de leo': 'bill\'s transfer', // Variante sans accent
