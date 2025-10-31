@@ -54,6 +54,7 @@ const TRAINER_TRANSLATIONS = {
   'salvio': 'salvatore', // Professeur de langues Académie Raisin - Paldea
   'sbire de la team star': 'team star grunt', // Classe de dresseur Team Star - Paldea
   'sbire team star': 'team star grunt', // Variante courte
+  'taro': 'lacey', // Conseil des 4 Académie Myrtille (DLC Indigo Disk) - Paldea
 
   // Hisui / Sinnoh (Legends: Arceus)
   'nacchara': 'irida', // Cheffe du Clan Perle - Astral Radiance
