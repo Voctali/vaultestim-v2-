@@ -15,12 +15,16 @@ const TRAINER_TRANSLATIONS = {
   'regard de jasmine': 'jasmine\'s gaze', // Championne d'Arène Oliville (Type Acier)
 
 
+
+  // Kanto (Gen 1)
+  'aldo': 'bruno', // Conseil des 4 Kanto (Type Combat)
   // Hoenn (Gen 3)
   'adriane': 'flannery', // Championne d'Arène Vermilava (Type Feu)
 
   // Galar (Gen 8)
   'alba minçalor': 'cara liss', // Scientifique - Restauration de fossiles
   'alba mincalor': 'cara liss', // Variante sans cédille
+  'alistair': 'allister', // Champion d'Arène Galar (Type Spectre)
   // Paldea (Gen 9)
   'alisma': 'geeta', // Maîtresse de la Ligue Pokémon
   'bria': 'briar', // Professeure de l'Académie Myrtille
