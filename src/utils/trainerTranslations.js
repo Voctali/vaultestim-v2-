@@ -12,7 +12,7 @@ const TRAINER_TRANSLATIONS = {
 
   // Johto (Gen 2)
   'albert': 'falkner', // Mauville/Violette - Type Vol
-  'regard de jasmine': 'jasmine's gaze', // Championne d'Arène Oliville (Type Acier)
+  'regard de jasmine': 'jasmine\'s gaze', // Championne d'Arène Oliville (Type Acier)
 
   // Paldea (Gen 9)
   'alisma': 'geeta', // Maîtresse de la Ligue Pokémon
@@ -95,8 +95,8 @@ const TRAINER_TRANSLATIONS = {
   'plan du professeur turum': 'professor turo\'s scenario', // Professeur de Paldea (Pokémon Écarlate)
   'vitalité de la professeure olim': 'professor sada\'s vitality', // Professeure de Paldea (Pokémon Violet)
   'recherches professorales': 'professor\'s research', // Carte Supporter classique - Multiple rééditions
-  'soutien de néphie': 'lana's aid', // Capitaine d'Épreuve Alola (Type Eau)
-  'soutien de nephie': 'lana's aid', // Variante sans accent
+  'soutien de néphie': 'lana\'s aid', // Capitaine d'Épreuve Alola (Type Eau)
+  'soutien de nephie': 'lana\'s aid', // Variante sans accent
   'surfeur': 'surfer', // Classe de dresseur
 
   // ========================================
