@@ -884,8 +884,6 @@ export function AdminDatabaseEditor() {
       {/* Affichage selon l'onglet sélectionné */}
       {mainTab === 'sealed-products' ? (
         <SealedProductsManager />
-      {/* Import automatique d'extensions */}
-      <SetImportPanel />
       ) : (
         <>
           {/* Migration des données IndexedDB → Backend */}
@@ -900,6 +898,8 @@ export function AdminDatabaseEditor() {
       <PriceRefreshPanel />
       {/* Migration des attaques depuis l'API Pokemon TCG */}
       <AttacksMigrationPanel />
+      {/* Import automatique d'extensions */}
+      <SetImportPanel />
       {/* Debug des liens CardMarket */}
       <CardMarketBulkHelper />
 
