@@ -74,12 +74,6 @@ export function Collection() {
       cardNameLower.includes(' ' + translatedSearch + ' ') || // " eri " au milieu
       cardNameLower.endsWith(' ' + translatedSearch) // " eri" à la fin
     )
-    const matchesTranslated = translatedSearch !== searchLower && (
-      cardNameLower === translatedSearch || // Exact match
-      cardNameLower.startsWith(translatedSearch + ' ') || // "eri " au début
-      cardNameLower.includes(' ' + translatedSearch + ' ') || // " eri " au milieu
-      cardNameLower.endsWith(' ' + translatedSearch) // " eri" à la fin
-    )
 
     const matchesSearch = matchesEnglish || matchesTranslated
     const matchesRarity = filters.rarity === 'all' || card.rarity === filters.rarity
