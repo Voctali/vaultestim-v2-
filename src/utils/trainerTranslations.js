@@ -12,6 +12,7 @@ const TRAINER_TRANSLATIONS = {
 
   // Johto (Gen 2)
   'albert': 'falkner', // Mauville/Violette - Type Vol
+  'regard de jasmine': 'jasmine's gaze', // Championne d'Arène Oliville (Type Acier)
 
   // Paldea (Gen 9)
   'alisma': 'geeta', // Maîtresse de la Ligue Pokémon
@@ -20,6 +21,7 @@ const TRAINER_TRANSLATIONS = {
   'brome': 'giacomo', // Variante sans accent
   'cassiopée': 'cassiopeia', // Boss Team Star (Poison)
   'cassiopee': 'cassiopeia', // Variante sans accent
+  'cayenn': 'katy', // Championne d'Arène Paldea (Type Insecte)
   'clavel': 'clavell', // Directeur de l'Académie Raisin (Paldea)
   'colza': 'brassius', // Champion d'Arène Paldea (Type Plante)
   'clove': 'clive', // Identité secrète de Clavel (Directeur déguisé)
@@ -43,15 +45,24 @@ const TRAINER_TRANSLATIONS = {
   'pania': 'penny', // Boss de Team Star (vraie identité de Cassiopée) - Paldea
   'pepper': 'arven', // Ami du protagoniste (quête des Herbes Mystérieuses) - Paldea
   'popi': 'poppy', // Membre du Conseil des 4 Paldea (Type Acier)
+  'rika': 'rika', // Conseil des 4 Paldea (Type Sol)
+  'roseille': 'carmine', // Sœur de Kieran (DLC The Teal Mask) - Paldea
+  'rubépin': 'crispin', // Conseil des 4 Académie Myrtille (Type Feu) - Paldea
+  'rubepin': 'crispin', // Variante sans accent
+  'salvio': 'salvatore', // Professeur de langues Académie Raisin - Paldea
+  'sbire de la team star': 'team star grunt', // Classe de dresseur Team Star - Paldea
+  'sbire team star': 'team star grunt', // Variante courte
 
   // Hisui / Sinnoh (Legends: Arceus)
   'nacchara': 'irida', // Cheffe du Clan Perle - Astral Radiance
   'lucio': 'lucian', // Membre du Conseil des 4 Sinnoh (Type Psy) - Twilight Masquerade
+  'pierrick': 'roark', // Champion d'Arène Charbourg Sinnoh (Type Roche)
 
   // Unys / Unova (Gen 5)
   'clown': 'harlequin', // Classe de Dresseur - White Flare
   'ludvina': 'hilda', // Protagoniste de Pokémon Noir et Blanc
   'oryse': 'fennel', // Scientifique spécialiste des rêves Pokémon - Unys
+  'anis': 'shauntal', // Conseil des 4 Unys (Type Spectre)
 
   // ========================================
   // CARTES SUPPORTER GÉNÉRALES
@@ -84,6 +95,9 @@ const TRAINER_TRANSLATIONS = {
   'plan du professeur turum': 'professor turo\'s scenario', // Professeur de Paldea (Pokémon Écarlate)
   'vitalité de la professeure olim': 'professor sada\'s vitality', // Professeure de Paldea (Pokémon Violet)
   'recherches professorales': 'professor\'s research', // Carte Supporter classique - Multiple rééditions
+  'soutien de néphie': 'lana's aid', // Capitaine d'Épreuve Alola (Type Eau)
+  'soutien de nephie': 'lana's aid', // Variante sans accent
+  'surfeur': 'surfer', // Classe de dresseur
 
   // ========================================
   // OBJETS ET CARTES DRESSEUR
