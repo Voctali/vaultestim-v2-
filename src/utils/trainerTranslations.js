@@ -105,6 +105,7 @@ const TRAINER_TRANSLATIONS = {
   'armand': 'riley', // Aura Guardian - Sinnoh
   'armando, rachid et noa': 'chili & cilan & cress', // Trio Gym Leaders Unova (Gen 5)
   'aromathérapeute': 'aroma lady', // Classe de dresseuse
+  'attention de tcheren': 'cheren\'s care', // Carte Supporter Unova (Gen 5)
   'art secret de jeannine': 'janine\'s secret art', // Fuchsia Gym Leader
   'art secret de janine': 'janine\'s secret art', // Variante orthographe anglaise
   'charme d\'atalante': 'lisia\'s appeal', // Championne de Concours Hoenn - Surging Sparks (SSP)
