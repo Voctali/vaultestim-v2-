@@ -97,6 +97,7 @@ const TRAINER_TRANSLATIONS = {
   'transfert de leo': 'bill\'s transfer', // Variante sans accent
   'charisme de giovanni': 'giovanni\'s charisma',
   'amis de paldea': 'friends in paldea', // Supporter Gen 9
+  'ambition de cynthia': 'cynthia\'s ambition', // Maîtresse de la Ligue Sinnoh - Carte Supporter
   'art secret de jeannine': 'janine\'s secret art', // Fuchsia Gym Leader
   'art secret de janine': 'janine\'s secret art', // Variante orthographe anglaise
   'charme d\'atalante': 'lisia\'s appeal', // Championne de Concours Hoenn - Surging Sparks (SSP)
