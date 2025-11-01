@@ -115,8 +115,11 @@ const TRAINER_TRANSLATIONS = {
   'ornithologue': 'bird keeper', // Classe de dresseur
   'canon': 'beauty', // Classe de dresseuse
   'capitaine d\'équipe blanche': 'blanche', // Leader Team Mystic - Pokémon GO
+  'capitaine d equipe blanche': 'blanche', // Variante sans apostrophe
   'capitaine d\'équipe candela': 'candela', // Leader Team Valor - Pokémon GO
+  'capitaine d equipe candela': 'candela', // Variante sans apostrophe
   'capitaine d\'équipe spark': 'spark', // Leader Team Instinct - Pokémon GO
+  'capitaine d equipe spark': 'spark', // Variante sans apostrophe
   'cardus': 'thorton', // Factory Head - Frontier de Combat Sinnoh (Gen 4)
   'carolina': 'skyla', // Championne d'Arène Méanville Unova (Type Vol)
   'chaz': 'gordie', // Champion d'Arène Galar (Type Roche)
