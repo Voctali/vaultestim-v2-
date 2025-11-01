@@ -490,6 +490,36 @@ L'application utilise une architecture en couches de Context API :
     - ✅ Correction automatique au prochain F5 après déploiement
     - ✅ Recherches "pepper" et "arven" retournent les résultats complets
   - **Commit** : `89e76ae` - "fix: Invalidation cache recherche Arven/Pepper au démarrage"
+56. **🔍 Séparation des Champs de Recherche** - Distinction entre filtrage local et recherche API globale
+  - **Problème signalé** : Recherche "capitaine d'équipe spark" → "spark" retournait 221 cartes aléatoires (confusion entre filtrage local et API)
+  - **Cause racine** :
+    - La traduction "spark" matchait localement toutes les cartes de l'extension "Surging Sparks"
+    - Un seul champ de recherche utilisé pour deux fonctionnalités différentes (filtrage local ET recherche API)
+  - **Solution implémentée** : Séparation en **deux champs distincts** dans `Explore.jsx`
+    - **Champ 1 - Filtrage local** : `filterTerm` pour filtrer blocs/extensions/cartes dans la vue courante
+      - Placeholder : "Filtrer les blocs, extensions ou cartes..."
+      - Visible uniquement hors vue de recherche (`currentView !== 'search'`)
+      - Icône : Database (base de données locale)
+    - **Champ 2 - Recherche API globale** : `searchTerm` pour rechercher dans toute l'API Pokemon TCG
+      - Placeholder : "Rechercher une carte dans l'API Pokemon TCG (traduction automatique français → anglais)"
+      - Toujours visible avec boutons "Rechercher" et "Annuler"
+      - Icône : Search (recherche globale)
+      - Traduction automatique Français→Anglais (Pokémon ET Dresseurs)
+  - **Modifications techniques** :
+    - Ligne 25 : Ajout état `filterTerm` pour filtrage local
+    - Ligne 144 : Modification `getFilteredData()` pour utiliser `filterTerm` au lieu de `searchTerm`
+    - Ligne 157 : Fix affichage vide - retourne `true` si recherche vide
+    - Lignes 497-543 : Nouvelle UI avec deux champs séparés
+  - **Impact** :
+    - ✅ "spark" en filtrage local → filtre uniquement les cartes de la vue courante contenant "spark"
+    - ✅ "capitaine d'équipe spark" en recherche API → trouve uniquement les 3 cartes Spark (Team Instinct)
+    - ✅ Fin de la confusion entre filtrage local et recherche globale
+    - ✅ Fix bug : affichage des cartes dans les extensions (recherche vide)
+    - ✅ Meilleure UX avec deux fonctionnalités clairement distinctes
+  - **Fichier modifié** : `src/pages/Explore.jsx` (lignes 25, 144, 157, 497-543)
+  - **Commit** : `3d168c3` - "feat: Séparation des champs de recherche locale et API"
+
+
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
