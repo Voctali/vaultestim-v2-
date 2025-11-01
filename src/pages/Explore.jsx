@@ -154,6 +154,9 @@ export function Explore() {
         const filteredCards = discoveredCards.filter(card => {
           if (card.set?.id !== selectedExtension?.id) return false
 
+          // Si pas de recherche active, afficher toutes les cartes de l'extension
+          if (!searchLower || searchLower.trim() === '') return true
+
           // Recherche bilingue : français et anglais
           const cardNameLower = card.name.toLowerCase()
 
