@@ -95,7 +95,14 @@
       "Bash(done)",
       "WebFetch(domain:www.jcc.pokemon.tf)",
       "Bash(Get-Content \"F:\\Logiciels\\Appli Vaultestim\\vaultestim-v2\\src\\utils\\trainerTranslations.js\")",
-      "Bash(Select-Object -Last 5)"
+      "Bash(Select-Object -Last 5)",
+      "Bash(for file in Collection Favorites Duplicates)",
+      "Bash(do echo \"=== $file.jsx ===\")",
+      "Bash(for file in Favorites Duplicates Explore)",
+      "WebFetch(domain:limitlesstcg.com)",
+      "Bash(for name in archer ariana petrel)",
+      "Bash(do echo \"=== $name ===\")",
+      "Bash(git reset HEAD '${result}')"
     ],
     "deny": [],
     "ask": []

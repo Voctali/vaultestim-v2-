@@ -22,7 +22,8 @@ import { formatCardPrice } from '@/utils/priceFormatter'
 import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
 export function Explore() {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [filterTerm, setFilterTerm] = useState('') // Filtrage local des blocs/extensions/cartes
+  const [searchTerm, setSearchTerm] = useState('') // Recherche API globale
   const [showAddCardModal, setShowAddCardModal] = useState(false) // Modale d'ajout manuel
   const [showAddToCollectionModal, setShowAddToCollectionModal] = useState(false) // Modale d'ajout à la collection
   const [showPreviewModal, setShowPreviewModal] = useState(false) // Modale d'aperçu en grand
@@ -139,7 +140,7 @@ export function Explore() {
 
   // Filtrer selon la vue actuelle
   const getFilteredData = () => {
-    const searchLower = searchTerm.toLowerCase()
+    const searchLower = filterTerm.toLowerCase()
 
     switch (currentView) {
       case 'blocks':
@@ -492,36 +493,53 @@ export function Explore() {
         </Button>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex gap-3">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher une carte dans l'API Pokemon TCG..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="pl-10 golden-border"
-            style={{ textTransform: 'none' }}
-          />
-        </div>
-        <Button
-          className="bg-blue-500 hover:bg-blue-600 text-white"
-          onClick={handleSearch}
-          disabled={isSearching}
-        >
-          {isSearching ? 'Recherche...' : 'Rechercher'}
-        </Button>
-        {isSearching && (
-          <Button
-            variant="destructive"
-            onClick={handleCancelSearch}
-            className="bg-red-500 hover:bg-red-600 text-white"
-          >
-            <X className="w-4 h-4 mr-2" />
-            Annuler
-          </Button>
+      {/* Barres de recherche séparées */}
+      <div className="space-y-3">
+        {/* Champ 1 : Filtrage local des blocs/extensions/cartes */}
+        {currentView !== 'search' && (
+          <div className="relative">
+            <Database className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Filtrer les blocs, extensions ou cartes..."
+              value={filterTerm}
+              onChange={(e) => setFilterTerm(e.target.value)}
+              className="pl-10 golden-border"
+              style={{ textTransform: 'none' }}
+            />
+          </div>
         )}
+
+        {/* Champ 2 : Recherche API globale */}
+        <div className="flex gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher une carte dans l'API Pokemon TCG (traduction automatique français → anglais)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="pl-10 golden-border"
+              style={{ textTransform: 'none' }}
+            />
+          </div>
+          <Button
+            className="bg-blue-500 hover:bg-blue-600 text-white"
+            onClick={handleSearch}
+            disabled={isSearching}
+          >
+            {isSearching ? 'Recherche...' : 'Rechercher'}
+          </Button>
+          {isSearching && (
+            <Button
+              variant="destructive"
+              onClick={handleCancelSearch}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Annuler
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Content Area */}
