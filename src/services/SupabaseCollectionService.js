@@ -47,41 +47,46 @@ export class SupabaseCollectionService {
       // Récupérer les IDs des cartes
       const cardIds = [...new Set(collectionData.map(card => card.card_id))]
 
-      // Récupérer les données complètes depuis discovered_cards (avec prix)
+      // Récupérer les données complètes depuis discovered_cards (avec prix ET infos extension)
       const { data: discoveredData, error: discoveredError } = await supabase
         .from('discovered_cards')
-        .select('id, cardmarket, tcgplayer')
+        .select('id, cardmarket, tcgplayer, set, number')
         .in('id', cardIds)
 
       if (discoveredError) {
         console.warn('⚠️ Impossible de récupérer les prix depuis discovered_cards:', discoveredError)
       }
 
-      // Créer un map pour les données de prix
-      const priceMap = {}
+      // Créer un map pour les données complètes (prix + extension + numéro)
+      const dataMap = {}
       if (discoveredData) {
         discoveredData.forEach(card => {
-          priceMap[card.id] = {
+          dataMap[card.id] = {
             cardmarket: card.cardmarket,
-            tcgplayer: card.tcgplayer
+            tcgplayer: card.tcgplayer,
+            set: card.set,
+            number: card.number
           }
         })
       }
 
-      // Enrichir les cartes de la collection avec les prix
+      // Enrichir les cartes de la collection avec les données complètes
       const enrichedData = collectionData.map(card => {
-        const priceData = priceMap[card.card_id]
-        if (priceData) {
+        const extraData = dataMap[card.card_id]
+        if (extraData) {
           return {
             ...card,
-            cardmarket: priceData.cardmarket,
-            tcgplayer: priceData.tcgplayer
+            cardmarket: extraData.cardmarket,
+            tcgplayer: extraData.tcgplayer,
+            // Utiliser les données de discovered_cards en priorité (plus complètes)
+            set: extraData.set || card.set,
+            number: extraData.number || card.number
           }
         }
         return card
       })
 
-      console.log(`💰 ${Object.keys(priceMap).length} cartes enrichies avec les prix`)
+      console.log(`💰 ${Object.keys(dataMap).length} cartes enrichies avec les données complètes`)
       return enrichedData
     } catch (error) {
       console.error('❌ Erreur getUserCollection:', error)
@@ -104,8 +109,10 @@ export class SupabaseCollectionService {
         user_id: userId,
         card_id: card.id,
         name: card.name,
+        number: card.number || null, // Numéro de carte (ex: "97") - REQUIS pour liens CardMarket
         series: card.series,
         extension: card.extension,
+        set: card.set || null, // Infos de l'extension (set.name, set.id) - REQUIS pour liens CardMarket
         rarity: card.rarity,
         image: card.image,
         images: card.images,

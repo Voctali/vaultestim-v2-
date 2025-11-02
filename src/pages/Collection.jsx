@@ -95,6 +95,74 @@ export function Collection() {
     return matchesSearch && matchesRarity && matchesCondition && matchesType
   })
 
+  // Trier les cartes par extension (set.releaseDate) et numéro de carte
+  const sortedCards = [...filteredCards].sort((a, b) => {
+    // 1. Trier par date de sortie de l'extension (plus récent en premier)
+    const dateA = a.set?.releaseDate ? new Date(a.set.releaseDate) : new Date(0)
+    const dateB = b.set?.releaseDate ? new Date(b.set.releaseDate) : new Date(0)
+
+    if (dateB.getTime() !== dateA.getTime()) {
+      return dateB.getTime() - dateA.getTime()
+    }
+
+    // 2. Si même extension, trier par numéro de carte
+    const numA = parseInt(a.number) || 0
+    const numB = parseInt(b.number) || 0
+    return numA - numB
+  })
+
+  // Grouper les cartes par BLOC puis EXTENSION (comme dans Explorer)
+  const cardsByBlock = sortedCards.reduce((acc, card) => {
+    const blockName = card.set?.series || card.series || 'Sans bloc'
+    const extensionKey = card.set?.id || card.extension || 'Sans extension'
+    const extensionName = card.set?.name || card.extension || 'Sans extension'
+    const releaseDate = card.set?.releaseDate || null
+
+    // Créer le bloc s'il n'existe pas
+    if (!acc[blockName]) {
+      acc[blockName] = {
+        name: blockName,
+        extensions: {}
+      }
+    }
+
+    // Créer l'extension dans le bloc s'il n'existe pas
+    if (!acc[blockName].extensions[extensionKey]) {
+      acc[blockName].extensions[extensionKey] = {
+        name: extensionName,
+        releaseDate: releaseDate,
+        cards: []
+      }
+    }
+
+    acc[blockName].extensions[extensionKey].cards.push(card)
+    return acc
+  }, {})
+
+  // Convertir en tableau et trier blocs et extensions par date
+  const blockGroups = Object.entries(cardsByBlock).map(([blockName, blockData]) => {
+    // Trier les extensions du bloc par date (plus récent en premier)
+    const sortedExtensions = Object.values(blockData.extensions).sort((a, b) => {
+      const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date(0)
+      const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date(0)
+      return dateB - dateA
+    })
+
+    // Trouver la date la plus récente du bloc
+    const blockMostRecentDate = sortedExtensions[0]?.releaseDate
+
+    return {
+      name: blockName,
+      mostRecentDate: blockMostRecentDate,
+      extensions: sortedExtensions
+    }
+  }).sort((a, b) => {
+    // Trier les blocs par date (plus récent en premier)
+    const dateA = a.mostRecentDate ? new Date(a.mostRecentDate) : new Date(0)
+    const dateB = b.mostRecentDate ? new Date(b.mostRecentDate) : new Date(0)
+    return dateB - dateA
+  })
+
   return (
     <div className="space-y-6 p-6">
       {/* Header with Search */}
@@ -205,62 +273,102 @@ export function Collection() {
         </div>
       </div>
 
-      {/* Cards Grid */}
-      {filteredCards.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-          {filteredCards.map((card) => (
-            <Card
-              key={card.id}
-              className="golden-border card-hover cursor-pointer group overflow-hidden"
-              onClick={() => {
-                setSelectedCard(card)
-                setShowDetailsModal(true)
-              }}
-            >
-              <CardContent className="p-4">
-                {/* Card Image */}
-                <div className="relative aspect-[3/4] mb-3 rounded-lg overflow-hidden group-hover:scale-105 transition-transform duration-200">
-                  <CardImage
-                    card={card}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                    x{card.totalQuantity || card.quantity || 1}
+      {/* Cards Grid with Block and Extension Hierarchy */}
+      {blockGroups.length > 0 ? (
+        <div className="space-y-12">
+          {blockGroups.map((block, blockIndex) => (
+            <div key={blockIndex} className="space-y-8">
+              {/* Block Header */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                  <h1 className="text-2xl font-bold golden-glow uppercase tracking-wide">{block.name}</h1>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                </div>
+                <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
+              </div>
+
+              {/* Extensions in this Block */}
+              {block.extensions.map((extension, extIndex) => (
+                <div key={extIndex} className="space-y-4">
+                  {/* Extension Header */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-semibold golden-glow">{extension.name}</h2>
+                      {extension.releaseDate && (
+                        <span className="text-sm text-muted-foreground">
+                          ({new Date(extension.releaseDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })})
+                        </span>
+                      )}
+                      <Badge variant="outline" className="ml-2">
+                        {extension.cards.length} carte{extension.cards.length > 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
                   </div>
-                  {/* Action buttons */}
-                  <div className="absolute bottom-2 left-2 flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="w-8 h-8 p-0 bg-black/50 text-white hover:bg-black/70"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleFavorite(card)
-                      }}
-                    >
-                      <Heart className={`w-4 h-4 ${favorites.find(fav => fav.card_id === card.id) ? 'fill-red-500 text-red-500' : ''}`} />
-                    </Button>
+
+                  {/* Cards Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                    {extension.cards.map((card) => (
+                  <Card
+                    key={card.id}
+                    className="golden-border card-hover cursor-pointer group overflow-hidden"
+                    onClick={() => {
+                      setSelectedCard(card)
+                      setShowDetailsModal(true)
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      {/* Card Image */}
+                      <div className="relative aspect-[3/4] mb-3 rounded-lg overflow-hidden group-hover:scale-105 transition-transform duration-200">
+                        <CardImage
+                          card={card}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          x{card.totalQuantity || card.quantity || 1}
+                        </div>
+                        {/* Action buttons */}
+                        <div className="absolute bottom-2 left-2 flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-8 h-8 p-0 bg-black/50 text-white hover:bg-black/70"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleFavorite(card)
+                            }}
+                          >
+                            <Heart className={`w-4 h-4 ${favorites.find(fav => fav.card_id === card.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Card Info */}
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-sm golden-glow">{translateCardName(card.name)}</h3>
+                        <p className="text-xs text-muted-foreground">{card.series}</p>
+
+                        <div className="space-y-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {card.rarity}
+                          </Badge>
+                          <p className="text-xs text-blue-500">{translateCondition(card.condition)}</p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="font-semibold text-green-500">{formatCardPrice(card)}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                    ))}
                   </div>
                 </div>
-
-                {/* Card Info */}
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-sm golden-glow">{translateCardName(card.name)}</h3>
-                  <p className="text-xs text-muted-foreground">{card.series}</p>
-
-                  <div className="space-y-1">
-                    <Badge variant="secondary" className="text-xs">
-                      {card.rarity}
-                    </Badge>
-                    <p className="text-xs text-blue-500">{translateCondition(card.condition)}</p>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="font-semibold text-green-500">{formatCardPrice(card)}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
           ))}
         </div>
       ) : (
