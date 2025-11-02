@@ -549,8 +549,10 @@ export class CardMarketSupabaseService {
       return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&searchInSealedProducts=true&language=${languageId}`
     }
 
-    // Pour les cartes singles
-    return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&language=${languageId}`
+    // Pour les cartes singles : utiliser l'ID produit direct (CardMarket redirige automatiquement vers l'URL complète)
+    // Format: https://www.cardmarket.com/en/Pokemon/Products/Singles/{idProduct}?language=2
+    // CardMarket va rediriger vers: https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Hypno-MEW097?language=2
+    return `https://www.cardmarket.com/en/Pokemon/Products/Singles/${idProduct}${languageParam}`
   }
 
   /**

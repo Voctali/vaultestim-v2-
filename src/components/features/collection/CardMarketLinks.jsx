@@ -43,12 +43,18 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
   let isDirect = false
   let isMatchedDirect = false
 
-  if (cardMarketMatch && cardMarketMatch.cardmarket_name && cardMarketMatch.match_score >= 0.5) {
-    // Utiliser le matching Supabase avec le NOM de la carte CardMarket (plus fiable que l'ID pour les singles)
-    // Recherche par nom exact entre guillemets pour éviter les résultats parasites
-    // SEULEMENT si le score est suffisamment élevé (≥ 50%)
-    const searchQuery = encodeURIComponent(`"${cardMarketMatch.cardmarket_name}"`)
-    cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${searchQuery}&language=2`
+  if (cardMarketMatch && cardMarketMatch.cardmarket_id_product && cardMarketMatch.match_score >= 0.2) {
+    // Utiliser le lien DIRECT CardMarket avec l'ID produit (CardMarket redirige automatiquement vers l'URL complète)
+    // Format: https://www.cardmarket.com/en/Pokemon/Products/Singles/{idProduct}?language=2
+    // → Redirige vers: https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Hypno-MEW097?language=2
+    // SEULEMENT si le score est suffisamment élevé (≥ 20%)
+    cardMarketUrl = CardMarketSupabaseService.buildDirectUrl(
+      cardMarketMatch.cardmarket_id_product,
+      cardMarketMatch.is_sealed_product || false,
+      cardMarketMatch.cardmarket_name,
+      null,
+      'fr' // Langue française par défaut
+    )
     isDirect = true
     isMatchedDirect = true
   } else {
