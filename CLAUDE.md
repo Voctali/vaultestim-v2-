@@ -519,6 +519,40 @@ L'application utilise une architecture en couches de Context API :
   - **Fichier modifié** : `src/pages/Explore.jsx` (lignes 25, 144, 157, 497-543)
   - **Commit** : `3d168c3` - "feat: Séparation des champs de recherche locale et API"
 
+57. **🐛 Fix Affichage des Cartes dans Ma Collection** - Correction du filtrage de recherche vide
+  - **Problème signalé** : 136 cartes en base Supabase mais "Aucune carte trouvée" affiché dans l'onglet "Ma Collection"
+  - **Symptômes** :
+    - Logs Supabase : `✅ 136 cartes dans la collection` (chargement OK)
+    - Logs Supabase : `💰 116 cartes enrichies avec les prix` (enrichissement OK)
+    - Logs Supabase : `✅ Données utilisateur chargées depuis Supabase` (tout fonctionne)
+    - Affichage : "Aucune carte trouvée" avec icône de collection vide
+  - **Cause racine** :
+    - Les cartes étaient bien chargées depuis Supabase via `useCollection()`
+    - Mais le filtrage de recherche dans `Collection.jsx` masquait TOUTES les cartes quand `searchTerm` était vide
+    - Comportement incorrect : `matchesEnglish` et `matchesTranslated` retournaient toujours `false` pour recherche vide
+    - Résultat : `filteredCards.length === 0` malgré `collection.length === 136`
+  - **Solution implémentée** :
+    ```javascript
+    // Ajout d'une condition early-return si searchTerm est vide (lignes 61-67)
+    if (!searchLower) {
+      const matchesRarity = filters.rarity === 'all' || card.rarity === filters.rarity
+      const matchesCondition = filters.condition === 'all' || card.condition === filters.condition
+      const matchesType = filters.type === 'all' || card.type === filters.type
+      return matchesRarity && matchesCondition && matchesType
+    }
+    ```
+  - **Modifications techniques** :
+    - Ligne 61-67 : Ajout condition early-return pour recherche vide
+    - Comportement : Si pas de recherche, afficher toutes les cartes (avec filtres rareté/condition/type uniquement)
+    - Identique au fix appliqué dans `Explore.jsx` à l'entrée #56 (ligne 157)
+  - **Impact** :
+    - ✅ Les 136 cartes s'affichent maintenant correctement dans "Ma Collection"
+    - ✅ Recherche fonctionne normalement quand terme saisi
+    - ✅ Filtres rareté/condition/type appliqués même sans recherche
+    - ✅ Cohérence avec le comportement de toutes les autres pages
+  - **Fichier modifié** : `src/pages/Collection.jsx` (lignes 61-67)
+  - **Commit** : `6d127d3` - "fix: Affichage des 136 cartes dans Ma Collection (recherche vide)"
+
 
 
 #### 🔄 Pages Créées (Structure de base)
