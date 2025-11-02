@@ -713,6 +713,8 @@ export function Explore() {
                           name: card.name,
                           series: card.set?.series || card.series || 'Non spécifié',
                           extension: card.set?.name || card.extension || 'Non spécifié',
+                          number: card.number || null, // REQUIS pour liens CardMarket et tri
+                          set: card.set || null, // REQUIS pour liens CardMarket et tri
                           rarity: card.rarity || 'Non spécifié',
                           image: card.images?.large || card.images?.small || card.image || null,
                           images: card.images || null,
@@ -915,6 +917,8 @@ export function Explore() {
               name: selectedCard.name,
               series: selectedCard.set?.series || selectedCard.series || 'Non spécifié',
               extension: selectedCard.set?.name || selectedCard.extension || 'Non spécifié',
+              number: selectedCard.number || null, // REQUIS pour liens CardMarket et tri
+              set: selectedCard.set || null, // REQUIS pour liens CardMarket et tri
               rarity: selectedCard.rarity || 'Non spécifié',
               image: selectedCard.images?.large || selectedCard.images?.small || selectedCard.image || null,
               images: selectedCard.images || null,
