@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth'
 export function CardMarketLink({ card, showTCGPlayer = true }) {
   const [showWarning, setShowWarning] = useState(false)
   const [cardMarketMatch, setCardMarketMatch] = useState(null)
+  const [cardMarketData, setCardMarketData] = useState(null) // Infos complètes de la carte CardMarket
   const [isMatching, setIsMatching] = useState(false)
   const [matchingError, setMatchingError] = useState(null)
   const { user } = useAuth()
@@ -27,6 +28,15 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
 
         if (match) {
           setCardMarketMatch(match)
+
+          // Charger les infos complètes de la carte CardMarket (idExpansion, name)
+          if (match.cardmarket_id_product && !match.is_sealed_product) {
+            const cardData = await CardMarketSupabaseService.getCardById(match.cardmarket_id_product)
+            if (cardData) {
+              setCardMarketData(cardData)
+              console.log(`📦 Infos CardMarket chargées: ${cardData.name} (expansion: ${cardData.id_expansion})`)
+            }
+          }
         }
       } catch (error) {
         console.error('❌ Erreur chargement matching CardMarket:', error)
@@ -53,7 +63,8 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
       cardMarketMatch.is_sealed_product || false,
       cardMarketMatch.cardmarket_name,
       null,
-      'fr' // Langue française par défaut
+      'fr', // Langue française par défaut
+      cardMarketData?.id_expansion // NOUVEAU : passer idExpansion pour URL complète
     )
     isDirect = true
     isMatchedDirect = true

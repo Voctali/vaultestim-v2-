@@ -525,7 +525,7 @@ export class CardMarketSupabaseService {
       .replace(/^-+|-+$/g, '')
   }
 
-  static buildDirectUrl(idProduct, isSealedProduct = false, productName = null, categoryId = null, languageCode = 'fr') {
+  static buildDirectUrl(idProduct, isSealedProduct = false, productName = null, categoryId = null, languageCode = 'fr', idExpansion = null) {
     // Convertir le code langue en ID CardMarket
     const languageId = this.getLanguageId(languageCode)
     const languageParam = `?language=${languageId}`
@@ -549,10 +549,18 @@ export class CardMarketSupabaseService {
       return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${idProduct}&searchInSealedProducts=true&language=${languageId}`
     }
 
-    // Pour les cartes singles : utiliser l'ID produit direct (CardMarket redirige automatiquement vers l'URL complète)
-    // Format: https://www.cardmarket.com/en/Pokemon/Products/Singles/{idProduct}?language=2
-    // CardMarket va rediriger vers: https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Hypno-MEW097?language=2
-    return `https://www.cardmarket.com/en/Pokemon/Products/Singles/${idProduct}${languageParam}`
+    // Pour les cartes singles : si idExpansion et productName fournis, construire l'URL complète
+    if (idExpansion && productName) {
+      const slug = this.slugifyForCardMarket(productName)
+      // Format correct : https://www.cardmarket.com/en/Pokemon/Products/Singles/{idExpansion}/{nom-slug}?language=2
+      const url = `https://www.cardmarket.com/en/Pokemon/Products/Singles/${idExpansion}/${slug}${languageParam}`
+      console.log(`✅ URL CardMarket complète construite: ${url}`)
+      return url
+    }
+
+    // Fallback : URL de recherche simple (si infos incomplètes)
+    console.warn(`⚠️ Info incomplète pour lien direct - URL de recherche utilisée pour ${idProduct}`)
+    return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${encodeURIComponent(productName || idProduct)}&language=${languageId}`
   }
 
   /**
