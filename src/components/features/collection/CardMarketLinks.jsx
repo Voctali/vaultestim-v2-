@@ -48,27 +48,41 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
 
   if (!card) return null
 
+  // Fonction helper pour slugifier (compatible CardMarket)
+  const slugify = (text) => {
+    if (!text) return ''
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/\s/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  }
+
   // Déterminer l'URL et le type de lien
   let cardMarketUrl
   let isDirect = false
   let isMatchedDirect = false
 
-  // PRIORITÉ 1 : Utiliser l'URL de l'API Pokemon TCG (proxy qui redirige vers CardMarket)
-  // Cette URL est fiable car elle est maintenue par l'API officielle
-  if (card.cardmarket?.url) {
-    cardMarketUrl = card.cardmarket.url
+  // PRIORITÉ 1 : Construire l'URL directe CardMarket avec set.name (RAPIDE - pas de proxy)
+  // Format: https://www.cardmarket.com/en/Pokemon/Products/Singles/{set-name-slug}/{card-name-slug}?language=2
+  // Exemple: https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Hypno-97?language=2
+  if (card.set?.name && card.name) {
+    const setSlug = slugify(card.set.name)
+    const cardSlug = slugify(card.name + (card.number ? ` ${card.number}` : ''))
+    cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Singles/${setSlug}/${cardSlug}?language=2`
     isDirect = true
-    console.log(`🔗 Utilisation URL API Pokemon TCG: ${cardMarketUrl}`)
+    console.log(`🔗 URL directe CardMarket: ${cardMarketUrl}`)
   }
   // PRIORITÉ 2 : Utiliser le matching CardMarket si disponible
   else if (cardMarketMatch && cardMarketMatch.cardmarket_id_product && cardMarketMatch.match_score >= 0.2) {
-    // Utiliser l'URL de recherche CardMarket avec le nom de la carte
-    // Format le plus fiable : recherche par nom de la carte
     const searchName = encodeURIComponent(cardMarketMatch.cardmarket_name || card.name)
     cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${searchName}&language=2`
     isDirect = false
     isMatchedDirect = true
-    console.log(`🔗 Utilisation URL de recherche CardMarket: ${cardMarketUrl}`)
+    console.log(`🔗 Recherche CardMarket avec matching: ${cardMarketUrl}`)
   }
   // PRIORITÉ 3 : Fallback recherche générique
   else {
@@ -77,7 +91,7 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
       ? `${fallbackUrl}&language=2`
       : `${fallbackUrl}?language=2`
     isDirect = false
-    console.log(`🔗 Fallback URL générique: ${cardMarketUrl}`)
+    console.log(`🔗 Fallback recherche générique: ${cardMarketUrl}`)
   }
 
   // TCGPlayer URL
