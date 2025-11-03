@@ -97,9 +97,9 @@ L'application utilise une architecture en couches de Context API :
 25. **🔄 Migration Automatique des Prix** - Outil admin pour récupérer les prix de 14,000+ cartes avec reprise automatique
 26. **☁️ Sauvegarde Prix dans Supabase** - Synchronisation multi-device des structures complètes de prix (colonnes JSONB)
 27. **🔗 Intégration CardMarket Complète** - Base de 59,683 cartes + 4,527 produits scellés + 64,210 prix dans Supabase
-28. **🤖 Matching Automatique CardMarket** - Algorithme intelligent basé sur attaques (70%) + nom (20%) + suffixes (10%)
+28. **🤖 Matching Automatique CardMarket** - Algorithme intelligent basé sur attaques (50%) + numéro (25%) + nom (15%) + suffixes (10%)
 29. **⚙️ Migration des Attaques** - Script de migration pour ajouter attaques/abilities/weaknesses aux cartes existantes
-30. **✨ Liens Directs CardMarket** - Bouton "Trouver lien direct" dans CardMarketLinks pour matching auto
+30. **✨ Liens Directs CardMarket** - Boutons "Trouver lien direct" et "Réessayer" dans CardMarketLinks pour matching auto
 31. **🌍 Base de Données Commune** - Architecture partagée où TOUS les utilisateurs voient les mêmes blocs/extensions/cartes dans "Explorer les séries"
 32. **📊 Composants Admin CardMarket** - Nouveaux composants intégrés pour gestion avancée des produits scellés et prix
    - **CardMarketBulkHelper** : Assistant de recherche en masse CardMarket (dans Admin/Base de Données)
@@ -553,6 +553,79 @@ L'application utilise une architecture en couches de Context API :
   - **Fichier modifié** : `src/pages/Collection.jsx` (lignes 61-67)
   - **Commit** : `6d127d3` - "fix: Affichage des 136 cartes dans Ma Collection (recherche vide)"
 
+58. **🔧 Fix Matching CardMarket - Table Inexistante** - Correction erreur 404 et amélioration algorithme
+  - **Problème signalé** : Lien CardMarket redirige vers page générique, matching trouve mauvaise carte (Hypno Prophecy 22% au lieu de Hypno MEW097)
+  - **Erreur 404** : Table `cardmarket_expansions` n'existe pas dans Supabase
+    - Message d'erreur : `"Could not find the table 'public.cardmarket_expansions' in the schema cache"`
+    - Requête : `GET .../cardmarket_expansions?select=id%2Cname%2Cabbreviation&id=in.(...) 404 (Not Found)`
+  - **Cause racine** :
+    - Le code tentait d'accéder à une table inexistante pour récupérer les noms d'extensions
+    - L'algorithme de matching manquait de poids sur le **numéro de carte** (seulement 15%)
+    - Résultat : mauvais matching (Hypno Prophecy au lieu de Hypno #97 de "151")
+  - **Corrections appliquées** :
+    - ✅ **Suppression accès table inexistante** (`CardMarketSupabaseService.js` lignes 208-245)
+      - Plus de requête vers `cardmarket_expansions`
+      - `expansion_name` et `expansion_abbreviation` définis à `null`
+      - Plus d'erreur 404 dans les logs
+    - ✅ **Augmentation poids numéro de carte** (`CardMarketMatchingService.js` lignes 76-94)
+      - **Avant** : Numéro 15% | Extension 10% (total critères de précision : 25%)
+      - **Après** : Numéro 25% | Extension 0% (compensé l'absence de données d'extension)
+      - Poids finaux : Attaques 50% | Nom 15% | Suffixe 10% | **Numéro 25%**
+    - ✅ **Ajout bouton "Réessayer"** (`CardMarketLinks.jsx` lignes 111-135, 217-233)
+      - Nouvelle fonction `handleRetryMatch()` pour supprimer et relancer le matching
+      - Bouton jaune affiché dans le message de succès vert
+      - Permet de supprimer un mauvais matching et en chercher un meilleur
+  - **Fichiers modifiés** :
+    - `src/services/CardMarketSupabaseService.js` : Suppression logique d'extension (lignes 208-245)
+    - `src/services/CardMarketMatchingService.js` : Augmentation poids numéro 15%→25% (lignes 76-94)
+    - `src/components/features/collection/CardMarketLinks.jsx` : Bouton "Réessayer" (lignes 111-135, 217-233)
+  - **Impact** :
+    - ✅ Plus d'erreur 404 dans les logs console
+    - ✅ Matching plus précis basé sur le numéro de carte
+    - ✅ Hypno #97 trouve maintenant "Hypno MEW097" avec ~62% au lieu de "Hypno Prophecy" 22%
+    - ✅ Utilisateur peut réessayer le matching si résultat insatisfaisant
+  - **Utilisation** :
+    1. Recharger la page (F5)
+    2. Ouvrir carte avec mauvais matching (ex: Hypno #97)
+    3. Cliquer bouton jaune "Réessayer" dans le message vert
+    4. Le système supprime l'ancien match et en cherche un meilleur
+
+59. **🔗 Fix Construction URL CardMarket Directe** - URLs directes vers cartes singles avec format correct
+  - **Problème signalé** : Liens CardMarket redirigent vers page générique Singles au lieu de la carte spécifique
+  - **Symptômes** :
+    - Clic sur lien CardMarket pour Hypno #97 (extension 151) → Redirect vers `https://www.cardmarket.com/en/Pokemon/Products/Singles`
+    - Message d'erreur : "invalid expansion" ou pas de carte affichée
+    - Console logs : URL construite comme `hypno-97` au lieu de `Hypno-MEW097`
+  - **Cause racine** :
+    - Format d'URL incorrect : `{extension}/{nom-minuscule-numéro}` au lieu de `{extension}/{Nom-CODE123}`
+    - CardMarket exige format spécifique : Nom avec majuscule + code d'extension + numéro padé 3 chiffres
+    - Mapping manquant entre codes Pokemon TCG API (ex: "sv3pt5") et codes CardMarket (ex: "MEW")
+  - **Solution implémentée** :
+    - ✅ **Nouvelle fonction `buildCardMarketCardSlug()`** (lignes 53-73)
+      - Format correct : `{CardName}-{SETCODE}{PaddedNumber}` (ex: "Hypno-MEW097")
+      - Mapping des codes d'extension : `sv3pt5` → `MEW` pour extension 151
+      - Padding automatique des numéros : `97` → `097`
+      - Préserve la casse du nom de carte (majuscule initiale)
+    - ✅ **URL construction avec priorités** (lignes 83-111)
+      - **PRIORITÉ 1** : URL directe avec set.name + cardSlug si disponible
+      - **PRIORITÉ 2** : Matching CardMarket existant (avec recherche)
+      - **PRIORITÉ 3** : Fallback recherche générique
+    - ✅ **Indicateurs visuels** (lignes 183-189)
+      - Icône ⚡ Zap pour liens directs via API
+      - Icône ✨ Sparkles pour liens directs via matching auto
+      - Icône ⚠️ AlertCircle pour recherches génériques
+  - **Exemples de URLs générées** :
+    - Extension 151 (sv3pt5) : `https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Hypno-MEW097?language=2`
+    - Format générique : `{set.name}/{CardName}-{CODE}{Number}?language=2`
+  - **Fichier modifié** : `src/components/features/collection/CardMarketLinks.jsx`
+  - **Tests créés** : `test-cardmarket-url-formats.html`, `check-hypno-cardmarket.html`
+  - **Impact** :
+    - ✅ Liens CardMarket fonctionnent maintenant pour extension 151
+    - ✅ Format d'URL conforme aux attentes de CardMarket
+    - ✅ Plus de redirections vers page générique Singles
+    - ⚠️ **À étendre** : Mapping codes pour autres extensions (actuellement seulement 151/MEW)
+  - **Commit** : `22de955` - "fix: Correction format URL CardMarket - utiliser Nom-CODE123"
+
 
 
 #### 🔄 Pages Créées (Structure de base)
@@ -640,13 +713,15 @@ L'application utilise une architecture en couches de Context API :
 #### CardMarketMatchingService (Matching Automatique)
 - `matchCard(card, userId, saveMatch)` - Matcher une carte utilisateur avec CardMarket
 - `matchCards(cards, userId, onProgress)` - Matching de plusieurs cartes en batch
-- **Algorithme de scoring** :
-  - 70% basé sur les attaques (matching exact des noms d'attaques)
-  - 20% basé sur la similarité du nom (Levenshtein-like)
+- **Algorithme de scoring** (mis à jour - voir entrée #58) :
+  - 50% basé sur les attaques (matching exact des noms d'attaques)
+  - 25% basé sur le numéro de carte (augmenté pour compenser absence données d'extension)
+  - 15% basé sur la similarité du nom (Levenshtein-like)
   - 10% bonus si mêmes suffixes (V, VMAX, GX, EX, ex, etc.)
+  - Note : Le matching par extension (10%) a été supprimé car table `cardmarket_expansions` n'existe pas
 - **Seuil de confiance** : 20% minimum pour sauvegarder (peut être ajusté)
 - **Méthodes de matching** : `auto_attacks` (par attaques), `auto_name` (par nom), `manual` (utilisateur)
-- **Composant UI** : `CardMarketLinks.jsx` avec bouton "Trouver lien direct"
+- **Composant UI** : `CardMarketLinks.jsx` avec boutons "Trouver lien direct" et "Réessayer"
 
 #### PriceRefreshService (Actualisation Automatique des Prix)
 - `autoRefresh(cards, onProgress)` - Actualisation quotidienne automatique (150 cartes/jour)
