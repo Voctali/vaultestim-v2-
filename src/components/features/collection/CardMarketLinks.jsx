@@ -48,17 +48,28 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
 
   if (!card) return null
 
-  // Fonction helper pour slugifier (compatible CardMarket)
-  const slugify = (text) => {
-    if (!text) return ''
-    return text
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/\s/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
+  // Fonction helper pour construire le code de carte CardMarket
+  // Format: "Hypno-MEW097" (Nom-CODESET123)
+  const buildCardMarketCardSlug = (cardName, setId, cardNumber) => {
+    if (!cardName || !setId || !cardNumber) return null
+
+    // Extraire le code de l'extension depuis set.id
+    // Format set.id: "sv3pt5" → code "MEW" pour l'extension 151
+    let setCode = setId.toUpperCase()
+
+    // Mapping des codes d'extension Pokemon TCG API → CardMarket
+    const setCodeMapping = {
+      'sv3pt5': 'MEW',   // Extension 151
+      'sv3.5': 'MEW'
+    }
+
+    setCode = setCodeMapping[setId.toLowerCase()] || setCode
+
+    // Padder le numéro à 3 chiffres
+    const paddedNumber = cardNumber.toString().padStart(3, '0')
+
+    // Format final : "Hypno-MEW097"
+    return `${cardName}-${setCode}${paddedNumber}`
   }
 
   // Déterminer l'URL et le type de lien
@@ -66,15 +77,20 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
   let isDirect = false
   let isMatchedDirect = false
 
-  // PRIORITÉ 1 : Construire l'URL directe CardMarket avec set.name (RAPIDE - pas de proxy)
-  // Format: https://www.cardmarket.com/en/Pokemon/Products/Singles/{set-name-slug}/{card-name-slug}?language=2
-  // Exemple: https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Hypno-97?language=2
-  if (card.set?.name && card.name) {
-    const setSlug = slugify(card.set.name)
-    const cardSlug = slugify(card.name + (card.number ? ` ${card.number}` : ''))
-    cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Singles/${setSlug}/${cardSlug}?language=2`
-    isDirect = true
-    console.log(`🔗 URL directe CardMarket: ${cardMarketUrl}`)
+  // PRIORITÉ 1 : Construire l'URL directe CardMarket avec le bon format
+  // Format: https://www.cardmarket.com/en/Pokemon/Products/Singles/{set-name}/{Card-Name-CODE123}?language=2
+  // Exemple: https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Hypno-MEW097?language=2
+  if (card.set?.name && card.set?.id && card.name && card.number) {
+    const setName = card.set.name  // "151"
+    const cardSlug = buildCardMarketCardSlug(card.name, card.set.id, card.number)
+
+    if (cardSlug) {
+      cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Singles/${setName}/${cardSlug}?language=2`
+      isDirect = true
+      console.log(`🔗 URL directe CardMarket construite: ${cardMarketUrl} (set.id: ${card.set.id})`)
+    } else {
+      console.warn(`⚠️ Impossible de construire le slug CardMarket pour ${card.name}`)
+    }
   }
   // PRIORITÉ 2 : Utiliser le matching CardMarket si disponible
   else if (cardMarketMatch && cardMarketMatch.cardmarket_id_product && cardMarketMatch.match_score >= 0.2) {
