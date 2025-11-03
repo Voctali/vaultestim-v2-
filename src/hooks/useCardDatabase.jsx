@@ -1836,14 +1836,13 @@ export function CardDatabaseProvider({ children }) {
           // Sauvegarder dans IndexedDB
           await CardCacheService.saveCards(validResults)
 
-          // Sauvegarder dans Supabase
-          SupabaseService.addDiscoveredCards(validResults)
-            .then((addedCount) => {
-              console.log(`☁️ Supabase: ${addedCount} cartes avec attaques synchronisées`)
-            })
-            .catch((error) => {
-              console.warn('⚠️ Erreur sauvegarde attaques dans Supabase:', error)
-            })
+          // Sauvegarder dans Supabase (CRITIQUE: await ajouté)
+          try {
+            const addedCount = await SupabaseService.addDiscoveredCards(validResults)
+            console.log(`☁️ Supabase: ${addedCount} cartes avec attaques synchronisées`)
+          } catch (error) {
+            console.warn('⚠️ Erreur sauvegarde attaques dans Supabase:', error)
+          }
 
           // Mettre à jour l'état React
           setDiscoveredCards(prevCards => {
