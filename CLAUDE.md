@@ -620,11 +620,32 @@ L'application utilise une architecture en couches de Context API :
   - **Fichier modifié** : `src/components/features/collection/CardMarketLinks.jsx`
   - **Tests créés** : `test-cardmarket-url-formats.html`, `check-hypno-cardmarket.html`
   - **Impact** :
-    - ✅ Liens CardMarket fonctionnent maintenant pour extension 151
+    - ✅ Liens CardMarket fonctionnent pour cartes simples (ex: Hypno #97)
     - ✅ Format d'URL conforme aux attentes de CardMarket
-    - ✅ Plus de redirections vers page générique Singles
     - ⚠️ **À étendre** : Mapping codes pour autres extensions (actuellement seulement 151/MEW)
-  - **Commit** : `22de955` - "fix: Correction format URL CardMarket - utiliser Nom-CODE123"
+  - **Commits** :
+    - `22de955` - "fix: Correction format URL CardMarket - utiliser Nom-CODE123"
+    - `fa7e2e4` - "fix: Utiliser cardMarketData.name pour gérer les variantes de cartes (V1, V2, etc.)"
+  - **🐛 BUG NON RÉSOLU - Cartes avec variantes (V1, V2, etc.)** :
+    - **Problème** : Omanyte (#138 extension 151) ne fonctionne toujours pas
+    - **URL attendue** : `https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Omanyte-V1-MEW138?language=2`
+    - **Symptôme actuel** : Redirection vers `https://www.cardmarket.com/en/Pokemon/Products/Singles/151`
+    - **Tentative de fix** :
+      - Modification pour utiliser `cardMarketData.name` en PRIORITÉ 1 (commit fa7e2e4)
+      - Ajout fonction `convertCardMarketNameToSlug()` pour convertir les noms CardMarket
+      - Logique : Si `cardMarketData` disponible, l'utiliser au lieu de construire manuellement
+    - **Pourquoi ça ne fonctionne pas** :
+      - Soit `cardMarketData` n'est pas chargé pour Omanyte (pas de matching effectué)
+      - Soit le format du nom dans `cardmarket_singles` n'est pas celui attendu
+      - Soit la conversion du nom en slug URL est incorrecte
+    - **À INVESTIGUER** :
+      1. Vérifier dans `cardmarket_singles` comment Omanyte est enregistré (avec quel nom exact)
+      2. Vérifier si le matching CardMarket a été effectué pour Omanyte (table `user_cardmarket_matches`)
+      3. Tester manuellement le format d'URL avec différentes variantes
+      4. Vérifier les logs console lors du clic sur le lien CardMarket pour Omanyte
+    - **Fichier debug créé** : `debug-omanyte-cardmarket.html` (ouvrir dans navigateur pour interroger Supabase)
+    - **Fichier à modifier** : `src/components/features/collection/CardMarketLinks.jsx` (lignes 75-137)
+    - **Note importante** : Hypno fonctionne car pas de variante, Omanyte ne fonctionne pas car nécessite "-V1-" dans l'URL
 
 
 

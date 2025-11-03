@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Omanyte CardMarket</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; background: #f9f9f9; }
+    code { background: #e0e0e0; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>Debug Omanyte dans CardMarket</h1>
+  <div id="output"></div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+    const supabase = createClient(
+      'https://ubphwlmnfjdaiarbihcx.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQzNTA1NjEsImV4cCI6MjA0OTkyNjU2MX0.RgQCUfkန5oM_sAz9k8dxCCPe1uEjYAy0jWIl8UNMg'
+    )
+
+    const output = document.getElementById('output')
+
+    async function debugOmanyte() {
+      output.innerHTML = '<p>🔍 Recherche de Omanyte dans cardmarket_singles...</p>'
+
+      // Rechercher toutes les cartes Omanyte
+      const { data, error } = await supabase
+        .from('cardmarket_singles')
+        .select('*')
+        .ilike('name', '%Omanyte%')
+        .limit(20)
+
+      if (error) {
+        output.innerHTML += `<p style="color: red;">❌ Erreur : ${error.message}</p>`
+        return
+      }
+
+      output.innerHTML += `<p>✅ ${data.length} carte(s) trouvée(s)</p>`
+
+      if (data.length === 0) {
+        output.innerHTML += `<p style="color: orange;">⚠️ Aucune carte Omanyte trouvée dans cardmarket_singles</p>`
+        output.innerHTML += `<p>Essayons une recherche plus large...</p>`
+
+        // Recherche par "MEW138"
+        const { data: data2, error: error2 } = await supabase
+          .from('cardmarket_singles')
+          .select('*')
+          .ilike('name', '%MEW138%')
+          .limit(20)
+
+        if (!error2 && data2.length > 0) {
+          output.innerHTML += `<p>✅ ${data2.length} carte(s) trouvée(s) avec MEW138</p>`
+          data2.forEach(card => displayCard(card))
+        }
+      } else {
+        data.forEach(card => displayCard(card))
+      }
+    }
+
+    function displayCard(card) {
+      output.innerHTML += `
+        <div class="card">
+          <h3>${card.name}</h3>
+          <p><strong>ID Produit :</strong> ${card.id_product}</p>
+          <p><strong>ID Expansion :</strong> ${card.id_expansion}</p>
+          <p><strong>ID Metacard :</strong> ${card.id_metacard || 'N/A'}</p>
+          <p><strong>Catégorie :</strong> ${card.category_name} (ID: ${card.id_category})</p>
+          <hr>
+          <p><strong>Nom pour slug :</strong> <code>${card.name}</code></p>
+          <p><strong>Slug attendu :</strong> <code>${convertToSlug(card.name)}</code></p>
+          <hr>
+          <p><strong>URL construite (PRIORITÉ 1) :</strong><br>
+          <code>https://www.cardmarket.com/en/Pokemon/Products/Singles/151/${convertToSlug(card.name)}?language=2</code></p>
+          <a href="https://www.cardmarket.com/en/Pokemon/Products/Singles/151/${convertToSlug(card.name)}?language=2" target="_blank">
+            🔗 Tester ce lien
+          </a>
+          <hr>
+          <p><strong>URL attendue par l'utilisateur :</strong><br>
+          <code>https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Omanyte-V1-MEW138?language=2</code></p>
+        </div>
+      `
+    }
+
+    function convertToSlug(cardMarketName) {
+      if (!cardMarketName) return 'NULL'
+
+      return cardMarketName
+        .replace(/\s+/g, '-')  // Espaces → tirets
+        .replace(/\[/g, '')     // Supprimer [
+        .replace(/\]/g, '')     // Supprimer ]
+    }
+
+    debugOmanyte()
+  </script>
+</body>
+</html>
