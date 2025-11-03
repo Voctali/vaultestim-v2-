@@ -72,15 +72,41 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
     return `${cardName}-${setCode}${paddedNumber}`
   }
 
+  // Fonction pour convertir le nom CardMarket en slug URL
+  // Format: "Omanyte MEW138" → "Omanyte-MEW138"
+  // Format: "Omanyte [details]" → "Omanyte-details"
+  const convertCardMarketNameToSlug = (cardMarketName) => {
+    if (!cardMarketName) return null
+
+    // Remplacer les espaces par des tirets et nettoyer
+    return cardMarketName
+      .replace(/\s+/g, '-')  // Espaces → tirets
+      .replace(/\[/g, '')     // Supprimer [
+      .replace(/\]/g, '')     // Supprimer ]
+  }
+
   // Déterminer l'URL et le type de lien
   let cardMarketUrl
   let isDirect = false
   let isMatchedDirect = false
 
-  // PRIORITÉ 1 : Construire l'URL directe CardMarket avec le bon format
-  // Format: https://www.cardmarket.com/en/Pokemon/Products/Singles/{set-name}/{Card-Name-CODE123}?language=2
-  // Exemple: https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Hypno-MEW097?language=2
-  if (card.set?.name && card.set?.id && card.name && card.number) {
+  // PRIORITÉ 1 : Utiliser cardMarketData.name si disponible (contient les variantes V1, V2, etc.)
+  // Format: https://www.cardmarket.com/en/Pokemon/Products/Singles/{set-name}/{Card-Name-V1-CODE123}?language=2
+  // Exemple: https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Omanyte-V1-MEW138?language=2
+  if (cardMarketData?.name && card.set?.name) {
+    const setName = card.set.name  // "151"
+    const cardSlug = convertCardMarketNameToSlug(cardMarketData.name)
+
+    if (cardSlug) {
+      cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Singles/${setName}/${cardSlug}?language=2`
+      isDirect = true
+      isMatchedDirect = true
+      console.log(`🔗 URL directe CardMarket depuis matching: ${cardMarketUrl} (nom CardMarket: ${cardMarketData.name})`)
+    }
+  }
+  // PRIORITÉ 2 : Construire l'URL avec buildCardMarketCardSlug (sans variantes)
+  // Fonctionne pour les cartes simples comme Hypno, mais pas pour les variantes
+  else if (card.set?.name && card.set?.id && card.name && card.number) {
     const setName = card.set.name  // "151"
     const cardSlug = buildCardMarketCardSlug(card.name, card.set.id, card.number)
 
@@ -92,7 +118,7 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
       console.warn(`⚠️ Impossible de construire le slug CardMarket pour ${card.name}`)
     }
   }
-  // PRIORITÉ 2 : Utiliser le matching CardMarket si disponible
+  // PRIORITÉ 3 : Utiliser le matching CardMarket pour recherche
   else if (cardMarketMatch && cardMarketMatch.cardmarket_id_product && cardMarketMatch.match_score >= 0.2) {
     const searchName = encodeURIComponent(cardMarketMatch.cardmarket_name || card.name)
     cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${searchName}&language=2`
@@ -100,7 +126,7 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
     isMatchedDirect = true
     console.log(`🔗 Recherche CardMarket avec matching: ${cardMarketUrl}`)
   }
-  // PRIORITÉ 3 : Fallback recherche générique
+  // PRIORITÉ 4 : Fallback recherche générique
   else {
     const fallbackUrl = buildCardMarketUrl(card, 'auto')
     cardMarketUrl = fallbackUrl.includes('?')
