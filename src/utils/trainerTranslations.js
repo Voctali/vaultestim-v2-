@@ -72,6 +72,7 @@ const TRAINER_TRANSLATIONS = {
   'tully': 'tulip', // Championne d'Arène Paldea (Type Psy) - Influenceuse
   // Hisui / Sinnoh (Legends: Arceus)
   'adamantin': 'adaman', // Chef du Clan Diamant - Astral Radiance
+  'cormier': 'kamado', // Commandant du Corps des Inspecteurs Rusti-Cité - Astral Radiance
   'nacchara': 'irida', // Cheffe du Clan Perle - Astral Radiance
   'lucio': 'lucian', // Membre du Conseil des 4 Sinnoh (Type Psy) - Twilight Masquerade
   'pierrick': 'roark', // Champion d'Arène Charbourg Sinnoh (Type Roche)
