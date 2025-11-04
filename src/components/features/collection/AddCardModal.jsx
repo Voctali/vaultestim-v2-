@@ -337,21 +337,58 @@ export function AddCardModal({ isOpen, onClose, onSubmit }) {
                     </SelectTrigger>
                     <SelectContent>
                       {formData.gradeCompany === 'PCA' && (
-                        <SelectItem value="10+">10+ (Pristine Plus)</SelectItem>
+                        <>
+                          <SelectItem value="10+">10+ (Pristine Plus)</SelectItem>
+                          <SelectItem value="10">10 (Pristine/Gem Mint)</SelectItem>
+                          <SelectItem value="9.5">9.5 (Gem Mint)</SelectItem>
+                          <SelectItem value="9">9 (Mint)</SelectItem>
+                          <SelectItem value="8.5">8.5 (Near Mint+)</SelectItem>
+                          <SelectItem value="8">8 (Near Mint)</SelectItem>
+                          <SelectItem value="7.5">7.5 (Near Mint-)</SelectItem>
+                          <SelectItem value="7">7 (Excellent-Near Mint)</SelectItem>
+                          <SelectItem value="6">6 (Excellent)</SelectItem>
+                          <SelectItem value="5">5 (Very Good-Excellent)</SelectItem>
+                          <SelectItem value="4">4 (Very Good)</SelectItem>
+                          <SelectItem value="3">3 (Good)</SelectItem>
+                          <SelectItem value="2">2 (Good-Fair)</SelectItem>
+                          <SelectItem value="1">1 (Poor)</SelectItem>
+                        </>
                       )}
-                      <SelectItem value="10">10 (Pristine/Gem Mint)</SelectItem>
-                      <SelectItem value="9.5">9.5 (Gem Mint)</SelectItem>
-                      <SelectItem value="9">9 (Mint)</SelectItem>
-                      <SelectItem value="8.5">8.5 (Near Mint+)</SelectItem>
-                      <SelectItem value="8">8 (Near Mint)</SelectItem>
-                      <SelectItem value="7.5">7.5 (Near Mint-)</SelectItem>
-                      <SelectItem value="7">7 (Excellent-Near Mint)</SelectItem>
-                      <SelectItem value="6">6 (Excellent)</SelectItem>
-                      <SelectItem value="5">5 (Very Good-Excellent)</SelectItem>
-                      <SelectItem value="4">4 (Very Good)</SelectItem>
-                      <SelectItem value="3">3 (Good)</SelectItem>
-                      <SelectItem value="2">2 (Good-Fair)</SelectItem>
-                      <SelectItem value="1">1 (Poor)</SelectItem>
+                      {formData.gradeCompany === 'PSA' && (
+                        <>
+                          <SelectItem value="10">10 - GEM MINT</SelectItem>
+                          <SelectItem value="9">9 - MINT</SelectItem>
+                          <SelectItem value="8.5">8.5 - NM-MT +</SelectItem>
+                          <SelectItem value="8">8 - NM-MT</SelectItem>
+                          <SelectItem value="7">7 - NM</SelectItem>
+                          <SelectItem value="6">6 - EX-MT</SelectItem>
+                          <SelectItem value="5">5 - EX</SelectItem>
+                          <SelectItem value="4">4 - VG-EX</SelectItem>
+                          <SelectItem value="3">3 - VG</SelectItem>
+                          <SelectItem value="2">2 - GOOD</SelectItem>
+                          <SelectItem value="1.5">1.5 - FR</SelectItem>
+                          <SelectItem value="1">1 - PR</SelectItem>
+                          <SelectItem value="N0">N0 - AUTHENTIC</SelectItem>
+                          <SelectItem value="AA">AA - ALTERED AUTHENTIC</SelectItem>
+                        </>
+                      )}
+                      {formData.gradeCompany && formData.gradeCompany !== 'PCA' && formData.gradeCompany !== 'PSA' && (
+                        <>
+                          <SelectItem value="10">10 (Pristine/Gem Mint)</SelectItem>
+                          <SelectItem value="9.5">9.5 (Gem Mint)</SelectItem>
+                          <SelectItem value="9">9 (Mint)</SelectItem>
+                          <SelectItem value="8.5">8.5 (Near Mint+)</SelectItem>
+                          <SelectItem value="8">8 (Near Mint)</SelectItem>
+                          <SelectItem value="7.5">7.5 (Near Mint-)</SelectItem>
+                          <SelectItem value="7">7 (Excellent-Near Mint)</SelectItem>
+                          <SelectItem value="6">6 (Excellent)</SelectItem>
+                          <SelectItem value="5">5 (Very Good-Excellent)</SelectItem>
+                          <SelectItem value="4">4 (Very Good)</SelectItem>
+                          <SelectItem value="3">3 (Good)</SelectItem>
+                          <SelectItem value="2">2 (Good-Fair)</SelectItem>
+                          <SelectItem value="1">1 (Poor)</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
