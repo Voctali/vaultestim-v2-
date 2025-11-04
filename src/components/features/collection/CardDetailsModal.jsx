@@ -471,19 +471,34 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
                             <SelectItem value="BGS">BGS/Beckett</SelectItem>
                             <SelectItem value="CGC">CGC</SelectItem>
                             <SelectItem value="SGC">SGC</SelectItem>
+                            <SelectItem value="PCA">PCA</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="edit-grade">Note</Label>
-                        <Input
-                          id="edit-grade"
-                          placeholder="ex: 10, 9.5..."
-                          value={editData.grade}
-                          onChange={(e) => handleInputChange('grade', e.target.value)}
-                          className="golden-border"
-                        />
+                        <Select value={editData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
+                          <SelectTrigger className="golden-border">
+                            <SelectValue placeholder="Choisir..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10+">10+ (Pristine Plus)</SelectItem>
+                            <SelectItem value="10">10 (Pristine/Gem Mint)</SelectItem>
+                            <SelectItem value="9.5">9.5 (Gem Mint)</SelectItem>
+                            <SelectItem value="9">9 (Mint)</SelectItem>
+                            <SelectItem value="8.5">8.5 (Near Mint+)</SelectItem>
+                            <SelectItem value="8">8 (Near Mint)</SelectItem>
+                            <SelectItem value="7.5">7.5 (Near Mint-)</SelectItem>
+                            <SelectItem value="7">7 (Excellent-Near Mint)</SelectItem>
+                            <SelectItem value="6">6 (Excellent)</SelectItem>
+                            <SelectItem value="5">5 (Very Good-Excellent)</SelectItem>
+                            <SelectItem value="4">4 (Very Good)</SelectItem>
+                            <SelectItem value="3">3 (Good)</SelectItem>
+                            <SelectItem value="2">2 (Good-Fair)</SelectItem>
+                            <SelectItem value="1">1 (Poor)</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   )}
