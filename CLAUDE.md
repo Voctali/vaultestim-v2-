@@ -647,7 +647,137 @@ L'application utilise une architecture en couches de Context API :
     - **Fichier à modifier** : `src/components/features/collection/CardMarketLinks.jsx` (lignes 75-137)
     - **Note importante** : Hypno fonctionne car pas de variante, Omanyte ne fonctionne pas car nécessite "-V1-" dans l'URL
 
+60. **🎴 Système de Gradation des Cartes** - Ajout complet des champs de gradation dans les deux modales
+  - **Problème signalé** : Checkbox "Carte gradée" dans AddCardModal sans champs société/note
+  - **Solution implémentée** :
+    - ✅ Ajout `gradeCompany` et `grade` dans l'état de AddCardModal
+    - ✅ Section conditionnelle qui s'affiche quand "Carte gradée" est cochée
+    - ✅ Deux Select : Société de gradation (PSA/BGS/CGC/SGC/PCA) + Note
+    - ✅ Cohérence avec CardDetailsModal (même logique de rendu conditionnel)
+  - **Fichiers modifiés** :
+    - `src/components/features/collection/AddCardModal.jsx` (lignes 27-29, 53-55, 314-359)
+    - `src/components/features/collection/CardDetailsModal.jsx` (déjà fonctionnel)
+  - **Commits** :
+    - `74b5eca` - "fix: Ajout des champs de gradation manquants dans AddCardModal"
 
+61. **📊 Grades PSA Officiels** - Implémentation de la nomenclature PSA avec grades spécifiques
+  - **Grades PSA (Professional Sports Authenticator)** :
+    - 10 - GEM MINT
+    - 9 - MINT
+    - 8.5 - NM-MT +
+    - 8 - NM-MT
+    - 7 - NM
+    - 6 - EX-MT
+    - 5 - EX
+    - 4 - VG-EX
+    - 3 - VG
+    - 2 - GOOD
+    - 1.5 - FR (Fair)
+    - 1 - PR (Poor)
+    - N0 - AUTHENTIC
+    - AA - ALTERED AUTHENTIC
+  - **Note importante** : Pas de grade 9.5 chez PSA (n'existe pas dans leur système)
+  - **Fichiers modifiés** :
+    - `src/components/features/collection/AddCardModal.jsx` (lignes 357-374)
+    - `src/components/features/collection/CardDetailsModal.jsx` (lignes 504-521)
+  - **Commits** :
+    - `140f45c` - "feat: Implémentation des grades PSA officiels dans les modales de gradation"
+
+62. **🇫🇷 Grades PCA Français Officiels** - Nomenclature française PCA avec grades corrects
+  - **Grades PCA (Professional Card Authenticator)** :
+    - 10+ - COLLECTOR (exclusif PCA)
+    - 10 - NEUF SUP'
+    - 9.5 - NEUF
+    - 9 - PROCHE DU NEUF
+    - 8 - EXCELLENT - PROCHE DU NEUF
+    - 7 - EXCELLENT
+    - 6 - TRÈS BON
+    - 5 - BON
+    - 4 - CORRECT
+    - 3 - MOYEN
+    - 2 - MAUVAIS
+    - 1 - TRÈS MAUVAIS
+  - **Notes supprimées** : 8.5 et 7.5 (n'existent pas chez PCA)
+  - **Fichiers modifiés** :
+    - `src/components/features/collection/AddCardModal.jsx` (lignes 339-354)
+    - `src/components/features/collection/CardDetailsModal.jsx` (lignes 486-501)
+  - **Commits** :
+    - `590930d` - "feat: Grades PCA officiels en français (nomenclature exacte)"
+  - **Résumé des 3 systèmes** :
+    - **PSA** : Nomenclature anglaise (pas de 9.5)
+    - **PCA** : Nomenclature française (pas de 8.5 ni 7.5)
+    - **BGS/CGC/SGC** : Échelle standard complète (10 à 1 avec tous les demi-points)
+
+63. **🎴 Traduction Dresseur - Cormier** - Ajout traduction pour Commandant Kamado
+  - **Ajout** : `'cormier': 'kamado'`
+  - **Personnage** : Commandant du Corps des Inspecteurs de Rusti-Cité (Pokémon Legends: Arceus)
+  - **Extension** : Astral Radiance
+  - **Placement** : Section Hisui/Sinnoh (ligne 75)
+  - **Fichier modifié** : `src/utils/trainerTranslations.js`
+  - **Total traductions dresseurs** : 41 traductions disponibles
+  - **Commits** :
+    - `677e972` - "feat: Ajout traduction 'cormier' → 'kamado' (Commandant Hisui)"
+
+#### 🚧 À Corriger / En Cours
+
+**1. Migration des Attaques (EN COURS - 76.5% complétée)**
+  - **État** : Migration stoppée à 76.5% (environ 12,000-13,000 cartes enrichies sur 16,719)
+  - **Restant** : 23.5% des cartes (~4,000 cartes) sans attaques/abilities/weaknesses
+  - **Problème spécifique** : Squirtle #7 (sv3pt5-7) était dans les 23.5% non traités
+  - **Impact** : Matching CardMarket échoue pour les cartes sans attaques (algorithme 50% basé sur attaques)
+  - **Solution** :
+    - ✅ Fix await Supabase appliqué (commit `3876c1b`)
+    - ⏳ Migration relancée mais interrompue (PC éteint)
+    - 📝 À relancer : Ouvrir Admin → Éditeur de Base de Données → Migration des attaques
+    - 📝 Surveiller les logs pour "sv3pt5-7" et arrêter dès que Squirtle est traité
+  - **Fichier** : `src/hooks/useCardDatabase.jsx` (fonction `migrateAttacks()`)
+  - **Durée estimée** : ~2 heures pour les 23.5% restants (avec timeouts)
+
+**2. Bug Cartes avec Variantes CardMarket (NON RÉSOLU)**
+  - **Problème** : Cartes avec variantes (V1, V2, V3) ont des URLs CardMarket incorrectes
+  - **Exemple** : Omanyte #138 (extension 151)
+    - URL attendue : `https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Omanyte-V1-MEW138?language=2`
+    - URL actuelle : Redirection vers page générique Singles
+  - **Cause** : Format du slug ne gère pas les variantes (V1, V2, etc.)
+  - **À investiguer** :
+    1. Vérifier format exact dans `cardmarket_singles` pour Omanyte
+    2. Vérifier si matching automatique a été effectué (table `user_cardmarket_matches`)
+    3. Tester différentes variantes manuellement
+  - **Fichier** : `src/components/features/collection/CardMarketLinks.jsx` (lignes 75-137)
+  - **Fichiers debug** : `debug-omanyte-cardmarket.html`
+
+**3. Mapping Codes Extensions CardMarket (INCOMPLET)**
+  - **Problème** : Seulement 1 extension mappée (sv3pt5 → MEW pour extension 151)
+  - **Impact** : URLs directes CardMarket fonctionnent uniquement pour extension 151
+  - **À faire** : Ajouter mappings pour toutes les extensions populaires
+  - **Exemple de mapping nécessaire** :
+    ```javascript
+    'sv1': 'SVI',        // Scarlet & Violet
+    'sv2': 'PAL',        // Paldea Evolved
+    'sv3': 'OBF',        // Obsidian Flames
+    'sv3pt5': 'MEW',     // 151 (déjà fait)
+    'sv4': 'PAR',        // Paradox Rift
+    // etc.
+    ```
+  - **Fichier** : `src/components/features/collection/CardMarketLinks.jsx` (fonction `buildCardMarketCardSlug()`)
+
+**4. Cache Recherche Obsolète (RÉSOLU pour Arven, possiblement d'autres)**
+  - **Problème** : Cache localStorage peut contenir des versions obsolètes de recherches
+  - **Symptôme** : Recherches retournent moins de résultats que disponibles dans l'API
+  - **Solution appliquée** : Invalidation automatique au démarrage pour "arven" et "pepper"
+  - **À surveiller** : D'autres recherches peuvent avoir le même problème
+  - **Solution générale** : Ajouter clés de cache à invalider dans `CacheService.js` ligne 376
+  - **Fichier** : `src/services/CacheService.js`
+
+**5. Traductions Manquantes (À SIGNALER)**
+  - **Process** : Lorsqu'une recherche française ne trouve pas de cartes, vérifier si traduction existe
+  - **Fichiers concernés** :
+    - `src/utils/pokemonTranslations.js` (1060+ Pokémon Gen 1-9)
+    - `src/utils/trainerTranslations.js` (41+ Dresseurs et Supporters)
+  - **Dernières ajoutées** :
+    - Pokémon : dunaconda, nigosier, embrochet, hastacuda, pêchaminus, 75+ Gen 8-9
+    - Dresseurs : cormier, hassa, irido, kassis, ortiga, pania, pepper, popi, etc.
+  - **Note** : Toujours vérifier doublons avec `grep -n "nom" fichier.js` avant d'ajouter
 
 #### 🔄 Pages Créées (Structure de base)
 - **Explorer** - Recherche et découverte de Pokémon avec navigation hiérarchique (Blocs → Extensions → Cartes)
