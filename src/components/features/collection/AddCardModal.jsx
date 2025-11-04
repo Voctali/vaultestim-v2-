@@ -336,22 +336,20 @@ export function AddCardModal({ isOpen, onClose, onSubmit }) {
                       <SelectValue placeholder="Choisir..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {formData.gradeCompany === 'PCA' && (
+                                            {formData.gradeCompany === 'PCA' && (
                         <>
-                          <SelectItem value="10+">10+ (Pristine Plus)</SelectItem>
-                          <SelectItem value="10">10 (Pristine/Gem Mint)</SelectItem>
-                          <SelectItem value="9.5">9.5 (Gem Mint)</SelectItem>
-                          <SelectItem value="9">9 (Mint)</SelectItem>
-                          <SelectItem value="8.5">8.5 (Near Mint+)</SelectItem>
-                          <SelectItem value="8">8 (Near Mint)</SelectItem>
-                          <SelectItem value="7.5">7.5 (Near Mint-)</SelectItem>
-                          <SelectItem value="7">7 (Excellent-Near Mint)</SelectItem>
-                          <SelectItem value="6">6 (Excellent)</SelectItem>
-                          <SelectItem value="5">5 (Very Good-Excellent)</SelectItem>
-                          <SelectItem value="4">4 (Very Good)</SelectItem>
-                          <SelectItem value="3">3 (Good)</SelectItem>
-                          <SelectItem value="2">2 (Good-Fair)</SelectItem>
-                          <SelectItem value="1">1 (Poor)</SelectItem>
+                          <SelectItem value="10+">10+ - COLLECTOR</SelectItem>
+                          <SelectItem value="10">10 - NEUF SUP'</SelectItem>
+                          <SelectItem value="9.5">9.5 - NEUF</SelectItem>
+                          <SelectItem value="9">9 - PROCHE DU NEUF</SelectItem>
+                          <SelectItem value="8">8 - EXCELLENT - PROCHE DU NEUF</SelectItem>
+                          <SelectItem value="7">7 - EXCELLENT</SelectItem>
+                          <SelectItem value="6">6 - TRÈS BON</SelectItem>
+                          <SelectItem value="5">5 - BON</SelectItem>
+                          <SelectItem value="4">4 - CORRECT</SelectItem>
+                          <SelectItem value="3">3 - MOYEN</SelectItem>
+                          <SelectItem value="2">2 - MAUVAIS</SelectItem>
+                          <SelectItem value="1">1 - TRÈS MAUVAIS</SelectItem>
                         </>
                       )}
                       {formData.gradeCompany === 'PSA' && (
