@@ -483,7 +483,9 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
                             <SelectValue placeholder="Choisir..." />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="10+">10+ (Pristine Plus)</SelectItem>
+                            {editData.gradeCompany === 'PCA' && (
+                              <SelectItem value="10+">10+ (Pristine Plus)</SelectItem>
+                            )}
                             <SelectItem value="10">10 (Pristine/Gem Mint)</SelectItem>
                             <SelectItem value="9.5">9.5 (Gem Mint)</SelectItem>
                             <SelectItem value="9">9 (Mint)</SelectItem>
