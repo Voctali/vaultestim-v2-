@@ -4,8 +4,8 @@
  */
 
 import { CacheService } from './CacheService'
-import { translatePokemonName } from '@/utils/pokemonTranslations'
-import { translateTrainerName } from '@/utils/trainerTranslations'
+import { translatePokemonName, POKEMON_TRANSLATIONS_VERSION } from '@/utils/pokemonTranslations'
+import { translateTrainerName, TRAINER_TRANSLATIONS_VERSION } from '@/utils/trainerTranslations'
 import { translateRarity } from '@/utils/cardConditions'
 
 export class TCGdxService {
@@ -117,6 +117,34 @@ export class TCGdxService {
   }
 
   /**
+   * Nettoie les anciennes entrées de cache avec une version obsolète
+   */
+  static cleanObsoleteCache() {
+    const currentVersion = `${POKEMON_TRANSLATIONS_VERSION}_${TRAINER_TRANSLATIONS_VERSION}`
+    const prefix = this.CACHE_KEYS.SEARCH
+
+    try {
+      // Parcourir toutes les clés localStorage
+      const keysToDelete = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith(prefix) && !key.includes(currentVersion)) {
+          keysToDelete.push(key)
+        }
+      }
+
+      // Supprimer les anciennes entrées
+      keysToDelete.forEach(key => localStorage.removeItem(key))
+
+      if (keysToDelete.length > 0) {
+        console.log(`🧹 Nettoyage cache obsolète: ${keysToDelete.length} entrées supprimées`)
+      }
+    } catch (error) {
+      console.warn('⚠️ Erreur nettoyage cache:', error)
+    }
+  }
+
+  /**
    * Recherche de cartes avec l'API Pokemon TCG
    */
   static async searchCards(query, limit = 50) {
@@ -126,8 +154,10 @@ export class TCGdxService {
     const translatedQuery = this.translateToEnglish(query)
     console.log(`🇬🇧 Recherche: "${translatedQuery}"`)
 
-    // Vérifier le cache avec le nom traduit
-    const cacheKey = `${this.CACHE_KEYS.SEARCH}_${translatedQuery}_${limit}`
+    // Vérifier le cache avec le nom traduit + versions des traductions
+    // Cela invalide automatiquement le cache quand les dictionnaires changent
+    const translationsVersion = `${POKEMON_TRANSLATIONS_VERSION}_${TRAINER_TRANSLATIONS_VERSION}`
+    const cacheKey = `${this.CACHE_KEYS.SEARCH}_${translationsVersion}_${translatedQuery}_${limit}`
     const cached = CacheService.getCache(cacheKey)
 
     if (cached) {

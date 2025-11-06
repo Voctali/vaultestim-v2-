@@ -1,6 +1,9 @@
 ﻿// Dictionnaire de traduction Français → Anglais pour les noms de Pokémon
 // Utilisé pour rechercher les cartes TCG avec l'API en anglais
 
+// Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
+export const POKEMON_TRANSLATIONS_VERSION = '1.0.0' // Dernière mise à jour: 2025-11-06
+
 export const POKEMON_TRANSLATIONS = {
   // Génération 1
   'bulbizarre': 'bulbasaur',

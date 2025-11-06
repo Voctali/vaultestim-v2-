@@ -145,6 +145,9 @@ export function CardDatabaseProvider({ children }) {
   const [authInitialized, setAuthInitialized] = useState(false)
 
   useEffect(() => {
+    // Nettoyer le cache obsolète au démarrage
+    TCGdxService.cleanObsoleteCache()
+
     // Vérifier l'authentification
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()

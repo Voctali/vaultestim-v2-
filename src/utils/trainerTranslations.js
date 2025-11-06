@@ -5,6 +5,9 @@
  * rivaux, personnages) du français vers l'anglais pour l'API Pokemon TCG.
  */
 
+// Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
+export const TRAINER_TRANSLATIONS_VERSION = '1.1.0' // Dernière mise à jour: 2025-11-06
+
 const TRAINER_TRANSLATIONS = {
   // ========================================
   // CHAMPIONS D'ARÈNE (GYM LEADERS)
@@ -284,6 +287,10 @@ const TRAINER_TRANSLATIONS = {
   'note d\'ingérence': 'meddling memo', // Objet Dresseur - Scarlet & Violet
   'note d\'ingerence': 'meddling memo', // Variante sans accent
   'note d ingerence': 'meddling memo', // Variante sans apostrophe ni accent
+  'orbe téracristal': 'tera orb', // Objet ACE SPEC - Scarlet & Violet (Téracristallisation)
+  'orbe teracristal': 'tera orb', // Variante sans accent
+  'panier de pique-nique': 'picnic basket', // Objet Dresseur - Scarlet & Violet
+  'panier de pique nique': 'picnic basket', // Variante sans tiret
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents
