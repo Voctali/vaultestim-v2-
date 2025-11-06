@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 
 export function Duplicates() {
-  const { collection, getDuplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale } = useCollection()
+  const { duplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale } = useCollection()
   const [currentTab, setCurrentTab] = useState('duplicates') // 'duplicates' ou 'batches'
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateBatchModal, setShowCreateBatchModal] = useState(false)
@@ -41,10 +41,8 @@ export function Duplicates() {
   const [cardToSell, setCardToSell] = useState(null)
   const [batchToSell, setBatchToSell] = useState(null)
 
-  // Obtenir les doublons (cartes avec quantité > 1, priorisant les moins bonnes conditions)
-  // Appel direct sans useMemo car getDuplicates change à chaque render
-  const allDuplicates = getDuplicates()
-  const duplicateCards = allDuplicates.filter(card => {
+  // Filtrer les doublons selon la recherche (duplicates vient du Context et est déjà mémorisé)
+  const duplicateCards = duplicates.filter(card => {
     if (!searchTerm.trim()) return true
 
     // Recherche bilingue : français et anglais

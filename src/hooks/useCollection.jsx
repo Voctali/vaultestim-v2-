@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect, useMemo, createContext, useContext } from 'react'
 import { SupabaseCollectionService } from '@/services/SupabaseCollectionService'
 import { supabase } from '@/lib/supabaseClient'
 import { getNumericPrice } from '@/utils/priceFormatter'
@@ -291,25 +291,25 @@ export function CollectionProvider({ children }) {
       .slice(0, limit)
   }
 
-  // Obtenir les doublons (cartes avec quantité > 1 ou cartes identiques multiples)
-  const getDuplicates = () => {
-    const duplicates = []
+  // Calculer les doublons avec useMemo pour performance (cartes avec quantité > 1 ou cartes identiques multiples)
+  const duplicates = useMemo(() => {
+    const duplicatesList = []
     const cardCounts = {}
 
-    console.log('🔍 [getDuplicates] Analyse de', collection.length, 'cartes')
+    console.log('🔍 [useMemo duplicates] Recalcul des doublons -', collection.length, 'cartes')
 
     // Cartes avec quantité > 1
     collection.forEach(card => {
       if (card.quantity > 1) {
-        console.log('✅ [getDuplicates] Carte avec quantity > 1:', card.name, '(quantité:', card.quantity, ')')
-        duplicates.push({
+        console.log('✅ [useMemo duplicates] Carte avec quantity > 1:', card.name, '(quantité:', card.quantity, ')')
+        duplicatesList.push({
           ...card,
           quantity: card.quantity
         })
       }
     })
 
-    console.log('📊 [getDuplicates] Cartes avec quantity > 1:', duplicates.length)
+    console.log('📊 [useMemo duplicates] Cartes avec quantity > 1:', duplicatesList.length)
 
     // Cartes identiques multiples
     collection.forEach(card => {
@@ -323,7 +323,7 @@ export function CollectionProvider({ children }) {
 
     Object.values(cardCounts).forEach(cards => {
       if (cards.length > 1) {
-        console.log('📦 [getDuplicates] Cartes identiques trouvées:', cards[0].name, '(', cards.length, 'exemplaires)')
+        console.log('📦 [useMemo duplicates] Cartes identiques trouvées:', cards[0].name, '(', cards.length, 'exemplaires)')
         // Prioriser les cartes en moins bon état pour les doublons
         const sortedCards = cards.sort((a, b) => {
           const conditionOrder = {
@@ -338,26 +338,26 @@ export function CollectionProvider({ children }) {
         })
 
         // Ajouter tous sauf le meilleur exemplaire
-        duplicates.push(...sortedCards.slice(0, -1))
+        duplicatesList.push(...sortedCards.slice(0, -1))
       }
     })
 
-    console.log('📊 [getDuplicates] Total doublons avant déduplication:', duplicates.length)
+    console.log('📊 [useMemo duplicates] Total doublons avant déduplication:', duplicatesList.length)
 
     // Supprimer les doublons de la liste
     const uniqueDuplicates = []
     const seen = new Set()
 
-    duplicates.forEach(card => {
+    duplicatesList.forEach(card => {
       if (!seen.has(card.id)) {
         seen.add(card.id)
         uniqueDuplicates.push(card)
       }
     })
 
-    console.log('✅ [getDuplicates] Doublons finaux:', uniqueDuplicates.length)
+    console.log('✅ [useMemo duplicates] Doublons finaux:', uniqueDuplicates.length)
     return uniqueDuplicates
-  }
+  }, [collection]) // Recalculer uniquement quand collection change
 
   // Gestion des lots de doublons
   const createDuplicateBatch = async (batchData) => {
@@ -572,6 +572,7 @@ export function CollectionProvider({ children }) {
     favorites,
     wishlist,
     recentAdditions,
+    duplicates, // Valeur mémorisée au lieu de fonction
     duplicateBatches,
     sales,
     isLoading,
@@ -586,7 +587,6 @@ export function CollectionProvider({ children }) {
     toggleWishlist,
     getStats,
     getMostValuedCards,
-    getDuplicates,
     createDuplicateBatch,
     updateDuplicateBatch,
     deleteDuplicateBatch,
