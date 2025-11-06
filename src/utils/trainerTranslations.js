@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.1.1' // Dernière mise à jour: 2025-01-06 - Fix cache "picnic basket"
+export const TRAINER_TRANSLATIONS_VERSION = '1.1.2' // Dernière mise à jour: 2025-01-06 - Ajout "buddy-buddy poffin"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -296,6 +296,8 @@ const TRAINER_TRANSLATIONS = {
   'pièce énergie': 'energy coin', // Objet Dresseur - Permet de manipuler les énergies
   'piece energie': 'energy coin', // Variante sans accent
   'pince attrapeuse': 'grabber', // Objet Dresseur - Permet de récupérer des cartes
+  'poffin copain-copain': 'buddy-buddy poffin', // Objet Dresseur - Scarlet & Violet
+  'poffin copain copain': 'buddy-buddy poffin', // Variante sans tiret
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents
