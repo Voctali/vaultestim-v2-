@@ -296,15 +296,20 @@ export function CollectionProvider({ children }) {
     const duplicates = []
     const cardCounts = {}
 
+    console.log('🔍 [getDuplicates] Analyse de', collection.length, 'cartes')
+
     // Cartes avec quantité > 1
     collection.forEach(card => {
       if (card.quantity > 1) {
+        console.log('✅ [getDuplicates] Carte avec quantity > 1:', card.name, '(quantité:', card.quantity, ')')
         duplicates.push({
           ...card,
           quantity: card.quantity
         })
       }
     })
+
+    console.log('📊 [getDuplicates] Cartes avec quantity > 1:', duplicates.length)
 
     // Cartes identiques multiples
     collection.forEach(card => {
@@ -318,6 +323,7 @@ export function CollectionProvider({ children }) {
 
     Object.values(cardCounts).forEach(cards => {
       if (cards.length > 1) {
+        console.log('📦 [getDuplicates] Cartes identiques trouvées:', cards[0].name, '(', cards.length, 'exemplaires)')
         // Prioriser les cartes en moins bon état pour les doublons
         const sortedCards = cards.sort((a, b) => {
           const conditionOrder = {
@@ -336,6 +342,8 @@ export function CollectionProvider({ children }) {
       }
     })
 
+    console.log('📊 [getDuplicates] Total doublons avant déduplication:', duplicates.length)
+
     // Supprimer les doublons de la liste
     const uniqueDuplicates = []
     const seen = new Set()
@@ -347,6 +355,7 @@ export function CollectionProvider({ children }) {
       }
     })
 
+    console.log('✅ [getDuplicates] Doublons finaux:', uniqueDuplicates.length)
     return uniqueDuplicates
   }
 

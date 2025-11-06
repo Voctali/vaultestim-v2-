@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 
 export function Duplicates() {
-  const { getDuplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale } = useCollection()
+  const { collection, getDuplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale } = useCollection()
   const [currentTab, setCurrentTab] = useState('duplicates') // 'duplicates' ou 'batches'
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateBatchModal, setShowCreateBatchModal] = useState(false)
@@ -71,7 +71,7 @@ export function Duplicates() {
 
       return matchesEnglish || matchesTranslated
     })
-  }, [getDuplicates, searchTerm])
+  }, [collection, searchTerm, getDuplicates])
 
   // Calculer la valeur totale d'un lot
   const calculateBatchValue = (cards) => {
