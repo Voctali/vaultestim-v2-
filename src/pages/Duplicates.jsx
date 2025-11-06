@@ -300,6 +300,12 @@ export function Duplicates() {
             </Button>
           </div>
 
+          {(() => {
+            console.log('🎨 [Duplicates] Rendu - duplicateCards.length:', duplicateCards.length)
+            console.log('🎨 [Duplicates] Première carte:', duplicateCards[0])
+            return null
+          })()}
+
           {duplicateCards.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
               {duplicateCards.map((card) => (
