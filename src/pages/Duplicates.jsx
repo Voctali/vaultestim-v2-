@@ -42,25 +42,28 @@ export function Duplicates() {
   const [batchToSell, setBatchToSell] = useState(null)
 
   // Obtenir les doublons (cartes avec quantité > 1, priorisant les moins bonnes conditions)
-  const duplicateCards = useMemo(() => {
-    return getDuplicates().filter(card => {
-      // Recherche bilingue : français et anglais
-      const searchLower = searchTerm.toLowerCase().trim()
-      const cardNameLower = card.name.toLowerCase()
+  // Appel direct sans useMemo car getDuplicates change à chaque render
+  const allDuplicates = getDuplicates()
+  const duplicateCards = allDuplicates.filter(card => {
+    if (!searchTerm.trim()) return true
 
-      // Recherche directe dans le nom anglais de la carte
-      const matchesEnglish = (
+    // Recherche bilingue : français et anglais
+    const searchLower = searchTerm.toLowerCase().trim()
+    const cardNameLower = card.name.toLowerCase()
+
+    // Recherche directe dans le nom anglais de la carte
+    const matchesEnglish = (
       cardNameLower === searchLower ||
       cardNameLower.startsWith(searchLower + ' ') ||
       cardNameLower.includes(' ' + searchLower + ' ') ||
       cardNameLower.endsWith(' ' + searchLower)
     )
 
-      // Si l'utilisateur recherche en français, traduire vers l'anglais
-      let translatedSearch = translatePokemonName(searchLower)
-      if (translatedSearch === searchLower) {
-        translatedSearch = translateTrainerName(searchLower)
-      }
+    // Si l'utilisateur recherche en français, traduire vers l'anglais
+    let translatedSearch = translatePokemonName(searchLower)
+    if (translatedSearch === searchLower) {
+      translatedSearch = translateTrainerName(searchLower)
+    }
     // Recherche par mot complet pour éviter faux positifs (ex: "eri" ne doit PAS matcher "Erika")
     const matchesTranslated = translatedSearch !== searchLower && (
       cardNameLower === translatedSearch || // Exact match
@@ -69,9 +72,8 @@ export function Duplicates() {
       cardNameLower.endsWith(' ' + translatedSearch) // " eri" à la fin
     )
 
-      return matchesEnglish || matchesTranslated
-    })
-  }, [collection, searchTerm, getDuplicates])
+    return matchesEnglish || matchesTranslated
+  })
 
   // Calculer la valeur totale d'un lot
   const calculateBatchValue = (cards) => {
