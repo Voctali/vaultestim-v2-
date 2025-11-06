@@ -243,10 +243,15 @@ export class TCGdxService {
     let lastError = null
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      // Créer un AbortController avec timeout de 60 secondes
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000)
+
       try {
         console.log(`📡 Tentative ${attempt}/${maxRetries}: ${url}`)
 
         const response = await fetch(url, {
+          signal: controller.signal,
           headers: {
             'Accept': 'application/json',
             // Ajouter la clé API si disponible
@@ -255,6 +260,8 @@ export class TCGdxService {
             })
           }
         })
+
+        clearTimeout(timeoutId)
 
         console.log(`📊 Réponse API: Status ${response.status} ${response.statusText}`)
 
@@ -290,11 +297,12 @@ export class TCGdxService {
         return data
 
       } catch (error) {
+        clearTimeout(timeoutId) // Nettoyer le timeout en cas d'erreur
         lastError = error
         console.warn(`❌ Tentative ${attempt} échouée:`, error.message)
 
         // Si ce n'est pas la dernière tentative et que c'est une erreur réseau
-        if (attempt < maxRetries && (error.name === 'TypeError' || error.message.includes('fetch'))) {
+        if (attempt < maxRetries && (error.name === 'TypeError' || error.message.includes('fetch') || error.name === 'AbortError')) {
           const delay = Math.pow(2, attempt) * 1000
           console.log(`⏳ Retry dans ${delay}ms...`)
           await this.sleep(delay)

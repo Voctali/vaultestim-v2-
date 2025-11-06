@@ -69,7 +69,7 @@ src/
 ### 🌐 Recherche Bilingue
 - **Dictionnaires** :
   - `src/utils/pokemonTranslations.js` - 1060+ Pokémon (Gen 1-9)
-  - `src/utils/trainerTranslations.js` - 54+ Dresseurs et Objets
+  - `src/utils/trainerTranslations.js` - 230+ Dresseurs et Objets (313 avec variantes)
 - **Comportement** : Recherche "salamèche" → trouve "Charmander"
 
 ### 💰 Gestion des Prix

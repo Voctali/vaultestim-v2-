@@ -277,6 +277,13 @@ const TRAINER_TRANSLATIONS = {
   'fossile racine ancien': 'antique root fossil', // Fossile Objet - Galar
   'planche de sauvetage': 'rescue board', // Objet Dresseur
   'masque de monstre': 'ogre\'s mask', // Objet Dresseur
+  'max canne': 'max rod', // Objet ACE SPEC - Prismatic Evolutions (SV8.5)
+  'méga canne': 'super rod', // Objet Dresseur - Multiple éditions (Neo Genesis, Paldea Evolved, etc.)
+  'mega canne': 'super rod', // Variante sans accent
+  'mixeur brillant': 'brilliant blender', // Objet Dresseur - Scarlet & Violet
+  'note d\'ingérence': 'meddling memo', // Objet Dresseur - Scarlet & Violet
+  'note d\'ingerence': 'meddling memo', // Variante sans accent
+  'note d ingerence': 'meddling memo', // Variante sans apostrophe ni accent
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents
