@@ -295,6 +295,7 @@ const TRAINER_TRANSLATIONS = {
   'perche a motismart': 'roto-stick', // Variante sans accent
   'pièce énergie': 'energy coin', // Objet Dresseur - Permet de manipuler les énergies
   'piece energie': 'energy coin', // Variante sans accent
+  'pince attrapeuse': 'grabber', // Objet Dresseur - Permet de récupérer des cartes
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents

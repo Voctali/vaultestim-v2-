@@ -8,7 +8,7 @@ Historique détaillé de toutes les fonctionnalités implémentées, corrections
 
 - [Fonctionnalités Majeures (1-40)](#fonctionnalités-majeures-1-40)
 - [Traductions et Corrections (41-50)](#traductions-et-corrections-41-50)
-- [Améliorations UX et Fixes (51-79)](#améliorations-ux-et-fixes-51-79)
+- [Améliorations UX et Fixes (51-80)](#améliorations-ux-et-fixes-51-80)
 
 ---
 
@@ -203,7 +203,7 @@ Correction du catch-all capturant les routes API :
 
 ---
 
-## Améliorations UX et Fixes (51-79)
+## Améliorations UX et Fixes (51-80)
 
 ### 51. 🎴 Enrichissement Traductions Dresseurs (11 nouvelles)
 Traductions Paldea (hassa, irido, kassis), Hisui (nacchara), Unova (clown, ludvina), Supporters générales (guide d'exploration, juge, intendant).
@@ -331,6 +331,9 @@ Permet de chercher des cartes Supporter depuis le deck.
 
 ### 79. 🎴 Traduction Dresseur - Pièce Énergie
 `'pièce énergie': 'energy coin'` + variante sans accent - Objet Dresseur (Black Bolt BLK 081).
+
+### 80. 🎴 Traduction Dresseur - Pince Attrapeuse
+`'pince attrapeuse': 'grabber'` - Objet Dresseur permettant de récupérer des cartes.
 
 ---
 
