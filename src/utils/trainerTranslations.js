@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.2.0' // Dernière mise à jour: 2025-01-06 - Ajout "superior energy retrieval"
+export const TRAINER_TRANSLATIONS_VERSION = '1.2.1' // Dernière mise à jour: 2025-01-06 - Ajout "pal pad"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -318,6 +318,7 @@ const TRAINER_TRANSLATIONS = {
   'récupération d\'energie superieure': 'superior energy retrieval', // Variante sans accents
   'recuperation d\'energie superieure': 'superior energy retrieval', // Variante sans accents
   'recuperation energie superieure': 'superior energy retrieval', // Variante sans accents ni "d'"
+  'registre ami': 'pal pad', // Objet Dresseur - Diamond & Pearl / HeartGold SoulSilver
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents
