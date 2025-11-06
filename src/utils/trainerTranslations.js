@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.2.1' // Dernière mise à jour: 2025-01-06 - Ajout "pal pad"
+export const TRAINER_TRANSLATIONS_VERSION = '1.2.2' // Dernière mise à jour: 2025-01-06 - Ajout "hop's bag"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -323,6 +323,7 @@ const TRAINER_TRANSLATIONS = {
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents
   'sac de menzi': 'nemona\'s backpack', // Objet Paldea - Paldean Fates
+  'sac de nabil': 'hop\'s bag', // Objet Dresseur - Sword & Shield
   'sandwich de pepper': 'arven\'s sandwich', // Objet Paldea - Carte signature d'Arven
   'attrape-pokémon': 'pokémon catcher', // Objet classique - Multiple rééditions
   'attrape-pokemon': 'pokemon catcher', // Variante sans accents
