@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.3.0' // Dernière mise à jour: 2025-01-06 - Ajout "rare candy"
+export const TRAINER_TRANSLATIONS_VERSION = '1.3.1' // Dernière mise à jour: 2025-01-06 - Ajout "awakening drum"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -335,6 +335,8 @@ const TRAINER_TRANSLATIONS = {
   'stickers energie': 'energy sticker', // Variante sans accent
   'super ball': 'great ball', // Objet Dresseur - Poké Ball classique
   'super bonbon': 'rare candy', // Objet Dresseur - Carte classique d'évolution
+  'tambour éveil': 'awakening drum', // Objet Dresseur - Sword & Shield
+  'tambour eveil': 'awakening drum', // Variante sans accent
   'attrape-pokémon': 'pokémon catcher', // Objet classique - Multiple rééditions
   'attrape-pokemon': 'pokemon catcher', // Variante sans accents
   'attrape-ultime': 'prime catcher', // Objet ACE SPEC - Scarlet & Violet
