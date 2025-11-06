@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.1.4' // Dernière mise à jour: 2025-01-06 - Ajout "pokégear 3.0"
+export const TRAINER_TRANSLATIONS_VERSION = '1.1.5' // Dernière mise à jour: 2025-01-06 - Ajout "n's pp up"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -301,6 +301,7 @@ const TRAINER_TRANSLATIONS = {
   'poing vengeance': 'vengeful punch', // Objet Dresseur - Scarlet & Violet
   'pokématos 3.0': 'pokégear 3.0', // Objet Dresseur - HeartGold & SoulSilver
   'pokematos 3.0': 'pokegear 3.0', // Variante sans accent
+  'pp plus de n': 'n\'s pp up', // Objet Dresseur - Black & White
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents
