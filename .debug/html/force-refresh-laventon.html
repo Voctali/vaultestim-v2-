@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Force Refresh Professor Laventon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #2a2a2a;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .success {
+            border-left: 4px solid #4caf50;
+        }
+        .warning {
+            border-left: 4px solid #ff9800;
+        }
+        .info {
+            border-left: 4px solid #2196f3;
+        }
+        button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .btn-danger {
+            background: #f44336;
+        }
+        .btn-danger:hover {
+            background: #da190b;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Force Refresh - Professor Laventon</h1>
+
+    <div class="result info">
+        <strong>📝 Diagnostic du problème :</strong><br>
+        Le cache contient probablement "0 cartes" pour "Professor Laventon".<br>
+        Ce cache a une durée de vie de 15 minutes.<br><br>
+
+        <strong>🎯 Solutions :</strong><br>
+        1. <strong>Attendre 15 minutes</strong> que le cache expire naturellement<br>
+        2. <strong>Supprimer TOUT le cache</strong> (bouton ci-dessous)<br>
+        3. <strong>Modifier le TTL du cache</strong> dans le code (pour développement)
+    </div>
+
+    <button class="btn-danger" onclick="clearAllCache()">🗑️ Vider TOUT le Cache</button>
+
+    <div id="results"></div>
+
+    <script>
+        function clearAllCache() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>🧹 Nettoyage complet du cache...</h3>';
+
+            let totalKeys = localStorage.length;
+            let cleaned = 0;
+            const keysToDelete = [];
+
+            // Lister toutes les clés localStorage
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key) {
+                    keysToDelete.push(key);
+                }
+            }
+
+            // Afficher les clés qui seront supprimées
+            results.innerHTML += `<div class="result warning">
+                ⚠️ <strong>Attention !</strong> Vous allez supprimer ${keysToDelete.length} clé(s) localStorage :<br><br>
+            `;
+
+            keysToDelete.slice(0, 20).forEach(key => {
+                results.innerHTML += `- ${key}<br>`;
+            });
+
+            if (keysToDelete.length > 20) {
+                results.innerHTML += `... et ${keysToDelete.length - 20} autres<br>`;
+            }
+
+            results.innerHTML += `</div>`;
+
+            // Confirmation avant suppression
+            if (confirm(`⚠️ ATTENTION : Vous allez supprimer ${keysToDelete.length} clés du cache.\n\nCela va forcer le rechargement de toutes les données depuis l'API.\n\nContinuer ?`)) {
+                keysToDelete.forEach(key => {
+                    localStorage.removeItem(key);
+                    cleaned++;
+                });
+
+                results.innerHTML += `<div class="result success">
+                    ✅ <strong>Nettoyage terminé !</strong><br>
+                    ${cleaned} clé(s) supprimée(s)
+                </div>`;
+
+                results.innerHTML += `<div class="result warning">
+                    <strong>📋 PROCHAINES ÉTAPES :</strong><br>
+                    1. Rechargez l'application (F5)<br>
+                    2. Recherchez "Professeur Lavande"<br>
+                    3. La recherche devrait maintenant interroger l'API et trouver 1 carte<br>
+                    4. Ce résultat sera mis en cache pour 15 minutes
+                </div>`;
+            } else {
+                results.innerHTML += `<div class="result info">
+                    ℹ️ Opération annulée par l'utilisateur
+                </div>`;
+            }
+        }
+    </script>
+</body>
+</html>

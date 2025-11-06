@@ -1,0 +1,18 @@
+--- a/src/utils/cardMarketUrlBuilder.js
++++ b/src/utils/cardMarketUrlBuilder.js
+@@ -30,11 +30,9 @@ function cleanCardName(name) {
+ export function buildCardMarketUrl(card, strategy = 'auto') {
+   if (!card) return null
+ 
+-  // Priorité 1 : URL directe de l'API (TOUJOURS la plus rapide et précise)
+-  if (card.cardmarket?.url) {
+-    return card.cardmarket.url
+-  }
+-
+-  // Si pas d'URL directe, construire une recherche optimisée
++  // ❌ NE PAS UTILISER card.cardmarket.url de l'API Pokemon TCG !
++  // Cette URL pointe vers prices.pokemontcg.io (agrégateur) au lieu du vrai CardMarket
++  // Toujours construire notre propre recherche vers www.cardmarket.com
++
++  // Construire une recherche optimisée vers www.cardmarket.com
+   const cleanName = cleanCardName(card.name)

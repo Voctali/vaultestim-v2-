@@ -102,7 +102,14 @@
       "WebFetch(domain:limitlesstcg.com)",
       "Bash(for name in archer ariana petrel)",
       "Bash(do echo \"=== $name ===\")",
-      "Bash(git reset HEAD '${result}')"
+      "Bash(git reset HEAD '${result}')",
+      "Bash(git apply:*)",
+      "Bash(git rm:*)",
+      "WebFetch(domain:pokemontcg.io)",
+      "Bash(NUL)",
+      "Bash(powershell:*)",
+      "Bash(nslookup:*)",
+      "Bash(ping:*)"
     ],
     "deny": [],
     "ask": []

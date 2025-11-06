@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vérification localStorage - VaultEstim</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    h1 {
+      color: #d4af37;
+    }
+    .section {
+      background: #2a2a2a;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid #d4af37;
+    }
+    .card {
+      background: #333;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    button {
+      background: #d4af37;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+    }
+    button:hover {
+      background: #f0c14b;
+    }
+    .success { color: #4caf50; }
+    .error { color: #f44336; }
+    .warning { color: #ff9800; }
+    pre {
+      background: #1a1a1a;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Vérification localStorage - VaultEstim</h1>
+
+  <div class="section">
+    <h2>📊 Résumé des données localStorage</h2>
+    <div id="summary"></div>
+  </div>
+
+  <div class="section">
+    <h2>🎴 Collection (localStorage)</h2>
+    <button onclick="showCollection()">Afficher ma collection</button>
+    <button onclick="exportCollection()">Exporter en JSON</button>
+    <div id="collection"></div>
+  </div>
+
+  <div class="section">
+    <h2>⭐ Favoris (localStorage)</h2>
+    <button onclick="showFavorites()">Afficher les favoris</button>
+    <div id="favorites"></div>
+  </div>
+
+  <div class="section">
+    <h2>💖 Wishlist (localStorage)</h2>
+    <button onclick="showWishlist()">Afficher la wishlist</button>
+    <div id="wishlist"></div>
+  </div>
+
+  <script>
+    // Charger les données au démarrage
+    window.addEventListener('DOMContentLoaded', loadSummary)
+
+    function loadSummary() {
+      const collection = JSON.parse(localStorage.getItem('vaultestim_collection') || '[]')
+      const favorites = JSON.parse(localStorage.getItem('vaultestim_favorites') || '[]')
+      const wishlist = JSON.parse(localStorage.getItem('vaultestim_wishlist') || '[]')
+
+      const html = `
+        <p><strong>Collection:</strong> <span class="${collection.length > 0 ? 'success' : 'error'}">${collection.length} cartes</span></p>
+        <p><strong>Favoris:</strong> <span class="${favorites.length > 0 ? 'success' : 'error'}">${favorites.length} cartes</span></p>
+        <p><strong>Wishlist:</strong> <span class="${wishlist.length > 0 ? 'success' : 'error'}">${wishlist.length} cartes</span></p>
+        <p class="warning">⚠️ Ces données sont dans localStorage mais ne sont PAS synchronisées avec Supabase.</p>
+      `
+      document.getElementById('summary').innerHTML = html
+    }
+
+    function showCollection() {
+      const collection = JSON.parse(localStorage.getItem('vaultestim_collection') || '[]')
+      const html = collection.length === 0
+        ? '<p class="error">Aucune carte dans localStorage</p>'
+        : collection.map(card => `
+            <div class="card">
+              <strong>${card.name}</strong> - ${card.series || card.extension || 'Extension inconnue'}<br>
+              <small>Rareté: ${card.rarity || 'N/A'} | Condition: ${card.condition || 'N/A'} | Qté: ${card.quantity || 1}</small><br>
+              <small>ID: ${card.id || 'N/A'}</small>
+            </div>
+          `).join('')
+      document.getElementById('collection').innerHTML = html
+    }
+
+    function showFavorites() {
+      const favorites = JSON.parse(localStorage.getItem('vaultestim_favorites') || '[]')
+      const html = favorites.length === 0
+        ? '<p class="error">Aucun favori dans localStorage</p>'
+        : favorites.map(card => `
+            <div class="card">
+              <strong>${card.name}</strong> - ${card.series || 'Extension inconnue'}<br>
+              <small>Rareté: ${card.rarity || 'N/A'}</small>
+            </div>
+          `).join('')
+      document.getElementById('favorites').innerHTML = html
+    }
+
+    function showWishlist() {
+      const wishlist = JSON.parse(localStorage.getItem('vaultestim_wishlist') || '[]')
+      const html = wishlist.length === 0
+        ? '<p class="error">Aucune carte dans la wishlist localStorage</p>'
+        : wishlist.map(card => `
+            <div class="card">
+              <strong>${card.name}</strong> - ${card.series || 'Extension inconnue'}<br>
+              <small>Rareté: ${card.rarity || 'N/A'}</small>
+            </div>
+          `).join('')
+      document.getElementById('wishlist').innerHTML = html
+    }
+
+    function exportCollection() {
+      const collection = JSON.parse(localStorage.getItem('vaultestim_collection') || '[]')
+      if (collection.length === 0) {
+        alert('Aucune carte à exporter')
+        return
+      }
+
+      const dataStr = JSON.stringify(collection, null, 2)
+      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr)
+
+      const exportFileDefaultName = `vaultestim_collection_backup_${new Date().toISOString().slice(0, 10)}.json`
+
+      const linkElement = document.createElement('a')
+      linkElement.setAttribute('href', dataUri)
+      linkElement.setAttribute('download', exportFileDefaultName)
+      linkElement.click()
+
+      alert(`✅ Collection exportée : ${collection.length} cartes`)
+    }
+  </script>
+</body>
+</html>

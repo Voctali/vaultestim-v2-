@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Trouver Pokemon Center Lady</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            background: #1a1a2e; 
+            color: #fff; 
+            padding: 20px; 
+        }
+        button {
+            background: #ffd700;
+            color: #000;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .result { 
+            background: #000; 
+            padding: 10px; 
+            margin-top: 10px; 
+            max-height: 500px; 
+            overflow-y: auto; 
+        }
+        .found { color: #4ade80; }
+        .warning { color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Recherche Pokemon Center Lady dans IndexedDB</h1>
+    <button onclick="searchAll()">Chercher TOUTES les cartes "Lady"</button>
+    <button onclick="searchCenter()">Chercher "Center"</button>
+    <button onclick="searchExact()">Chercher "Pokemon Center Lady"</button>
+    <div class="result" id="result"></div>
+
+    <script>
+        async function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('VaultEstim_CardCache', 1);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function getAllCards() {
+            const db = await openDB();
+            const transaction = db.transaction(['cards'], 'readonly');
+            const store = transaction.objectStore('cards');
+            return new Promise((resolve, reject) => {
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        function log(msg, type = '') {
+            const div = document.getElementById('result');
+            const className = type === 'found' ? 'found' : type === 'warning' ? 'warning' : '';
+            div.innerHTML += `<div class="${className}">${msg}</div>`;
+        }
+
+        async function searchAll() {
+            document.getElementById('result').innerHTML = '';
+            log('🚀 Chargement de toutes les cartes...');
+            
+            const cards = await getAllCards();
+            log(`📦 Total: ${cards.length} cartes dans le cache`);
+            log('');
+            
+            // Chercher toutes les cartes avec "lady" dans le nom
+            const ladyCards = cards.filter(c => 
+                c.name && c.name.toLowerCase().includes('lady')
+            );
+            
+            log(`🔍 Cartes contenant "lady": ${ladyCards.length}`, 'found');
+            ladyCards.forEach(c => {
+                log(`  ✓ ${c.name} (${c.set?.name || 'Unknown'}) #${c.number}`, 'found');
+            });
+        }
+
+        async function searchCenter() {
+            document.getElementById('result').innerHTML = '';
+            log('🚀 Chargement...');
+            
+            const cards = await getAllCards();
+            const centerCards = cards.filter(c => 
+                c.name && c.name.toLowerCase().includes('center')
+            );
+            
+            log(`🔍 Cartes contenant "center": ${centerCards.length}`, 'found');
+            centerCards.forEach(c => {
+                log(`  ✓ ${c.name} (${c.set?.name || 'Unknown'}) #${c.number}`, 'found');
+            });
+        }
+
+        async function searchExact() {
+            document.getElementById('result').innerHTML = '';
+            log('🚀 Recherche exacte...');
+            
+            const cards = await getAllCards();
+            
+            // Essayer différentes variantes
+            const variants = [
+                'pokémon center lady',
+                'pokemon center lady',
+                'pokémon-center lady',
+                'center lady'
+            ];
+            
+            variants.forEach(variant => {
+                const matches = cards.filter(c => 
+                    c.name && c.name.toLowerCase().includes(variant)
+                );
+                
+                if (matches.length > 0) {
+                    log(``, '');
+                    log(`✅ Trouvé ${matches.length} carte(s) pour "${variant}":`, 'found');
+                    matches.forEach(c => {
+                        log(`  ✓ ${c.name} (${c.set?.name}) #${c.number} - ${c.set?.series || ''}`, 'found');
+                        log(`    ID: ${c.id}`, 'found');
+                    });
+                } else {
+                    log(`⚠️ Aucune carte pour "${variant}"`, 'warning');
+                }
+            });
+        }
+
+        // Lancer automatiquement la recherche au chargement
+        window.onload = () => searchExact();
+    </script>
+</body>
+</html>

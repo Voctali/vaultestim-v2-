@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug - Comparaison Hypno vs Squirtle</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: monospace;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    h1 { color: #4ade80; }
+    h2 { color: #60a5fa; margin-top: 30px; }
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .card {
+      background: #2a2a2a;
+      border: 1px solid #404040;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+    .warning { color: #fbbf24; }
+    .info { color: #60a5fa; }
+    pre {
+      background: #0a0a0a;
+      border: 1px solid #404040;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 400px;
+    }
+    button {
+      background: #4ade80;
+      color: #0a0a0a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 10px 5px;
+    }
+    button:hover { background: #22c55e; }
+  </style>
+</head>
+<body>
+  <h1>🔬 Debug - Pourquoi Hypno fonctionne mais pas Squirtle ?</h1>
+
+  <button onclick="compareCards()">🔍 Comparer Hypno #97 vs Squirtle #7</button>
+
+  <div id="results"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAwMDIsImV4cCI6MjA3NTUxNjAwMn0.7d0303MNw__AVC9wkS7BodK2WG8Rvb2IY2V-0wv0l7Q'
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    async function compareCards() {
+      document.getElementById('results').innerHTML = '<p class="info">⏳ Chargement des données...</p>'
+
+      try {
+        // Charger Hypno #97
+        const { data: hypnoArray, error: hypnoError } = await supabase
+          .from('discovered_cards')
+          .select('*')
+          .ilike('name', '%hypno%')
+          .eq('number', '97')
+          .limit(1)
+
+        const hypno = hypnoArray && hypnoArray.length > 0 ? hypnoArray[0] : null
+
+        // Charger Squirtle #7
+        const { data: squirtleArray, error: squirtleError } = await supabase
+          .from('discovered_cards')
+          .select('*')
+          .ilike('name', '%squirtle%')
+          .eq('number', '7')
+          .limit(1)
+
+        const squirtle = squirtleArray && squirtleArray.length > 0 ? squirtleArray[0] : null
+
+        let html = '<div class="comparison">'
+
+        // Hypno
+        html += '<div class="card" style="border: 2px solid #4ade80;">'
+        html += '<h2 class="success">✅ Hypno #97 (FONCTIONNE)</h2>'
+        if (hypnoError) {
+          html += `<p class="error">❌ Erreur: ${hypnoError.message}</p>`
+        } else {
+          html += `<h3>Données discovered_cards :</h3>`
+          html += `<p><strong>ID:</strong> ${hypno.id}</p>`
+          html += `<p><strong>Nom:</strong> ${hypno.name}</p>`
+          html += `<p><strong>Set:</strong> ${hypno.set?.name || 'N/A'}</p>`
+          html += `<p class="${hypno.attacks ? 'success' : 'error'}"><strong>Attaques:</strong> ${hypno.attacks ? '✅ OUI (' + hypno.attacks.length + ' attaques)' : '❌ NULL'}</p>`
+          html += `<p class="${hypno.abilities ? 'success' : 'warning'}"><strong>Abilities:</strong> ${hypno.abilities ? '✅ OUI' : '⚠️ NULL'}</p>`
+          html += `<p class="${hypno.weaknesses ? 'success' : 'warning'}"><strong>Weaknesses:</strong> ${hypno.weaknesses ? '✅ OUI' : '⚠️ NULL'}</p>`
+          html += `<pre>${JSON.stringify(hypno.attacks, null, 2)}</pre>`
+          html += `<h3>Construction URL :</h3>`
+          html += `<p><strong>set.name:</strong> ${hypno.set?.name}</p>`
+          html += `<p><strong>set.id:</strong> ${hypno.set_id}</p>`
+          html += `<p><strong>URL construite:</strong> Hypno-MEW097</p>`
+        }
+        html += '</div>'
+
+        // Squirtle
+        html += '<div class="card" style="border: 2px solid #f87171;">'
+        html += '<h2 class="error">❌ Squirtle #7 (NE FONCTIONNE PAS)</h2>'
+        if (squirtleError) {
+          html += `<p class="error">❌ Erreur: ${squirtleError.message}</p>`
+        } else {
+          html += `<h3>Données discovered_cards :</h3>`
+          html += `<p><strong>ID:</strong> ${squirtle.id}</p>`
+          html += `<p><strong>Nom:</strong> ${squirtle.name}</p>`
+          html += `<p><strong>Set:</strong> ${squirtle.set?.name || 'N/A'}</p>`
+          html += `<p class="${squirtle.attacks ? 'success' : 'error'}"><strong>Attaques:</strong> ${squirtle.attacks ? '✅ OUI (' + squirtle.attacks.length + ' attaques)' : '❌ NULL'}</p>`
+          html += `<p class="${squirtle.abilities ? 'success' : 'warning'}"><strong>Abilities:</strong> ${squirtle.abilities ? '✅ OUI' : '⚠️ NULL'}</p>`
+          html += `<p class="${squirtle.weaknesses ? 'success' : 'warning'}"><strong>Weaknesses:</strong> ${squirtle.weaknesses ? '✅ OUI' : '⚠️ NULL'}</p>`
+          html += `<pre>${JSON.stringify(squirtle.attacks, null, 2)}</pre>`
+          html += `<h3>Construction URL :</h3>`
+          html += `<p><strong>set.name:</strong> ${squirtle.set?.name}</p>`
+          html += `<p><strong>set.id:</strong> ${squirtle.set_id}</p>`
+          html += `<p><strong>URL construite:</strong> Squirtle-MEW007</p>`
+        }
+        html += '</div>'
+
+        html += '</div>'
+
+        // Analyse
+        html += '<div class="card" style="border: 2px solid #fbbf24; margin-top: 20px;">'
+        html += '<h2 class="warning">🔍 Analyse des Différences</h2>'
+        html += '<ul>'
+
+        if (hypno && squirtle) {
+          const hypnoHasAttacks = hypno.attacks && hypno.attacks.length > 0
+          const squirtleHasAttacks = squirtle.attacks && squirtle.attacks.length > 0
+
+          if (hypnoHasAttacks !== squirtleHasAttacks) {
+            html += '<li class="error"><strong>❗ DIFFÉRENCE CRITIQUE : Attaques</strong><br/>'
+            html += `Hypno a ${hypnoHasAttacks ? 'DES attaques ✅' : 'PAS d\'attaques ❌'}<br/>`
+            html += `Squirtle a ${squirtleHasAttacks ? 'DES attaques ✅' : 'PAS d\'attaques ❌'}<br/>`
+            html += '💡 Le matching CardMarket utilise les attaques pour 50% du score !<br/>'
+            html += 'Sans attaques, le matching ne peut PAS fonctionner correctement.</li>'
+          }
+
+          html += `<li><strong>URL Format:</strong> Les deux utilisent le même pattern (Nom-MEWXXX)</li>`
+          html += `<li><strong>Set Name:</strong> Hypno: "${hypno.set?.name}" | Squirtle: "${squirtle.set?.name}"</li>`
+        }
+
+        html += '</ul>'
+        html += '</div>'
+
+        document.getElementById('results').innerHTML = html
+      } catch (error) {
+        document.getElementById('results').innerHTML = `<p class="error">❌ Erreur: ${error.message}</p>`
+      }
+    }
+  </script>
+</body>
+</html>

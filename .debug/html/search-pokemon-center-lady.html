@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rechercher Pokemon Center Lady</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+        }
+        h1 { color: #ffd700; }
+        button {
+            background: #ffd700;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #ffed4e;
+            transform: translateY(-2px);
+        }
+        .result {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Rechercher Pokemon Center Lady</h1>
+        <p>Recherche dans IndexedDB local et API Pokemon TCG</p>
+        
+        <button onclick="searchLocal()">Chercher dans Cache Local</button>
+        <button onclick="searchAPI()">Chercher dans API Pokemon TCG</button>
+        <button onclick="location.href='http://localhost:5174'">Retour à l'App</button>
+        
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : '';
+            resultDiv.innerHTML += `<div class="${className}">${message}</div>`;
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        }
+
+        async function searchLocal() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+            
+            log('🚀 Recherche dans IndexedDB local...', 'info');
+            
+            try {
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('VaultEstim_CardCache', 1);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+                
+                const transaction = db.transaction(['cards'], 'readonly');
+                const store = transaction.objectStore('cards');
+                const allCards = await new Promise((resolve, reject) => {
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+                
+                log(`📦 ${allCards.length} cartes dans le cache local`, 'info');
+                
+                const matches = allCards.filter(card => 
+                    card.name && card.name.toLowerCase().includes('pokémon center lady')
+                );
+                
+                if (matches.length > 0) {
+                    log(`✅ Trouvé ${matches.length} carte(s) :`, 'success');
+                    matches.forEach(card => {
+                        log(`  - ${card.name} (${card.set?.name || 'Set inconnu'}) #${card.number}`, 'success');
+                    });
+                } else {
+                    log('⚠️ Aucune carte "Pokémon Center Lady" trouvée dans le cache local', 'warning');
+                    log('', 'info');
+                    log('💡 Cela signifie que cette carte n\'a jamais été importée dans votre base de données', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function searchAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+            
+            log('🌐 Recherche dans API Pokemon TCG...', 'info');
+            
+            try {
+                // Essayer plusieurs variantes de recherche
+                const searches = [
+                    'name:"Pokémon Center Lady"',
+                    'name:pokémon*lady',
+                    'name:"Pokemon Center Lady"',
+                    'name:pokemon*center*lady'
+                ];
+                
+                for (const query of searches) {
+                    log(`🔍 Tentative: ${query}`, 'info');
+                    
+                    const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(query)}&pageSize=10`);
+                    const data = await response.json();
+                    
+                    if (data.data && data.data.length > 0) {
+                        log(`✅ Trouvé ${data.data.length} carte(s) avec la requête "${query}":`, 'success');
+                        data.data.forEach(card => {
+                            log(`  - ${card.name} (${card.set.name}) #${card.number}`, 'success');
+                        });
+                        return;
+                    } else {
+                        log(`  ⏭️ Aucun résultat avec "${query}"`, 'warning');
+                    }
+                }
+                
+                log('', 'info');
+                log('❌ Aucune carte trouvée avec toutes les variantes de recherche', 'error');
+                log('', 'info');
+                log('💡 La carte "Pokémon Center Lady" n\'existe peut-être pas dans l\'API Pokemon TCG v2', 'warning');
+                log('💡 Elle pourrait être uniquement dans Pokemon TCG Pocket ou d\'anciennes extensions non numérisées', 'warning');
+                
+            } catch (error) {
+                log(`❌ Erreur API: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Formats URL CardMarket</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; background: #f9f9f9; }
+    a { display: block; margin: 5px 0; color: blue; }
+    .note { color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Test des Formats d'URL CardMarket pour Hypno #97 (Extension 151)</h1>
+
+  <div class="test">
+    <h3>Format 1 : Extension slug + Nom + Numéro</h3>
+    <a href="https://www.cardmarket.com/en/Pokemon/Products/Singles/151/hypno-97?language=2" target="_blank">
+      https://www.cardmarket.com/en/Pokemon/Products/Singles/151/hypno-97?language=2
+    </a>
+    <p class="note">Format actuel utilisé</p>
+  </div>
+
+  <div class="test">
+    <h3>Format 2 : Extension slug + Nom sans numéro</h3>
+    <a href="https://www.cardmarket.com/en/Pokemon/Products/Singles/151/hypno?language=2" target="_blank">
+      https://www.cardmarket.com/en/Pokemon/Products/Singles/151/hypno?language=2
+    </a>
+  </div>
+
+  <div class="test">
+    <h3>Format 3 : Extension + Nom-Code (MEW097)</h3>
+    <a href="https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Hypno-MEW097?language=2" target="_blank">
+      https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Hypno-MEW097?language=2
+    </a>
+    <p class="note">Format souvent utilisé par CardMarket</p>
+  </div>
+
+  <div class="test">
+    <h3>Format 4 : Recherche par nom exact</h3>
+    <a href="https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=Hypno+MEW097&language=2" target="_blank">
+      https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=Hypno+MEW097&language=2
+    </a>
+    <p class="note">Recherche par nom (devrait toujours fonctionner)</p>
+  </div>
+
+  <div class="test">
+    <h3>Format 5 : Recherche par nom + set</h3>
+    <a href="https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=Hypno+151+97&language=2" target="_blank">
+      https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=Hypno+151+97&language=2
+    </a>
+  </div>
+
+  <div class="test">
+    <h3>Format 6 : ID Produit direct (si connu)</h3>
+    <p class="note" style="color: orange;">
+      Si vous avez l'ID produit CardMarket de Hypno #97, testez :
+      <br>https://www.cardmarket.com/en/Pokemon/Products/Singles/{ID_PRODUIT}?language=2
+    </p>
+  </div>
+
+  <hr>
+
+  <h2>Instructions</h2>
+  <ol>
+    <li>Cliquez sur chaque lien ci-dessus</li>
+    <li>Notez quel(s) format(s) vous amène(nt) à la bonne page Hypno #97 de l'extension 151</li>
+    <li>Si aucun ne fonctionne, essayez de chercher manuellement sur CardMarket et copiez l'URL de la bonne page</li>
+  </ol>
+
+  <h3>URL de référence (si vous trouvez la bonne page manuellement)</h3>
+  <input type="text" id="manualUrl" style="width: 100%; padding: 8px; margin: 10px 0;"
+         placeholder="Collez ici l'URL de la bonne page Hypno si vous la trouvez manuellement">
+
+  <button onclick="analyzeUrl()" style="padding: 10px 20px; cursor: pointer;">
+    Analyser cette URL
+  </button>
+
+  <div id="analysis" style="margin-top: 20px; padding: 10px; background: #e8f5e9; border: 1px solid #4caf50; display: none;">
+  </div>
+
+  <script>
+    function analyzeUrl() {
+      const url = document.getElementById('manualUrl').value
+      const analysisDiv = document.getElementById('analysis')
+
+      if (!url) {
+        alert('Veuillez coller une URL')
+        return
+      }
+
+      analysisDiv.style.display = 'block'
+
+      // Extraire les parties de l'URL
+      const parts = url.split('/')
+      const queryParams = url.includes('?') ? url.split('?')[1] : 'Aucun'
+
+      let html = '<h3>Analyse de l\'URL</h3>'
+      html += '<p><strong>URL complète :</strong><br>' + url + '</p>'
+      html += '<p><strong>Segments :</strong></p><ul>'
+
+      parts.forEach((part, i) => {
+        if (part) html += '<li>Segment ' + i + ': ' + part + '</li>'
+      })
+
+      html += '</ul>'
+      html += '<p><strong>Paramètres query :</strong> ' + queryParams + '</p>'
+
+      // Identifier le pattern
+      if (url.includes('/Singles/')) {
+        const afterSingles = url.split('/Singles/')[1].split('?')[0]
+        html += '<p><strong>Après /Singles/ :</strong> ' + afterSingles + '</p>'
+      }
+
+      analysisDiv.innerHTML = html
+    }
+  </script>
+</body>
+</html>

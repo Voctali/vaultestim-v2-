@@ -376,8 +376,14 @@ export class CacheService {
     const searchCachesToClean = [
       'dracaufeu', 'charizard', 'amphinobi', 'greninja', 'fezandipiti',
       'lépidonille', 'lepidonille', 'pérégrain', 'peregrain', 'scatterbug', 'spewpa',
-      'flabébé', 'flabebe', 'arven', 'pepper',
+      'flabébé', 'flabebe', 'arven', 'pepper', 'hau', 'tili',
+      'pokemon center lady', 'pokémon center lady', 'dame du centre pokemon', 'dame du centre pokémon',
+      'damien', 'sidney',
+      'danseuse', 'dancer',
       'jasmine\'s gaze', 'regard de jasmine',
+      'professor laventon', 'professeur lavande',
+      'zinnia\'s resolve', 'résolution d\'amaryllis', 'amaryllis',
+      'roseanne\'s backup', 'sauvegarde de rose',
       // Team Rocket members
       'team rocket\'s proton', 'lance de la team rocket',
       'team rocket\'s archer', 'amos de la team rocket',

@@ -747,17 +747,35 @@ export function CardDatabaseProvider({ children }) {
       return 0
     }
 
+    // Helper pour vérifier la correspondance par mot complet (évite faux positifs comme "lino" dans "linoone")
+    const matchesWordBoundary = (text, query) => {
+      return text === query || // Exact match
+        text.startsWith(query + ' ') || // Début: "grant "
+        text.includes(' ' + query + ' ') || // Milieu: " grant "
+        text.endsWith(' ' + query) // Fin: " grant"
+    }
+
+    // Helper pour vérifier si le mot est au début (ex: "Lady" au début de "Lady Outing")
+    const startsWithWord = (text, query) => {
+      return text === query || text.startsWith(query + ' ')
+    }
+
     // Correspondance exacte (score maximum)
     if (cardName === queryLower || cardNameFr === queryLower) {
       score += 100
     }
-    // Commence par la requête
-    else if (cardName.startsWith(queryLower) || cardNameFr.startsWith(queryLower)) {
-      score += 50
+    // Commence par la requête (score élevé - ex: "Lady" dans "Lady Outing")
+    else if (startsWithWord(cardName, queryLower) || startsWithWord(cardNameFr, queryLower)) {
+      score += 70
     }
-    // Contient la requête dans le nom - score élevé pour la correspondance du nom principal
+    // Contient la requête comme mot complet (score moyen - ex: "lady" dans "Parasol Lady")
+    else if (matchesWordBoundary(cardName, queryLower) || matchesWordBoundary(cardNameFr, queryLower)) {
+      score += 30
+    }
+    // Fallback : contient la requête (pour compatibilité avec anciens comportements, mais score plus faible)
+    // Note: Ce cas devrait rarement être utilisé maintenant avec le word boundary
     else if (cardName.includes(queryLower) || cardNameFr.includes(queryLower)) {
-      score += 25
+      score += 10 // Réduit de 25 à 10 pour pénaliser les faux positifs
     }
     // Si aucune correspondance dans le nom, vérifier les autres champs mais avec score très faible
     else {

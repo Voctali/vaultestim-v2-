@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettoyage Cache Roseanne's Backup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #2a2a2a;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .success {
+            border-left: 4px solid #4caf50;
+        }
+        .warning {
+            border-left: 4px solid #ff9800;
+        }
+        .info {
+            border-left: 4px solid #2196f3;
+        }
+        button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .btn-secondary {
+            background: #2196f3;
+        }
+        .btn-secondary:hover {
+            background: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧹 Nettoyage Cache Roseanne's Backup</h1>
+    <p>Ce script va nettoyer <strong>TOUTES</strong> les clés de cache contenant "roseanne" ou "sauvegarde de rose".</p>
+
+    <button onclick="clearCache()">Nettoyer le Cache</button>
+    <button class="btn-secondary" onclick="listCache()">Lister les Clés</button>
+
+    <div id="results"></div>
+
+    <script>
+        function listCache() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>📋 Clés localStorage contenant "roseanne" ou "sauvegarde":</h3>';
+
+            let found = 0;
+            const keywords = ['roseanne', 'sauvegarde'];
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const keyLower = key ? key.toLowerCase() : '';
+
+                if (keywords.some(kw => keyLower.includes(kw))) {
+                    found++;
+                    const value = localStorage.getItem(key);
+                    const preview = value.length > 100 ? value.substring(0, 100) + '...' : value;
+                    results.innerHTML += `<div class="result info">
+                        🔑 <strong>${key}</strong><br>
+                        📦 Taille: ${value.length} caractères<br>
+                        👁️ Aperçu: ${preview}
+                    </div>`;
+                }
+            }
+
+            if (found === 0) {
+                results.innerHTML += '<div class="result warning">⚠️ Aucune clé trouvée</div>';
+            } else {
+                results.innerHTML += `<div class="result success">✅ ${found} clé(s) trouvée(s)</div>`;
+            }
+        }
+
+        function clearCache() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>🧹 Nettoyage en cours...</h3>';
+
+            let cleaned = 0;
+            const keysToDelete = [];
+            const keywords = ['roseanne', 'sauvegarde'];
+
+            // Trouver toutes les clés contenant les mots-clés
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const keyLower = key ? key.toLowerCase() : '';
+
+                if (keywords.some(kw => keyLower.includes(kw))) {
+                    keysToDelete.push(key);
+                }
+            }
+
+            // Supprimer les clés trouvées
+            keysToDelete.forEach(key => {
+                const value = localStorage.getItem(key);
+                localStorage.removeItem(key);
+                cleaned++;
+                results.innerHTML += `<div class="result success">
+                    ✅ Supprimé: <strong>${key}</strong><br>
+                    📦 Taille: ${value.length} caractères
+                </div>`;
+            });
+
+            if (cleaned === 0) {
+                results.innerHTML += '<div class="result warning">⚠️ Aucune clé à supprimer</div>';
+            } else {
+                results.innerHTML += `<div class="result success">
+                    <strong>🎉 Nettoyage terminé!</strong><br>
+                    Supprimés: ${cleaned} clé(s)
+                </div>`;
+            }
+
+            results.innerHTML += `<div class="result warning">
+                <strong>⚠️ IMPORTANT:</strong><br>
+                1. Rechargez la page de l'application (F5)<br>
+                2. Recherchez à nouveau "Sauvegarde de Rose"<br>
+                3. La recherche devrait maintenant trouver 3 cartes de Brilliant Stars
+            </div>`;
+        }
+    </script>
+</body>
+</html>

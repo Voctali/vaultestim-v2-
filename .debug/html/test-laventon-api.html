@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Professor Laventon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #2a2a2a;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success {
+            border-left: 4px solid #4caf50;
+        }
+        .error {
+            border-left: 4px solid #f44336;
+        }
+        .info {
+            border-left: 4px solid #2196f3;
+        }
+        button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        img {
+            max-width: 200px;
+            border-radius: 10px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test API Pokemon TCG - Professor Laventon</h1>
+
+    <button onclick="testExactSearch()">Test Recherche Exacte</button>
+    <button onclick="testWildcardSearch()">Test Recherche Wildcard</button>
+    <button onclick="testBothAPIs()">Test Les Deux</button>
+
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+
+        async function testExactSearch() {
+            results.innerHTML = '<div class="result info">🔍 Test recherche exacte: name:"professor laventon"</div>';
+
+            try {
+                const url = `/api/pokemontcg/v2/cards?q=name:"professor laventon"&pageSize=100`;
+                results.innerHTML += `<div class="result info">📡 URL: ${url}</div>`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                results.innerHTML += `<div class="result ${data.data.length > 0 ? 'success' : 'error'}">
+                    ✅ Réponse reçue: ${data.data.length} carte(s) trouvée(s)
+                </div>`;
+
+                if (data.data.length > 0) {
+                    data.data.forEach(card => {
+                        results.innerHTML += `<div class="result success">
+🎴 <strong>${card.name}</strong> (#${card.number})
+📦 Extension: ${card.set.name} (${card.set.id})
+🎨 Artiste: ${card.artist || 'N/A'}
+⭐ Rareté: ${card.rarity || 'N/A'}
+${card.images?.small ? `<img src="${card.images.small}" alt="${card.name}">` : ''}
+                        </div>`;
+                    });
+                } else {
+                    results.innerHTML += `<div class="result error">
+❌ Aucune carte trouvée avec la recherche exacte
+                    </div>`;
+                }
+
+                results.innerHTML += `<div class="result info">
+📋 Réponse brute (JSON):
+${JSON.stringify(data, null, 2)}
+                </div>`;
+            } catch (error) {
+                results.innerHTML += `<div class="result error">
+❌ Erreur: ${error.message}
+                </div>`;
+            }
+        }
+
+        async function testWildcardSearch() {
+            results.innerHTML = '<div class="result info">🔍 Test recherche wildcard: name:professor%20laventon*</div>';
+
+            try {
+                const url = `/api/pokemontcg/v2/cards?q=name:professor%20laventon*&pageSize=100`;
+                results.innerHTML += `<div class="result info">📡 URL: ${url}</div>`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                results.innerHTML += `<div class="result ${data.data.length > 0 ? 'success' : 'error'}">
+                    ✅ Réponse reçue: ${data.data.length} carte(s) trouvée(s)
+                </div>`;
+
+                if (data.data.length > 0) {
+                    data.data.forEach(card => {
+                        results.innerHTML += `<div class="result success">
+🎴 <strong>${card.name}</strong> (#${card.number})
+📦 Extension: ${card.set.name} (${card.set.id})
+🎨 Artiste: ${card.artist || 'N/A'}
+⭐ Rareté: ${card.rarity || 'N/A'}
+${card.images?.small ? `<img src="${card.images.small}" alt="${card.name}">` : ''}
+                        </div>`;
+                    });
+                } else {
+                    results.innerHTML += `<div class="result error">
+❌ Aucune carte trouvée avec la recherche wildcard
+                    </div>`;
+                }
+
+                results.innerHTML += `<div class="result info">
+📋 Réponse brute (JSON):
+${JSON.stringify(data, null, 2)}
+                </div>`;
+            } catch (error) {
+                results.innerHTML += `<div class="result error">
+❌ Erreur: ${error.message}
+                </div>`;
+            }
+        }
+
+        async function testBothAPIs() {
+            await testExactSearch();
+            setTimeout(async () => {
+                await testWildcardSearch();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

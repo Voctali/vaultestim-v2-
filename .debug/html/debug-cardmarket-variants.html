@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug CardMarket Variantes 151</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: monospace;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    h1 { color: #4ade80; }
+    h2 { color: #60a5fa; margin-top: 30px; }
+    .card {
+      background: #2a2a2a;
+      border: 1px solid #404040;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+    .warning { color: #fbbf24; }
+    .info { color: #60a5fa; }
+    pre {
+      background: #0a0a0a;
+      border: 1px solid #404040;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    button {
+      background: #4ade80;
+      color: #0a0a0a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 10px 5px;
+    }
+    button:hover { background: #22c55e; }
+    .url-test {
+      background: #1e293b;
+      border: 1px solid #475569;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .url-test a {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+    .url-test a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Debug CardMarket - Variantes Extension 151</h1>
+  <p class="info">Investigation des cartes avec variantes (V1, V2, etc.) de l'extension 151</p>
+
+  <div>
+    <button onclick="searchSquirtleEverywhere()">🔎 Chercher "Squirtle" dans TOUTE la base</button>
+    <button onclick="findCorrectExpansionId()">🔍 Trouver le bon ID pour l'extension 151</button>
+    <button onclick="listFirst50Cards()">📋 Lister les 50 premières cartes de l'extension 151</button>
+  </div>
+  <div style="margin-top: 10px;">
+    <button onclick="analyzeHypno()">Analyser Hypno #97 (✅ Fonctionne)</button>
+    <button onclick="analyzeSquirtle()">Analyser Squirtle #7 (❌ Carte NORMALE qui échoue)</button>
+    <button onclick="analyzeOmanyte()">Analyser Omanyte #138 (❌ Échoue)</button>
+  </div>
+
+  <div id="results"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAwMDIsImV4cCI6MjA3NTUxNjAwMn0.7d0303MNw__AVC9wkS7BodK2WG8Rvb2IY2V-0wv0l7Q'
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    function displayResults(html) {
+      document.getElementById('results').innerHTML = html
+    }
+
+    async function analyzeHypno() {
+      displayResults('<p class="info">⏳ Recherche de Hypno #97 dans discovered_cards...</p>')
+
+      try {
+        // Chercher Hypno #97 dans discovered_cards
+        const { data: cards, error } = await supabase
+          .from('discovered_cards')
+          .select('*')
+          .ilike('name', '%hypno%')
+          .eq('number', '97')
+
+        if (error) throw error
+
+        let html = '<h2>🔍 Hypno #97 (Extension 151) - Carte qui FONCTIONNE</h2>'
+
+        if (cards.length === 0) {
+          html += '<p class="warning">⚠️ Aucun Hypno #97 trouvé dans discovered_cards</p>'
+        } else {
+          cards.forEach(card => {
+            html += `<div class="card">
+              <h3 class="success">✅ Trouvé : ${card.name} #${card.number}</h3>
+              <p><strong>ID:</strong> ${card.id}</p>
+              <p><strong>Extension:</strong> ${card.set?.name || 'N/A'} (set_id: ${card.set_id})</p>
+              <p><strong>URL attendue:</strong> <code>Hypno-MEW097</code></p>
+              <pre>${JSON.stringify(card, null, 2)}</pre>
+            </div>`
+          })
+        }
+
+        // Chercher dans cardmarket_singles
+        html += '<h2>🔍 Recherche dans cardmarket_singles</h2>'
+        const { data: cmCards, error: cmError } = await supabase
+          .from('cardmarket_singles')
+          .select('*')
+          .ilike('name', '%hypno%')
+          .eq('id_expansion', 1549) // Extension 151 sur CardMarket
+
+        if (cmError) throw cmError
+
+        if (cmCards.length === 0) {
+          html += '<p class="warning">⚠️ Aucun Hypno trouvé dans cardmarket_singles pour extension 151</p>'
+        } else {
+          html += `<p class="success">✅ ${cmCards.length} cartes Hypno trouvées dans CardMarket (extension 151)</p>`
+          cmCards.forEach(cm => {
+            html += `<div class="card">
+              <h3>${cm.name}</h3>
+              <p><strong>ID Produit:</strong> ${cm.id_product}</p>
+              <p><strong>ID Extension:</strong> ${cm.id_expansion} (151)</p>
+              <p><strong>Attaques:</strong> ${cm.attacks || 'N/A'}</p>
+              <div class="url-test">
+                <strong>Test URL CardMarket:</strong><br/>
+                <a href="https://www.cardmarket.com/en/Pokemon/Products/Singles/151/${cm.name.replace(/\s+/g, '-').replace(/\[/g, '').replace(/\]/g, '')}?language=2" target="_blank">
+                  → Tester ce lien
+                </a>
+              </div>
+            </div>`
+          })
+        }
+
+        displayResults(html)
+      } catch (error) {
+        displayResults(`<p class="error">❌ Erreur: ${error.message}</p>`)
+      }
+    }
+
+    async function analyzeSquirtle() {
+      displayResults('<p class="info">⏳ Recherche de Squirtle #7 dans discovered_cards...</p>')
+
+      try {
+        // Chercher Squirtle #7 dans discovered_cards
+        const { data: cards, error } = await supabase
+          .from('discovered_cards')
+          .select('*')
+          .ilike('name', '%squirtle%')
+          .eq('number', '7')
+
+        if (error) throw error
+
+        let html = '<h2>🔍 Squirtle #7 (Extension 151) - Carte NORMALE qui ÉCHOUE</h2>'
+        html += '<p class="warning">⚠️ Squirtle est une carte NORMALE (pas ex, V, VMAX, etc.) mais a quand même V1 dans l\'URL CardMarket !</p>'
+
+        if (cards.length === 0) {
+          html += '<p class="warning">⚠️ Aucun Squirtle #7 trouvé dans discovered_cards</p>'
+        } else {
+          cards.forEach(card => {
+            html += `<div class="card">
+              <h3 class="error">❌ Trouvé : ${card.name} #${card.number}</h3>
+              <p><strong>ID:</strong> ${card.id}</p>
+              <p><strong>Extension:</strong> ${card.set?.name || 'N/A'} (set_id: ${card.set_id})</p>
+              <p><strong>URL attendue (URL RÉELLE qui fonctionne):</strong> <code class="success">Squirtle-V1-MEW007</code></p>
+              <p><strong>URL générée actuellement:</strong> <code class="error">Squirtle-MEW007</code> (manque le "V1" ❌)</p>
+              <p class="info">💡 Ceci prouve que le problème affecte aussi les cartes NORMALES, pas seulement les cartes spéciales !</p>
+              <pre>${JSON.stringify(card, null, 2)}</pre>
+            </div>`
+          })
+        }
+
+        // Chercher dans cardmarket_singles
+        html += '<h2>🔍 Recherche dans cardmarket_singles</h2>'
+        const { data: cmCards, error: cmError } = await supabase
+          .from('cardmarket_singles')
+          .select('*')
+          .ilike('name', '%squirtle%')
+          .eq('id_expansion', 1549) // Extension 151 sur CardMarket
+
+        if (cmError) throw cmError
+
+        if (cmCards.length === 0) {
+          html += '<p class="warning">⚠️ Aucun Squirtle trouvé dans cardmarket_singles pour extension 151</p>'
+        } else {
+          html += `<p class="success">✅ ${cmCards.length} cartes Squirtle trouvées dans CardMarket (extension 151)</p>`
+          html += '<p class="info">📝 Regardez si le nom contient "V1", "V2", etc. dans la base CardMarket</p>'
+          cmCards.forEach(cm => {
+            const hasVariant = /V\d+/.test(cm.name)
+            html += `<div class="card">
+              <h3 ${hasVariant ? 'class="warning"' : ''}>${cm.name} ${hasVariant ? '⚠️ VARIANTE DÉTECTÉE' : ''}</h3>
+              <p><strong>ID Produit:</strong> ${cm.id_product}</p>
+              <p><strong>ID Extension:</strong> ${cm.id_expansion} (151)</p>
+              <p><strong>Attaques:</strong> ${cm.attacks || 'N/A'}</p>
+              <div class="url-test">
+                <strong>Test URL CardMarket:</strong><br/>
+                <a href="https://www.cardmarket.com/en/Pokemon/Products/Singles/151/${cm.name.replace(/\s+/g, '-').replace(/\[/g, '').replace(/\]/g, '')}?language=2" target="_blank">
+                  → Tester ce lien
+                </a>
+              </div>
+            </div>`
+          })
+        }
+
+        displayResults(html)
+      } catch (error) {
+        displayResults(`<p class="error">❌ Erreur: ${error.message}</p>`)
+      }
+    }
+
+    async function analyzeOmanyte() {
+      displayResults('<p class="info">⏳ Recherche de Omanyte #138 dans discovered_cards...</p>')
+
+      try {
+        // Chercher Omanyte #138 dans discovered_cards
+        const { data: cards, error } = await supabase
+          .from('discovered_cards')
+          .select('*')
+          .ilike('name', '%omanyte%')
+          .eq('number', '138')
+
+        if (error) throw error
+
+        let html = '<h2>🔍 Omanyte #138 (Extension 151) - Carte qui ÉCHOUE</h2>'
+
+        if (cards.length === 0) {
+          html += '<p class="warning">⚠️ Aucun Omanyte #138 trouvé dans discovered_cards</p>'
+        } else {
+          cards.forEach(card => {
+            html += `<div class="card">
+              <h3 class="error">❌ Trouvé : ${card.name} #${card.number}</h3>
+              <p><strong>ID:</strong> ${card.id}</p>
+              <p><strong>Extension:</strong> ${card.set?.name || 'N/A'} (set_id: ${card.set_id})</p>
+              <p><strong>URL attendue:</strong> <code class="warning">Omanyte-V1-MEW138</code> (note le "V1" !)</p>
+              <p><strong>URL générée actuellement:</strong> <code class="error">Omanyte-MEW138</code> (manque le "V1" ❌)</p>
+              <pre>${JSON.stringify(card, null, 2)}</pre>
+            </div>`
+          })
+        }
+
+        // Chercher dans cardmarket_singles
+        html += '<h2>🔍 Recherche dans cardmarket_singles</h2>'
+        const { data: cmCards, error: cmError } = await supabase
+          .from('cardmarket_singles')
+          .select('*')
+          .ilike('name', '%omanyte%')
+          .eq('id_expansion', 1549) // Extension 151 sur CardMarket
+
+        if (cmError) throw cmError
+
+        if (cmCards.length === 0) {
+          html += '<p class="warning">⚠️ Aucun Omanyte trouvé dans cardmarket_singles pour extension 151</p>'
+        } else {
+          html += `<p class="success">✅ ${cmCards.length} cartes Omanyte trouvées dans CardMarket (extension 151)</p>`
+          html += '<p class="info">📝 Comparez les noms : devrait contenir "V1", "V2", etc.</p>'
+          cmCards.forEach(cm => {
+            const hasVariant = /V\d+/.test(cm.name)
+            html += `<div class="card">
+              <h3 ${hasVariant ? 'class="warning"' : ''}>${cm.name} ${hasVariant ? '⚠️ VARIANTE' : ''}</h3>
+              <p><strong>ID Produit:</strong> ${cm.id_product}</p>
+              <p><strong>ID Extension:</strong> ${cm.id_expansion} (151)</p>
+              <p><strong>Attaques:</strong> ${cm.attacks || 'N/A'}</p>
+              <div class="url-test">
+                <strong>Test URL CardMarket:</strong><br/>
+                <a href="https://www.cardmarket.com/en/Pokemon/Products/Singles/151/${cm.name.replace(/\s+/g, '-').replace(/\[/g, '').replace(/\]/g, '')}?language=2" target="_blank">
+                  → Tester ce lien
+                </a>
+              </div>
+            </div>`
+          })
+        }
+
+        displayResults(html)
+      } catch (error) {
+        displayResults(`<p class="error">❌ Erreur: ${error.message}</p>`)
+      }
+    }
+
+    async function searchAllVariants() {
+      displayResults('<p class="info">⏳ Recherche de toutes les cartes avec variantes dans extension 151...</p>')
+
+      try {
+        const { data: cmCards, error } = await supabase
+          .from('cardmarket_singles')
+          .select('name, id_product, id_expansion')
+          .eq('id_expansion', 1549)
+          .order('name')
+
+        if (error) throw error
+
+        const variants = cmCards.filter(c => /V\d+/.test(c.name))
+        const noVariants = cmCards.filter(c => !/V\d+/.test(c.name))
+
+        let html = '<h2>📊 Statistiques Extension 151 (CardMarket)</h2>'
+        html += `<div class="card">
+          <p><strong>Total cartes:</strong> ${cmCards.length}</p>
+          <p class="warning"><strong>Cartes avec variantes (V1, V2, etc.):</strong> ${variants.length}</p>
+          <p class="success"><strong>Cartes sans variantes:</strong> ${noVariants.length}</p>
+        </div>`
+
+        html += '<h2>⚠️ Cartes avec variantes (problématiques)</h2>'
+        html += '<p class="info">Ces cartes nécessitent "V1", "V2", etc. dans l\'URL</p>'
+
+        const variantGroups = {}
+        variants.forEach(c => {
+          const baseName = c.name.replace(/\s+V\d+.*/, '')
+          if (!variantGroups[baseName]) variantGroups[baseName] = []
+          variantGroups[baseName].push(c)
+        })
+
+        Object.entries(variantGroups).forEach(([baseName, cards]) => {
+          html += `<div class="card">
+            <h3>${baseName} (${cards.length} variantes)</h3>
+            <ul>`
+          cards.forEach(c => {
+            html += `<li><strong>${c.name}</strong> (ID: ${c.id_product})</li>`
+          })
+          html += `</ul></div>`
+        })
+
+        displayResults(html)
+      } catch (error) {
+        displayResults(`<p class="error">❌ Erreur: ${error.message}</p>`)
+      }
+    }
+
+    async function searchCardMarketDatabase() {
+      displayResults('<p class="info">⏳ Analyse complète de la base CardMarket pour extension 151...</p>')
+
+      try {
+        // Compter les variantes par Pokémon
+        const { data: allCards, error } = await supabase
+          .from('cardmarket_singles')
+          .select('name, id_product')
+          .eq('id_expansion', 1549)
+          .order('name')
+
+        if (error) throw error
+
+        // Grouper par base name
+        const pokemonGroups = {}
+        allCards.forEach(card => {
+          // Extraire le nom de base (avant MEW ou V1/V2)
+          const baseName = card.name
+            .replace(/\s+MEW\d+.*/, '')  // Supprimer MEW138 etc.
+            .replace(/\s+V\d+.*/, '')     // Supprimer V1, V2 etc.
+            .trim()
+
+          if (!pokemonGroups[baseName]) {
+            pokemonGroups[baseName] = []
+          }
+          pokemonGroups[baseName].push(card)
+        })
+
+        let html = '<h2>📊 Analyse par Pokémon (Extension 151)</h2>'
+
+        // Trier par nombre de variantes (décroissant)
+        const sorted = Object.entries(pokemonGroups).sort((a, b) => b[1].length - a[1].length)
+
+        const multiVariant = sorted.filter(([_, cards]) => cards.length > 1)
+        const singleVariant = sorted.filter(([_, cards]) => cards.length === 1)
+
+        html += `<div class="card">
+          <p><strong>Total Pokémon différents:</strong> ${sorted.length}</p>
+          <p class="warning"><strong>Pokémon avec plusieurs variantes:</strong> ${multiVariant.length}</p>
+          <p class="success"><strong>Pokémon sans variante:</strong> ${singleVariant.length}</p>
+        </div>`
+
+        html += '<h2>⚠️ Top 20 Pokémon avec le plus de variantes</h2>'
+        multiVariant.slice(0, 20).forEach(([baseName, cards]) => {
+          html += `<div class="card">
+            <h3>${baseName} <span class="warning">(${cards.length} variantes)</span></h3>
+            <ul>`
+          cards.forEach(c => {
+            const variant = c.name.match(/V\d+/) ? c.name.match(/V\d+/)[0] : 'standard'
+            html += `<li><strong>${c.name}</strong> - Variante: ${variant}</li>`
+          })
+          html += `</ul></div>`
+        })
+
+        displayResults(html)
+      } catch (error) {
+        displayResults(`<p class="error">❌ Erreur: ${error.message}</p>`)
+      }
+    }
+
+    async function listFirst50Cards() {
+      displayResults('<p class="info">⏳ Chargement des 50 premières cartes de l\'extension 151...</p>')
+
+      try {
+        const { data: cards, error } = await supabase
+          .from('cardmarket_singles')
+          .select('id_product, name, id_expansion, id_metacard')
+          .eq('id_expansion', 1549)
+          .order('id_product')
+          .limit(50)
+
+        if (error) throw error
+
+        let html = '<h2>📋 50 Premières Cartes de l\'Extension 151</h2>'
+        html += `<p class="success">✅ ${cards.length} cartes chargées</p>`
+        html += '<p class="info">💡 Cherchez Squirtle dans cette liste pour trouver son ID produit</p>'
+
+        cards.forEach((card, index) => {
+          const isSquirtle = card.name.toLowerCase().includes('squirtle')
+          html += `<div class="card" ${isSquirtle ? 'style="border: 2px solid #fbbf24; background: #2a2210;"' : ''}>
+            <h3>${index + 1}. ${card.name} ${isSquirtle ? '⚡ SQUIRTLE TROUVÉ !' : ''}</h3>
+            <p><strong>ID Produit:</strong> ${card.id_product}</p>
+            <p><strong>ID Metacard:</strong> ${card.id_metacard}</p>
+            <div class="url-test">
+              <strong>Test URL par ID (nouvelle approche):</strong><br/>
+              <a href="https://www.cardmarket.com/en/Pokemon/Products/${card.id_product}?language=2" target="_blank">
+                → https://www.cardmarket.com/en/Pokemon/Products/${card.id_product}
+              </a>
+            </div>
+          </div>`
+        })
+
+        displayResults(html)
+      } catch (error) {
+        displayResults(`<p class="error">❌ Erreur: ${error.message}</p>`)
+      }
+    }
+
+    async function findCorrectExpansionId() {
+      displayResults('<p class="info">⏳ Recherche du bon ID d\'extension pour 151 (cartes avec MEW dans le nom)...</p>')
+
+      try {
+        // Chercher toutes les cartes avec "MEW" dans le nom (code de l'extension 151)
+        const { data: cards, error } = await supabase
+          .from('cardmarket_singles')
+          .select('id_product, name, id_expansion, id_metacard')
+          .ilike('name', '%MEW%')
+          .limit(100)
+
+        if (error) throw error
+
+        // Grouper par id_expansion
+        const expansionGroups = {}
+        cards.forEach(card => {
+          if (!expansionGroups[card.id_expansion]) {
+            expansionGroups[card.id_expansion] = []
+          }
+          expansionGroups[card.id_expansion].push(card)
+        })
+
+        let html = '<h2>🔍 Recherche de l\'extension 151 (cartes avec MEW)</h2>'
+        html += `<p class="success">✅ ${cards.length} cartes trouvées avec "MEW" dans le nom</p>`
+        html += `<p class="info">📊 ${Object.keys(expansionGroups).length} extensions différentes trouvées</p>`
+
+        // Afficher chaque extension
+        Object.entries(expansionGroups).forEach(([expansionId, cards]) => {
+          html += `<div class="card">
+            <h3>Extension ID: ${expansionId} <span class="warning">(${cards.length} cartes)</span></h3>
+            <p class="info">Exemples de cartes dans cette extension :</p>
+            <ul>`
+          cards.slice(0, 5).forEach(card => {
+            const isSquirtle = card.name.toLowerCase().includes('squirtle')
+            html += `<li ${isSquirtle ? 'style="color: #fbbf24; font-weight: bold;"' : ''}>
+              ${card.name} ${isSquirtle ? '⚡ SQUIRTLE !' : ''}
+              <br/><small>ID Produit: ${card.id_product}</small>
+            </li>`
+          })
+          html += `</ul>
+            <div class="url-test">
+              <strong>Tester avec ce ID d'extension :</strong><br/>
+              <button onclick="listCardsFromExpansion(${expansionId})" style="background: #60a5fa; margin-top: 10px;">
+                Voir toutes les cartes de l'extension ${expansionId}
+              </button>
+            </div>
+          </div>`
+        })
+
+        displayResults(html)
+      } catch (error) {
+        displayResults(`<p class="error">❌ Erreur: ${error.message}</p>`)
+      }
+    }
+
+    async function listCardsFromExpansion(expansionId) {
+      displayResults(`<p class="info">⏳ Chargement des cartes de l'extension ${expansionId}...</p>`)
+
+      try {
+        const { data: cards, error } = await supabase
+          .from('cardmarket_singles')
+          .select('id_product, name, id_expansion, id_metacard')
+          .eq('id_expansion', expansionId)
+          .order('name')
+          .limit(100)
+
+        if (error) throw error
+
+        let html = `<h2>📋 Cartes de l'extension ${expansionId}</h2>`
+        html += `<p class="success">✅ ${cards.length} cartes chargées (limite 100)</p>`
+
+        cards.forEach((card, index) => {
+          const isSquirtle = card.name.toLowerCase().includes('squirtle') && !card.name.toLowerCase().includes('ditto')
+          html += `<div class="card" ${isSquirtle ? 'style="border: 2px solid #22c55e; background: #0a2a0a;"' : ''}>
+            <h3>${index + 1}. ${card.name} ${isSquirtle ? '🎯 VRAI SQUIRTLE !' : ''}</h3>
+            <p><strong>ID Produit:</strong> ${card.id_product}</p>
+            <p><strong>ID Metacard:</strong> ${card.id_metacard}</p>
+            <div class="url-test">
+              <a href="https://www.cardmarket.com/en/Pokemon/Products/${card.id_product}?language=2" target="_blank">
+                → Test URL par ID
+              </a>
+            </div>
+          </div>`
+        })
+
+        displayResults(html)
+      } catch (error) {
+        displayResults(`<p class="error">❌ Erreur: ${error.message}</p>`)
+      }
+    }
+
+    async function searchSquirtleEverywhere() {
+      displayResults('<p class="info">⏳ Recherche de TOUTES les cartes "Squirtle" dans cardmarket_singles (toutes extensions confondues)...</p>')
+
+      try {
+        const { data: cards, error } = await supabase
+          .from('cardmarket_singles')
+          .select('id_product, name, id_expansion, id_metacard')
+          .ilike('name', '%squirtle%')
+          .order('name')
+          .limit(100)
+
+        if (error) throw error
+
+        // Grouper par extension
+        const byExtension = {}
+        cards.forEach(card => {
+          if (!byExtension[card.id_expansion]) {
+            byExtension[card.id_expansion] = []
+          }
+          byExtension[card.id_expansion].push(card)
+        })
+
+        let html = '<h2>🔎 Toutes les cartes "Squirtle" dans la base CardMarket</h2>'
+        html += `<p class="success">✅ ${cards.length} cartes trouvées au total</p>`
+        html += `<p class="warning">📊 Réparties dans ${Object.keys(byExtension).length} extensions différentes</p>`
+
+        // Afficher par extension
+        Object.entries(byExtension).forEach(([expansionId, cards]) => {
+          html += `<div class="card">
+            <h3>Extension ID: ${expansionId} <span class="info">(${cards.length} cartes Squirtle)</span></h3>
+            <ul>`
+          cards.forEach(card => {
+            const isDitto = card.name.toLowerCase().includes('ditto')
+            html += `<li>
+              <strong ${!isDitto ? 'style="color: #22c55e;"' : ''}>${card.name}</strong>
+              ${!isDitto ? '🎯 VRAI SQUIRTLE !' : '(Ditto)'}
+              <br/><small>ID Produit: ${card.id_product} | ID Metacard: ${card.id_metacard}</small>
+              <br/><a href="https://www.cardmarket.com/en/Pokemon/Products/${card.id_product}?language=2" target="_blank" style="color: #60a5fa;">
+                → Test URL par ID
+              </a>
+            </li>`
+          })
+          html += `</ul></div>`
+        })
+
+        // Conclusion
+        html += `<div class="card" style="background: #2a2a0a; border: 2px solid #fbbf24;">
+          <h3 class="warning">💡 Conclusion Importante</h3>
+          <p>Si vous ne voyez QUE des cartes "Ditto [Squirtle...]" et AUCUN vrai Squirtle, cela signifie que :</p>
+          <ul>
+            <li>❌ La base <code>cardmarket_singles</code> est <strong>INCOMPLÈTE</strong></li>
+            <li>❌ Les cartes de l'extension 151 n'ont <strong>PAS été importées</strong></li>
+            <li>✅ Solution : Utiliser le <strong>matching automatique</strong> (bouton "Trouver lien direct") au lieu de construire l'URL manuellement</li>
+          </ul>
+        </div>`
+
+        displayResults(html)
+      } catch (error) {
+        displayResults(`<p class="error">❌ Erreur: ${error.message}</p>`)
+      }
+    }
+  </script>
+</body>
+</html>

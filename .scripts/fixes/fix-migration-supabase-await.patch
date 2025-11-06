@@ -1,0 +1,23 @@
+--- a/src/hooks/useCardDatabase.jsx
++++ b/src/hooks/useCardDatabase.jsx
+@@ -1836,12 +1836,12 @@
+           // Sauvegarder dans IndexedDB
+           await CardCacheService.saveCards(validResults)
+ 
+-          // Sauvegarder dans Supabase
+-          SupabaseService.addDiscoveredCards(validResults)
+-            .then((addedCount) => {
+-              console.log(`☁️ Supabase: ${addedCount} cartes avec attaques synchronisées`)
+-            })
+-            .catch((error) => {
+-              console.warn('⚠️ Erreur sauvegarde attaques dans Supabase:', error)
+-            })
++          // Sauvegarder dans Supabase (CRITIQUE: ajouter await pour garantir la sauvegarde)
++          try {
++            const addedCount = await SupabaseService.addDiscoveredCards(validResults)
++            console.log(`☁️ Supabase: ${addedCount} cartes avec attaques synchronisées`)
++          } catch (error) {
++            console.warn('⚠️ Erreur sauvegarde attaques dans Supabase:', error)
++          }
+ 
+           // Mettre à jour l'état React

@@ -177,6 +177,7 @@ export class TCGdxService {
         // Pour les correspondances partielles, vérifier que c'est un mot complet
         // "mew" ne doit PAS matcher "mewtwo" (mew n'est pas un mot séparé)
         // "mew" PEUT matcher "Mew ex", "Mew V", etc. (mew est suivi d'un espace)
+        // "mustard" PEUT matcher "Rapid Strike Style Mustard" (mustard est un mot complet au milieu)
         const validPartialMatches = cards.filter(card => {
           const cardNameLower = card.name.toLowerCase()
           const queryLower = translatedQuery.toLowerCase()
@@ -184,18 +185,25 @@ export class TCGdxService {
           // Éviter les correspondances exactes (déjà traitées)
           if (cardNameLower === queryLower) return false
 
-          // Vérifier que le terme recherché est un mot complet
-          // Exemple : "mew ex" ✅, "mewtwo" ❌
-          const startsWithQuery = cardNameLower.startsWith(queryLower)
-          if (!startsWithQuery) return false
+          // Vérifier que le terme recherché est un mot complet N'IMPORTE OÙ dans le nom
+          // Cas 1: Au début - "mew ex" ✅, "mewtwo" ❌
+          const startsWithQuery = cardNameLower.startsWith(queryLower + ' ') ||
+                                   cardNameLower.startsWith(queryLower + '-') ||
+                                   cardNameLower.startsWith(queryLower + '(') ||
+                                   cardNameLower.startsWith(queryLower + '.')
 
-          // Vérifier que le caractère suivant est un espace, un tiret ou un caractère spécial
-          // Cela évite "mewtwo" pour la recherche "mew"
-          const charAfterQuery = cardNameLower.charAt(queryLower.length)
-          const isWordBoundary = charAfterQuery === ' ' || charAfterQuery === '-' ||
-                                  charAfterQuery === '(' || charAfterQuery === '.'
+          // Cas 2: Au milieu - "rapid strike style mustard" ✅
+          const containsQueryAsWord = cardNameLower.includes(' ' + queryLower + ' ') ||
+                                       cardNameLower.includes(' ' + queryLower + '-') ||
+                                       cardNameLower.includes(' ' + queryLower + '(') ||
+                                       cardNameLower.includes('-' + queryLower + ' ') ||
+                                       cardNameLower.includes('-' + queryLower + '-')
 
-          return isWordBoundary
+          // Cas 3: À la fin - "style mustard" ✅
+          const endsWithQuery = cardNameLower.endsWith(' ' + queryLower) ||
+                                 cardNameLower.endsWith('-' + queryLower)
+
+          return startsWithQuery || containsQueryAsWord || endsWithQuery
         })
 
         // Prioriser les correspondances exactes, sinon accepter les correspondances de mots complets

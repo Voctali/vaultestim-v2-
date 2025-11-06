@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettoyage Cache Professor Laventon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #2a2a2a;
+        }
+        .success {
+            border-left: 4px solid #4caf50;
+        }
+        .warning {
+            border-left: 4px solid #ff9800;
+        }
+        button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧹 Nettoyage Cache Professor Laventon</h1>
+    <p>Ce script va nettoyer le cache de recherche pour "Professor Laventon" et "Professeur Lavande".</p>
+
+    <button onclick="clearCache()">Nettoyer le Cache</button>
+
+    <div id="results"></div>
+
+    <script>
+        function clearCache() {
+            const results = document.getElementById('results');
+            results.innerHTML = '';
+
+            const cachesToClean = [
+                'vaultestim_search_cache_professor laventon',
+                'vaultestim_search_cache_professeur lavande',
+                'tcg_search_v2_professor laventon',
+                'tcg_search_v2_professeur lavande'
+            ];
+
+            let cleaned = 0;
+            let notFound = 0;
+
+            // Nettoyer localStorage
+            cachesToClean.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    cleaned++;
+                    results.innerHTML += `<div class="result success">✅ Supprimé: ${key}</div>`;
+                } else {
+                    notFound++;
+                    results.innerHTML += `<div class="result warning">⚠️ Introuvable: ${key}</div>`;
+                }
+            });
+
+            // Chercher toutes les clés qui commencent par tcg_search_v2_professor laventon_
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('tcg_search_v2_professor laventon_') || key.startsWith('tcg_search_v2_professeur lavande_'))) {
+                    localStorage.removeItem(key);
+                    cleaned++;
+                    results.innerHTML += `<div class="result success">✅ Supprimé: ${key}</div>`;
+                }
+            }
+
+            results.innerHTML += `<div class="result success"><strong>🎉 Nettoyage terminé!</strong><br>Supprimés: ${cleaned} | Introuvables: ${notFound}</div>`;
+            results.innerHTML += `<div class="result warning"><strong>⚠️ Important:</strong> Rechargez maintenant la page de l'application (F5) pour voir les résultats mis à jour.</div>`;
+        }
+    </script>
+</body>
+</html>

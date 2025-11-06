@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Collection Supabase - VaultEstim</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      max-width: 1400px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #0a0a0a;
+      color: #0f0;
+    }
+    h1 { color: #d4af37; text-align: center; }
+    h2 { color: #4af; margin-top: 30px; }
+    .section {
+      background: #1a1a1a;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+    button {
+      background: #d4af37;
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+      font-size: 14px;
+    }
+    button:hover { background: #f0c14b; }
+    button:disabled {
+      background: #555;
+      color: #888;
+      cursor: not-allowed;
+    }
+    .success { color: #4caf50; }
+    .error { color: #f44336; }
+    .warning { color: #ff9800; }
+    .info { color: #2196f3; }
+    pre {
+      background: #000;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      border: 1px solid #333;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .log {
+      margin: 5px 0;
+      padding: 8px;
+      background: #1a1a1a;
+      border-left: 3px solid #4af;
+      font-size: 13px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #d4af37;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #d4af37;
+    }
+    .stat-label {
+      color: #aaa;
+      margin-top: 5px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <h1>🔬 Diagnostic Collection Supabase</h1>
+
+  <div class="section">
+    <h2>1️⃣ Configuration Supabase</h2>
+    <div id="config-status"></div>
+  </div>
+
+  <div class="section">
+    <h2>2️⃣ État de l'Authentification</h2>
+    <button onclick="checkAuth()">Vérifier l'authentification</button>
+    <div id="auth-status"></div>
+  </div>
+
+  <div class="section">
+    <h2>3️⃣ Test de Chargement Collection</h2>
+    <button onclick="loadCollection()" id="loadBtn">📥 Charger la collection depuis Supabase</button>
+    <button onclick="clearLogs()">🗑️ Effacer les logs</button>
+    <div class="stats" id="stats"></div>
+    <div id="logs"></div>
+  </div>
+
+  <div class="section">
+    <h2>4️⃣ Données Brutes (Première carte)</h2>
+    <pre id="raw-data">Aucune donnée chargée</pre>
+  </div>
+
+  <script>
+    // Configuration Supabase (récupérée depuis .env)
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYxNzkyNDAsImV4cCI6MjA1MTc1NTI0MH0.cVSFiZkbzOG1jmK1fUZcf0sSsVY_FMQL6dMr_B55gBs'
+
+    // Créer le client Supabase
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    // Afficher la config
+    document.getElementById('config-status').innerHTML = `
+      <p class="success">✅ URL Supabase: ${SUPABASE_URL}</p>
+      <p class="success">✅ Client Supabase initialisé</p>
+    `
+
+    // Logs
+    let logs = []
+    function addLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString()
+      logs.push({ timestamp, message, type })
+      displayLogs()
+    }
+
+    function displayLogs() {
+      const logsHtml = logs.map(log =>
+        `<div class="log ${log.type}">[${log.timestamp}] ${log.message}</div>`
+      ).join('')
+      document.getElementById('logs').innerHTML = logsHtml || '<p class="info">Aucun log</p>'
+    }
+
+    function clearLogs() {
+      logs = []
+      displayLogs()
+    }
+
+    // Vérifier l'authentification
+    async function checkAuth() {
+      addLog('🔍 Vérification de l\'authentification...', 'info')
+
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (error) {
+          addLog(`❌ Erreur getSession(): ${error.message}`, 'error')
+          document.getElementById('auth-status').innerHTML = `
+            <p class="error">❌ Erreur: ${error.message}</p>
+          `
+          return null
+        }
+
+        if (!session) {
+          addLog('⚠️ Aucune session active - Utilisateur non connecté', 'warning')
+          document.getElementById('auth-status').innerHTML = `
+            <p class="warning">⚠️ Aucune session active</p>
+            <p class="info">Veuillez vous connecter sur l'application principale d'abord</p>
+          `
+          return null
+        }
+
+        const user = session.user
+        addLog(`✅ Session active - User ID: ${user.id}`, 'success')
+        addLog(`📧 Email: ${user.email}`, 'info')
+
+        document.getElementById('auth-status').innerHTML = `
+          <p class="success">✅ Session active</p>
+          <p><strong>User ID:</strong> ${user.id}</p>
+          <p><strong>Email:</strong> ${user.email}</p>
+          <p><strong>Créé le:</strong> ${new Date(user.created_at).toLocaleString()}</p>
+        `
+
+        return user.id
+      } catch (err) {
+        addLog(`❌ Exception: ${err.message}`, 'error')
+        document.getElementById('auth-status').innerHTML = `
+          <p class="error">❌ Exception: ${err.message}</p>
+        `
+        return null
+      }
+    }
+
+    // Charger la collection
+    async function loadCollection() {
+      clearLogs()
+      document.getElementById('loadBtn').disabled = true
+      addLog('🚀 Démarrage du chargement...', 'info')
+
+      try {
+        // Vérifier l'authentification
+        const userId = await checkAuth()
+        if (!userId) {
+          addLog('❌ Impossible de continuer sans authentification', 'error')
+          document.getElementById('loadBtn').disabled = false
+          return
+        }
+
+        // Charger la collection depuis user_collection
+        addLog('📥 Requête SELECT sur user_collection...', 'info')
+        const { data: collectionData, error: collectionError } = await supabase
+          .from('user_collection')
+          .select('*')
+          .eq('user_id', userId)
+          .order('date_added', { ascending: false })
+
+        if (collectionError) {
+          addLog(`❌ Erreur Supabase: ${collectionError.message}`, 'error')
+          addLog(`Code: ${collectionError.code}`, 'error')
+          addLog(`Détails: ${collectionError.details}`, 'error')
+          document.getElementById('loadBtn').disabled = false
+          return
+        }
+
+        addLog(`✅ ${collectionData.length} cartes récupérées depuis user_collection`, 'success')
+
+        // Afficher les statistiques
+        const stats = {
+          total: collectionData.length,
+          withPrices: collectionData.filter(c => c.market_price || c.purchase_price).length,
+          withImages: collectionData.filter(c => c.image || c.images).length,
+          withCondition: collectionData.filter(c => c.condition).length
+        }
+
+        document.getElementById('stats').innerHTML = `
+          <div class="stat-card">
+            <div class="stat-value">${stats.total}</div>
+            <div class="stat-label">Cartes totales</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.withPrices}</div>
+            <div class="stat-label">Avec prix</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.withImages}</div>
+            <div class="stat-label">Avec images</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${stats.withCondition}</div>
+            <div class="stat-label">Avec condition</div>
+          </div>
+        `
+
+        if (collectionData.length === 0) {
+          addLog('⚠️ La collection est vide dans Supabase', 'warning')
+          document.getElementById('raw-data').textContent = 'Aucune carte dans la collection'
+        } else {
+          addLog(`📊 Exemple de carte: ${collectionData[0].name}`, 'info')
+          document.getElementById('raw-data').textContent = JSON.stringify(collectionData[0], null, 2)
+
+          // Lister toutes les cartes
+          addLog('📋 Liste des cartes:', 'info')
+          collectionData.forEach((card, index) => {
+            addLog(`  ${index + 1}. ${card.name} (${card.series || 'N/A'}) - Qté: ${card.quantity || 1}`, 'success')
+          })
+        }
+
+        // Maintenant, enrichir avec les prix depuis discovered_cards
+        if (collectionData.length > 0) {
+          const cardIds = [...new Set(collectionData.map(card => card.card_id))]
+          addLog(`🔍 Récupération des prix pour ${cardIds.length} cartes uniques...`, 'info')
+
+          const { data: discoveredData, error: discoveredError } = await supabase
+            .from('discovered_cards')
+            .select('id, cardmarket, tcgplayer')
+            .in('id', cardIds)
+
+          if (discoveredError) {
+            addLog(`⚠️ Impossible de récupérer les prix: ${discoveredError.message}`, 'warning')
+          } else {
+            addLog(`💰 ${discoveredData.length} cartes trouvées dans discovered_cards`, 'success')
+            addLog(`💰 ${discoveredData.filter(c => c.cardmarket || c.tcgplayer).length} ont des données de prix`, 'info')
+          }
+        }
+
+      } catch (err) {
+        addLog(`❌ Exception: ${err.message}`, 'error')
+        console.error(err)
+      } finally {
+        document.getElementById('loadBtn').disabled = false
+      }
+    }
+
+    // Auto-check auth au chargement
+    window.addEventListener('DOMContentLoaded', () => {
+      addLog('🔄 Page chargée, vérification automatique...', 'info')
+      checkAuth()
+    })
+  </script>
+</body>
+</html>

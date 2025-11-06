@@ -1,0 +1,17 @@
+--- a/src/pages/Collection.jsx
++++ b/src/pages/Collection.jsx
+@@ -57,6 +57,14 @@ export function Collection() {
+   const filteredCards = uniqueCards.filter(card => {
+     // Recherche bilingue : français et anglais
+     const searchLower = searchTerm.toLowerCase().trim()
++
++    // Si recherche vide, afficher toutes les cartes (ne pas filtrer)
++    if (!searchLower) {
++      const matchesRarity = filters.rarity === 'all' || card.rarity === filters.rarity
++      const matchesCondition = filters.condition === 'all' || card.condition === filters.condition
++      const matchesType = filters.type === 'all' || card.type === filters.type
++      return matchesRarity && matchesCondition && matchesType
++    }
+     const cardNameLower = card.name.toLowerCase()
+ 
+     // Recherche directe dans le nom anglais de la carte

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug API - Squirtle #7</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #4ade80; }
+    h2 { color: #60a5fa; margin-top: 30px; }
+    .card {
+      background: #2a2a2a;
+      border: 1px solid #404040;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+    .warning { color: #fbbf24; }
+    .info { color: #60a5fa; }
+    pre {
+      background: #0a0a0a;
+      border: 1px solid #404040;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 600px;
+    }
+    button {
+      background: #4ade80;
+      color: #0a0a0a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 10px 5px;
+    }
+    button:hover { background: #22c55e; }
+  </style>
+</head>
+<body>
+  <h1>🔬 Debug API Pokemon TCG - Squirtle #7</h1>
+  <p class="info">Test direct de l'API pour comprendre pourquoi Squirtle n'a pas d'attaques</p>
+
+  <div>
+    <button onclick="testSquirtleById()">Test 1 : Chercher par ID exact (sv3pt5-7)</button>
+    <button onclick="testSquirtleBySearch()">Test 2 : Chercher par nom + set</button>
+    <button onclick="testHypnoById()">Test 3 : Comparer avec Hypno #97 (qui marche)</button>
+  </div>
+
+  <div id="results"></div>
+
+  <script>
+    const API_BASE = '/api/pokemontcg/v2'
+    const API_KEY = '6fbee8f7-f9f8-4844-aa81-349777320243'
+
+    async function fetchAPI(url) {
+      const headers = {
+        'X-Api-Key': API_KEY
+      }
+
+      const response = await fetch(url, { headers })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      return await response.json()
+    }
+
+    async function testSquirtleById() {
+      document.getElementById('results').innerHTML = '<p class="info">⏳ Test 1 : Recherche de Squirtle par ID exact...</p>'
+
+      try {
+        const cardId = 'sv3pt5-7'
+        const url = `${API_BASE}/cards/${cardId}`
+
+        console.log(`📡 Requête API: ${url}`)
+
+        const data = await fetchAPI(url)
+
+        let html = '<div class="card">'
+        html += '<h2 class="success">✅ Test 1 : Recherche par ID (sv3pt5-7)</h2>'
+        html += `<p><strong>URL:</strong> ${url}</p>`
+        html += `<p><strong>Résultat:</strong> ${data.data ? 'Carte trouvée ✅' : 'Carte non trouvée ❌'}</p>`
+
+        if (data.data) {
+          const card = data.data
+          html += '<h3>Données reçues de l\'API :</h3>'
+          html += `<p><strong>Nom:</strong> ${card.name}</p>`
+          html += `<p><strong>Set:</strong> ${card.set?.name} (${card.set?.id})</p>`
+          html += `<p><strong>Numéro:</strong> ${card.number}</p>`
+          html += `<p class="${card.attacks ? 'success' : 'error'}"><strong>Attaques:</strong> ${card.attacks ? `✅ OUI (${card.attacks.length})` : '❌ NULL'}</p>`
+
+          if (card.attacks && card.attacks.length > 0) {
+            html += '<h4>Liste des attaques :</h4>'
+            html += '<pre>' + JSON.stringify(card.attacks, null, 2) + '</pre>'
+          } else {
+            html += '<div class="card" style="border: 2px solid #f87171;">'
+            html += '<h4 class="error">❌ PROBLÈME : L\'API ne retourne PAS d\'attaques !</h4>'
+            html += '<p>Cela signifie que :</p>'
+            html += '<ul>'
+            html += '<li>Soit la carte Squirtle #7 est une carte spéciale sans attaques (Energy, Trainer)</li>'
+            html += '<li>Soit les données de l\'API sont incomplètes pour cette carte</li>'
+            html += '<li>Soit l\'ID "sv3pt5-7" ne correspond pas au bon Squirtle</li>'
+            html += '</ul>'
+            html += '</div>'
+          }
+
+          html += '<h4>Réponse complète de l\'API :</h4>'
+          html += '<pre>' + JSON.stringify(card, null, 2) + '</pre>'
+        }
+
+        html += '</div>'
+        document.getElementById('results').innerHTML = html
+
+      } catch (error) {
+        document.getElementById('results').innerHTML = `
+          <div class="card" style="border: 2px solid #f87171;">
+            <h2 class="error">❌ Erreur Test 1</h2>
+            <p>${error.message}</p>
+          </div>
+        `
+      }
+    }
+
+    async function testSquirtleBySearch() {
+      document.getElementById('results').innerHTML = '<p class="info">⏳ Test 2 : Recherche de Squirtle par nom + set...</p>'
+
+      try {
+        const searchQuery = 'name:Squirtle set.id:sv3pt5 number:7'
+        const url = `${API_BASE}/cards?q=${encodeURIComponent(searchQuery)}`
+
+        console.log(`📡 Requête API: ${url}`)
+
+        const data = await fetchAPI(url)
+
+        let html = '<div class="card">'
+        html += '<h2>🔍 Test 2 : Recherche par nom + set</h2>'
+        html += `<p><strong>Query:</strong> ${searchQuery}</p>`
+        html += `<p><strong>Résultats:</strong> ${data.data?.length || 0} carte(s) trouvée(s)</p>`
+
+        if (data.data && data.data.length > 0) {
+          data.data.forEach((card, index) => {
+            html += `<div class="card" style="margin-top: 20px;">`
+            html += `<h3>Carte ${index + 1} : ${card.name} #${card.number}</h3>`
+            html += `<p><strong>ID:</strong> ${card.id}</p>`
+            html += `<p><strong>Set:</strong> ${card.set?.name}</p>`
+            html += `<p class="${card.attacks ? 'success' : 'error'}"><strong>Attaques:</strong> ${card.attacks ? `✅ ${card.attacks.length}` : '❌ NULL'}</p>`
+
+            if (card.attacks) {
+              html += '<pre>' + JSON.stringify(card.attacks, null, 2) + '</pre>'
+            }
+
+            html += '</div>'
+          })
+        } else {
+          html += '<p class="error">❌ Aucun résultat trouvé</p>'
+        }
+
+        html += '</div>'
+        document.getElementById('results').innerHTML = html
+
+      } catch (error) {
+        document.getElementById('results').innerHTML = `
+          <div class="card" style="border: 2px solid #f87171;">
+            <h2 class="error">❌ Erreur Test 2</h2>
+            <p>${error.message}</p>
+          </div>
+        `
+      }
+    }
+
+    async function testHypnoById() {
+      document.getElementById('results').innerHTML = '<p class="info">⏳ Test 3 : Comparaison avec Hypno #97...</p>'
+
+      try {
+        const squirtleId = 'sv3pt5-7'
+        const hypnoId = 'sv3pt5-97'
+
+        const [squirtleData, hypnoData] = await Promise.all([
+          fetchAPI(`${API_BASE}/cards/${squirtleId}`),
+          fetchAPI(`${API_BASE}/cards/${hypnoId}`)
+        ])
+
+        let html = '<div class="comparison" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">'
+
+        // Squirtle
+        html += '<div class="card" style="border: 2px solid #f87171;">'
+        html += '<h2 class="error">❌ Squirtle #7</h2>'
+        if (squirtleData.data) {
+          const card = squirtleData.data
+          html += `<p><strong>ID:</strong> ${card.id}</p>`
+          html += `<p><strong>Nom:</strong> ${card.name}</p>`
+          html += `<p class="${card.attacks ? 'success' : 'error'}"><strong>Attaques:</strong> ${card.attacks ? `✅ ${card.attacks.length}` : '❌ NULL'}</p>`
+          html += `<p class="${card.abilities ? 'success' : 'warning'}"><strong>Abilities:</strong> ${card.abilities ? '✅ OUI' : '⚠️ NULL'}</p>`
+          html += `<p><strong>Supertype:</strong> ${card.supertype || 'N/A'}</p>`
+          html += `<p><strong>Subtypes:</strong> ${card.subtypes?.join(', ') || 'N/A'}</p>`
+        } else {
+          html += '<p class="error">❌ Carte non trouvée</p>'
+        }
+        html += '</div>'
+
+        // Hypno
+        html += '<div class="card" style="border: 2px solid #4ade80;">'
+        html += '<h2 class="success">✅ Hypno #97</h2>'
+        if (hypnoData.data) {
+          const card = hypnoData.data
+          html += `<p><strong>ID:</strong> ${card.id}</p>`
+          html += `<p><strong>Nom:</strong> ${card.name}</p>`
+          html += `<p class="${card.attacks ? 'success' : 'error'}"><strong>Attaques:</strong> ${card.attacks ? `✅ ${card.attacks.length}` : '❌ NULL'}</p>`
+          html += `<p class="${card.abilities ? 'success' : 'warning'}"><strong>Abilities:</strong> ${card.abilities ? '✅ OUI' : '⚠️ NULL'}</p>`
+          html += `<p><strong>Supertype:</strong> ${card.supertype || 'N/A'}</p>`
+          html += `<p><strong>Subtypes:</strong> ${card.subtypes?.join(', ') || 'N/A'}</p>`
+        } else {
+          html += '<p class="error">❌ Carte non trouvée</p>'
+        }
+        html += '</div>'
+
+        html += '</div>'
+
+        // Analyse
+        html += '<div class="card" style="border: 2px solid #fbbf24; margin-top: 20px;">'
+        html += '<h2 class="warning">📊 Analyse</h2>'
+        if (squirtleData.data && hypnoData.data) {
+          const squirtle = squirtleData.data
+          const hypno = hypnoData.data
+
+          html += '<ul>'
+          html += `<li><strong>Squirtle supertype:</strong> ${squirtle.supertype}</li>`
+          html += `<li><strong>Hypno supertype:</strong> ${hypno.supertype}</li>`
+
+          if (squirtle.supertype !== 'Pokémon') {
+            html += '<li class="error">⚠️ PROBLÈME : Squirtle n\'est PAS de supertype "Pokémon" !</li>'
+          }
+
+          if (!squirtle.attacks && squirtle.supertype === 'Pokémon') {
+            html += '<li class="error">⚠️ PROBLÈME : Squirtle est un Pokémon mais n\'a pas d\'attaques dans l\'API</li>'
+            html += '<li class="info">💡 Solution : Vérifier manuellement sur https://api.pokemontcg.io/v2/cards/sv3pt5-7</li>'
+          }
+
+          html += '</ul>'
+        }
+        html += '</div>'
+
+        document.getElementById('results').innerHTML = html
+
+      } catch (error) {
+        document.getElementById('results').innerHTML = `
+          <div class="card" style="border: 2px solid #f87171;">
+            <h2 class="error">❌ Erreur Test 3</h2>
+            <p>${error.message}</p>
+          </div>
+        `
+      }
+    }
+  </script>
+</body>
+</html>

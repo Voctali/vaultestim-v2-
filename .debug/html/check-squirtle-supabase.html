@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Check Squirtle dans Supabase</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: monospace;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #4ade80; }
+    .card {
+      background: #2a2a2a;
+      border: 1px solid #404040;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+    pre {
+      background: #0a0a0a;
+      border: 1px solid #404040;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 600px;
+    }
+    button {
+      background: #4ade80;
+      color: #0a0a0a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 10px 5px;
+    }
+    button:hover { background: #22c55e; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Check Squirtle #7 dans Supabase</h1>
+  
+  <button onclick="checkSquirtle()">Vérifier Squirtle dans Supabase</button>
+  
+  <div id="results"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAwMDIsImV4cCI6MjA3NTUxNjAwMn0.7d0303MNw__AVC9wkS7BodK2WG8Rvb2IY2V-0wv0l7Q'
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    async function checkSquirtle() {
+      document.getElementById('results').innerHTML = '<p class="info">⏳ Chargement...</p>'
+
+      try {
+        // Chercher Squirtle #7 dans discovered_cards
+        const { data, error } = await supabase
+          .from('discovered_cards')
+          .select('*')
+          .eq('id', 'sv3pt5-7')
+          .limit(1)
+
+        if (error) {
+          document.getElementById('results').innerHTML = `<p class="error">❌ Erreur: ${error.message}</p>`
+          return
+        }
+
+        const squirtle = data && data.length > 0 ? data[0] : null
+
+        let html = '<div class="card">'
+        html += '<h2>🔍 Squirtle #7 (sv3pt5-7) dans Supabase</h2>'
+
+        if (!squirtle) {
+          html += '<p class="error">❌ Squirtle #7 NON TROUVÉ dans discovered_cards</p>'
+        } else {
+          html += `<p><strong>ID:</strong> ${squirtle.id}</p>`
+          html += `<p><strong>Nom:</strong> ${squirtle.name}</p>`
+          html += `<p><strong>Set:</strong> ${squirtle.set?.name || 'N/A'} (${squirtle.set_id})</p>`
+          html += `<p><strong>Numéro:</strong> ${squirtle.number}</p>`
+          
+          html += `<p class="${squirtle.attacks ? 'success' : 'error'}"><strong>Attaques:</strong> ${squirtle.attacks ? '✅ OUI (' + squirtle.attacks.length + ' attaques)' : '❌ NULL ou ABSENT'}</p>`
+          
+          if (squirtle.attacks && squirtle.attacks.length > 0) {
+            html += '<h3>Attaques enregistrées :</h3>'
+            html += '<pre>' + JSON.stringify(squirtle.attacks, null, 2) + '</pre>'
+          } else {
+            html += '<div class="card" style="border: 2px solid #f87171;">'
+            html += '<h3 class="error">❌ PROBLÈME : Aucune attaque enregistrée !</h3>'
+            html += '<p>L\'API retourne bien les attaques ("Withdraw" et "Skull Bash") mais elles ne sont pas sauvegardées dans Supabase.</p>'
+            html += '<p><strong>Hypothèses :</strong></p>'
+            html += '<ul>'
+            html += '<li>La migration lit les données mais ne les sauvegarde pas correctement</li>'
+            html += '<li>Le champ "attacks" n\'est pas dans la whitelist de SupabaseService</li>'
+            html += '<li>Les données sont écrasées par une version obsolète sans attaques</li>'
+            html += '</ul>'
+            html += '</div>'
+          }
+
+          html += '<h3>Données complètes de Supabase :</h3>'
+          html += '<pre>' + JSON.stringify(squirtle, null, 2) + '</pre>'
+        }
+
+        html += '</div>'
+        document.getElementById('results').innerHTML = html
+
+      } catch (error) {
+        document.getElementById('results').innerHTML = `<p class="error">❌ Erreur: ${error.message}</p>`
+      }
+    }
+  </script>
+</body>
+</html>

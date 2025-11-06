@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettoyer Cache Pokemon Center Lady</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #ffd700;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #ffd700;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #ffed4e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
+        }
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .success { color: #4ade80; }
+        .warning { color: #fbbf24; }
+        .error { color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Nettoyage Cache Pokemon Center Lady</h1>
+        <p>Cet outil supprime les caches obsolètes pour "Pokemon Center Lady" et permet une nouvelle recherche fraîche.</p>
+        
+        <button onclick="clearCache()">Nettoyer le Cache</button>
+        <button onclick="location.href='http://localhost:5174'">Retour à l'App</button>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const className = type === 'success' ? 'success' : type === 'warning' ? 'warning' : type === 'error' ? 'error' : '';
+            logDiv.innerHTML += `<div class="${className}">${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearCache() {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML = '';
+            
+            log('🚀 Démarrage du nettoyage...', 'info');
+            
+            const searchTerms = [
+                'pokemon center lady',
+                'pokémon center lady',
+                'dame du centre pokemon',
+                'dame du centre pokémon'
+            ];
+            
+            let totalRemoved = 0;
+            
+            // Nettoyer les caches CacheService (vaultestim_search_cache_)
+            searchTerms.forEach(term => {
+                const key = `vaultestim_search_cache_${term}`;
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    totalRemoved++;
+                    log(`✅ Supprimé: ${key}`, 'success');
+                } else {
+                    log(`⏭️ Non trouvé: ${key}`, 'warning');
+                }
+            });
+            
+            // Nettoyer les caches TCGdxService (tcg_search_v2_)
+            searchTerms.forEach(term => {
+                // Chercher toutes les variantes avec différentes limites
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(`tcg_search_v2_${term}`)) {
+                        localStorage.removeItem(key);
+                        totalRemoved++;
+                        log(`✅ Supprimé: ${key}`, 'success');
+                    }
+                }
+            });
+            
+            // Chercher d'autres variantes possibles
+            const allKeys = Object.keys(localStorage);
+            allKeys.forEach(key => {
+                const lowerKey = key.toLowerCase();
+                if (lowerKey.includes('pokemon') && lowerKey.includes('center') && lowerKey.includes('lady')) {
+                    localStorage.removeItem(key);
+                    totalRemoved++;
+                    log(`✅ Supprimé (variante): ${key}`, 'success');
+                }
+            });
+            
+            log('', 'info');
+            if (totalRemoved > 0) {
+                log(`🎉 ${totalRemoved} cache(s) supprimé(s) avec succès !`, 'success');
+                log('', 'info');
+                log('✅ Vous pouvez maintenant retourner à l\'application et rechercher "Dame du centre pokemon"', 'success');
+            } else {
+                log('ℹ️ Aucun cache trouvé pour Pokemon Center Lady', 'warning');
+                log('', 'info');
+                log('💡 Le cache a peut-être déjà été nettoyé ou n\'existait pas', 'warning');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vérifier Hypnomade CardMarket</title>
+</head>
+<body>
+  <h1>Vérification Hypnomade CardMarket</h1>
+  <div id="output"></div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+    const supabase = createClient(
+      'https://ubphwlmnfjdaiarbihcx.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQzNTA1NjEsImV4cCI6MjA0OTkyNjU2MX0.RgQCUfkန5oM_sAz9k8dxCCPe1uEjYAy0jWIl8UNMg'
+    )
+
+    const output = document.getElementById('output')
+
+    async function checkHypno() {
+      output.innerHTML = '<p>Recherche de Hypnomade dans cardmarket_singles...</p>'
+
+      // Rechercher toutes les cartes Hypno MEW
+      const { data, error } = await supabase
+        .from('cardmarket_singles')
+        .select('*')
+        .ilike('name', 'Hypno MEW%')
+        .limit(10)
+
+      if (error) {
+        output.innerHTML += `<p style="color: red;">Erreur : ${error.message}</p>`
+        return
+      }
+
+      output.innerHTML += `<p>✅ ${data.length} carte(s) trouvée(s)</p>`
+
+      data.forEach(card => {
+        output.innerHTML += `
+          <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0; background: #f9f9f9;">
+            <h3>${card.name}</h3>
+            <p><strong>ID Produit :</strong> ${card.id_product}</p>
+            <p><strong>ID Expansion :</strong> ${card.id_expansion}</p>
+            <p><strong>ID Metacard :</strong> ${card.id_metacard}</p>
+            <p><strong>Catégorie :</strong> ${card.category_name} (ID: ${card.id_category})</p>
+            <p><strong>Date ajoutée :</strong> ${card.date_added}</p>
+            <hr>
+            <p><strong>URL construite :</strong><br>
+            <code>https://www.cardmarket.com/en/Pokemon/Products/Singles/${card.id_expansion}/${slugify(card.name)}?language=2</code></p>
+            <a href="https://www.cardmarket.com/en/Pokemon/Products/Singles/${card.id_expansion}/${slugify(card.name)}?language=2" target="_blank">Tester ce lien</a>
+          </div>
+        `
+      })
+    }
+
+    function slugify(text) {
+      return text
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\s/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+    }
+
+    checkHypno()
+  </script>
+</body>
+</html>

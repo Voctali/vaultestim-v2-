@@ -125,9 +125,22 @@ export class MultiApiService {
             if (Date.now() <= cacheEntry.expires) {
               const card = cacheEntry.data
 
-              // Vérifier si correspond à la recherche
-              if (card.name && card.name.toLowerCase().includes(queryLower)) {
-                results.push(card)
+              // Vérifier si correspond à la recherche (word boundary pour éviter faux positifs)
+              if (card.name) {
+                const cardNameLower = card.name.toLowerCase()
+
+                // Recherche par mot complet pour éviter "bea" dans "beautifly"
+                const matchesExact = cardNameLower === queryLower
+                const matchesWordBoundary = (
+                  cardNameLower === queryLower ||
+                  cardNameLower.startsWith(queryLower + ' ') ||
+                  cardNameLower.includes(' ' + queryLower + ' ') ||
+                  cardNameLower.endsWith(' ' + queryLower)
+                )
+
+                if (matchesExact || matchesWordBoundary) {
+                  results.push(card)
+                }
               }
             }
           }
