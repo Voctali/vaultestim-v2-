@@ -20,6 +20,7 @@ import { buildBlocksHierarchy } from '@/services/BlockHierarchyService'
 import { CardPreviewModal } from '@/components/features/explore/CardPreviewModal'
 import { DataMigration } from '@/components/features/settings/DataMigration'
 import { DatabaseBackup } from '@/components/features/settings/DatabaseBackup'
+import { DatabaseBackupPanel } from '@/components/features/admin/DatabaseBackupPanel'
 import { PriceMigrationPanel } from '@/components/features/admin/PriceMigrationPanel'
 import { PriceRefreshPanel } from '@/components/features/admin/PriceRefreshPanel'
 import { AttacksMigrationPanel } from '@/components/features/admin/AttacksMigrationPanel'
@@ -889,8 +890,11 @@ export function AdminDatabaseEditor() {
           {/* Migration des données IndexedDB → Backend */}
           <DataMigration />
 
-      {/* Sauvegarde de la base de données */}
+      {/* Sauvegarde de la base de données locale (IndexedDB) */}
       <DatabaseBackup />
+
+      {/* Sauvegarde complète Supabase (Cloud) */}
+      <DatabaseBackupPanel />
 
       {/* Migration des prix depuis l'API Pokemon TCG */}
       <PriceMigrationPanel />
