@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.2.8' // Dernière mise à jour: 2025-01-06 - Ajout "energy sticker"
+export const TRAINER_TRANSLATIONS_VERSION = '1.2.9' // Dernière mise à jour: 2025-01-06 - Ajout "great ball"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -333,6 +333,7 @@ const TRAINER_TRANSLATIONS = {
   'souffleur titanesque': 'megaton blower', // Objet Dresseur - Scarlet & Violet
   'stickers énergie': 'energy sticker', // Objet Dresseur - Scarlet & Violet
   'stickers energie': 'energy sticker', // Variante sans accent
+  'super ball': 'great ball', // Objet Dresseur - Poké Ball classique
   'attrape-pokémon': 'pokémon catcher', // Objet classique - Multiple rééditions
   'attrape-pokemon': 'pokemon catcher', // Variante sans accents
   'attrape-ultime': 'prime catcher', // Objet ACE SPEC - Scarlet & Violet
