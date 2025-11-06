@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.1.5' // Dernière mise à jour: 2025-01-06 - Ajout "n's pp up"
+export const TRAINER_TRANSLATIONS_VERSION = '1.1.6' // Dernière mise à jour: 2025-01-06 - Ajout "scoop up cyclone"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -302,6 +302,7 @@ const TRAINER_TRANSLATIONS = {
   'pokématos 3.0': 'pokégear 3.0', // Objet Dresseur - HeartGold & SoulSilver
   'pokematos 3.0': 'pokegear 3.0', // Variante sans accent
   'pp plus de n': 'n\'s pp up', // Objet Dresseur - Black & White
+  'rappel cyclone': 'scoop up cyclone', // Objet ACE SPEC - Scarlet & Violet
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents
