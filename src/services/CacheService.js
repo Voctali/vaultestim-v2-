@@ -389,7 +389,10 @@ export class CacheService {
       'team rocket\'s archer', 'amos de la team rocket',
       'team rocket\'s ariana', 'ariane de la team rocket',
       'team rocket\'s petrel', 'lambda de la team rocket',
-      'team rocket\'s giovanni', 'giovanni de la team rocket'
+      'team rocket\'s giovanni', 'giovanni de la team rocket',
+      // Objets Dresseur
+      'enhanced hammer', 'maillet amélioré', 'maillet ameliore',
+      'crushing hammer', 'maillet écrasant', 'maillet ecrasant'
     ]
     searchCachesToClean.forEach(searchTerm => {
       const cacheKey = `${this.CACHE_KEYS.SEARCH_RESULTS}_${searchTerm}`
