@@ -109,7 +109,8 @@
       "Bash(NUL)",
       "Bash(powershell:*)",
       "Bash(nslookup:*)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(move scriptsincrement-translation-version.js scriptsincrement-translation-version.cjs)"
     ],
     "deny": [],
     "ask": []
