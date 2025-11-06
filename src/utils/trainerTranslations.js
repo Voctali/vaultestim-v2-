@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.2.3' // Dernière mise à jour: 2025-01-06 - Ajout "sacred ash"
+export const TRAINER_TRANSLATIONS_VERSION = '1.2.4' // Dernière mise à jour: 2025-01-06 - Ajout "snorlax doll"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -301,6 +301,8 @@ const TRAINER_TRANSLATIONS = {
   'poing vengeance': 'vengeful punch', // Objet Dresseur - Scarlet & Violet
   'pokématos 3.0': 'pokégear 3.0', // Objet Dresseur - HeartGold & SoulSilver
   'pokematos 3.0': 'pokegear 3.0', // Variante sans accent
+  'poupée ronflex': 'snorlax doll', // Objet Dresseur - Carte classique
+  'poupee ronflex': 'snorlax doll', // Variante sans accent
   'pp plus de n': 'n\'s pp up', // Objet Dresseur - Black & White
   'rappel cyclone': 'scoop up cyclone', // Objet ACE SPEC - Scarlet & Violet
   'recherche d\'énergie': 'energy search', // Objet Dresseur - Carte classique de base
