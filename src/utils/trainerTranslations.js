@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.2.2' // Dernière mise à jour: 2025-01-06 - Ajout "hop's bag"
+export const TRAINER_TRANSLATIONS_VERSION = '1.2.3' // Dernière mise à jour: 2025-01-06 - Ajout "sacred ash"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -335,6 +335,8 @@ const TRAINER_TRANSLATIONS = {
   'boite a secrets': 'secret box', // Variante sans accents
   'capsule de redémarrage': 'reboot pod', // Objet
   'capsule de redemarrage': 'reboot pod', // Variante sans accents
+  'cendre sacrée': 'sacred ash', // Objet Dresseur - Carte classique
+  'cendre sacree': 'sacred ash', // Variante sans accents
   'casque miracle': 'miracle headset', // Objet
   'casquette de patrouille': 'patrol cap', // Objet
   'chariot précieux': 'precious trolley', // Objet
