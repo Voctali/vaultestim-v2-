@@ -189,7 +189,7 @@ export function CardDatabaseProvider({ children }) {
 
     const initializeDatabase = async () => {
       // Nettoyer d'abord le cache
-      CacheService.cleanLegacyApiCache()
+      CacheService.cleanLegacyApiData()
       cleanDemoDataFromCache()
 
       // Vider le cache de recherche pour les termes récemment traduits
