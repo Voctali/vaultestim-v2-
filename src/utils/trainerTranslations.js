@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.2.7' // Dernière mise à jour: 2025-01-06 - Ajout "megaton blower"
+export const TRAINER_TRANSLATIONS_VERSION = '1.2.8' // Dernière mise à jour: 2025-01-06 - Ajout "energy sticker"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -331,6 +331,8 @@ const TRAINER_TRANSLATIONS = {
   'sonnette d\'appel': 'call bell', // Objet Dresseur - Scarlet & Violet
   'sonnette appel': 'call bell', // Variante sans "d'"
   'souffleur titanesque': 'megaton blower', // Objet Dresseur - Scarlet & Violet
+  'stickers énergie': 'energy sticker', // Objet Dresseur - Scarlet & Violet
+  'stickers energie': 'energy sticker', // Variante sans accent
   'attrape-pokémon': 'pokémon catcher', // Objet classique - Multiple rééditions
   'attrape-pokemon': 'pokemon catcher', // Variante sans accents
   'attrape-ultime': 'prime catcher', // Objet ACE SPEC - Scarlet & Violet
