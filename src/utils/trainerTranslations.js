@@ -343,7 +343,9 @@ const TRAINER_TRANSLATIONS = {
   'machine technique : poing de crise': 'technical machine: crisis punch', // Machine Technique - Carte Objet
   'machine technique poing de crise': 'technical machine: crisis punch', // Variante sans deux-points
   'maillet amélioré': 'enhanced hammer', // Objet Dresseur - Carte Objet
-  'maillet ameliore': 'enhanced hammer' // Variante sans accent
+  'maillet ameliore': 'enhanced hammer', // Variante sans accent
+  'maillet écrasant': 'crushing hammer', // Objet Dresseur - Carte Objet
+  'maillet ecrasant': 'crushing hammer' // Variante sans accent
 }
 
 /**
