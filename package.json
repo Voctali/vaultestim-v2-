@@ -12,7 +12,13 @@
     "db:export": "node scripts/export-data.js",
     "db:verify": "node scripts/verify-export.js",
     "db:import": "node scripts/import-data.js",
-    "db:backup": "node scripts/export-data.js && echo '✅ Backup créé dans le dossier backups/'"
+    "db:backup": "node scripts/export-data.js && echo '✅ Backup créé dans le dossier backups/'",
+    "version:pokemon": "node scripts/increment-translation-version.cjs pokemon patch",
+    "version:pokemon:minor": "node scripts/increment-translation-version.cjs pokemon minor",
+    "version:trainer": "node scripts/increment-translation-version.cjs trainer patch",
+    "version:trainer:minor": "node scripts/increment-translation-version.cjs trainer minor",
+    "version:both": "node scripts/increment-translation-version.cjs both patch",
+    "version:both:minor": "node scripts/increment-translation-version.cjs both minor"
   },
   "dependencies": {
     "@base44/sdk": "^0.7.8",
