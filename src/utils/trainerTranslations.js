@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.2.4' // Dernière mise à jour: 2025-01-06 - Ajout "snorlax doll"
+export const TRAINER_TRANSLATIONS_VERSION = '1.2.5' // Dernière mise à jour: 2025-01-06 - Ajout "dusk ball"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -327,6 +327,7 @@ const TRAINER_TRANSLATIONS = {
   'sac de menzi': 'nemona\'s backpack', // Objet Paldea - Paldean Fates
   'sac de nabil': 'hop\'s bag', // Objet Dresseur - Sword & Shield
   'sandwich de pepper': 'arven\'s sandwich', // Objet Paldea - Carte signature d'Arven
+  'sombre ball': 'dusk ball', // Objet Dresseur - Poké Ball spéciale
   'attrape-pokémon': 'pokémon catcher', // Objet classique - Multiple rééditions
   'attrape-pokemon': 'pokemon catcher', // Variante sans accents
   'attrape-ultime': 'prime catcher', // Objet ACE SPEC - Scarlet & Violet
