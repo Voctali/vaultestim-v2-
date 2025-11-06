@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.1.7' // Dernière mise à jour: 2025-01-06 - Ajout "energy search"
+export const TRAINER_TRANSLATIONS_VERSION = '1.1.8' // Dernière mise à jour: 2025-01-06 - Ajout "energy search pro"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -306,6 +306,9 @@ const TRAINER_TRANSLATIONS = {
   'recherche d\'énergie': 'energy search', // Objet Dresseur - Carte classique de base
   'recherche d\'energie': 'energy search', // Variante sans accent
   'recherche energie': 'energy search', // Variante sans "d'"
+  'recherche d\'énergie pro': 'energy search pro', // Objet Dresseur - Version améliorée
+  'recherche d\'energie pro': 'energy search pro', // Variante sans accent
+  'recherche energie pro': 'energy search pro', // Variante sans "d'"
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents
