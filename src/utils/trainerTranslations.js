@@ -341,7 +341,9 @@ const TRAINER_TRANSLATIONS = {
   'lettre d encouragement': 'letter of encouragement', // Variante sans apostrophe ni accent
   'love ball': 'love ball', // Objet - Poké Ball (même nom en français/anglais)
   'machine technique : poing de crise': 'technical machine: crisis punch', // Machine Technique - Carte Objet
-  'machine technique poing de crise': 'technical machine: crisis punch' // Variante sans deux-points
+  'machine technique poing de crise': 'technical machine: crisis punch', // Variante sans deux-points
+  'maillet amélioré': 'enhanced hammer', // Objet Dresseur - Carte Objet
+  'maillet ameliore': 'enhanced hammer' // Variante sans accent
 }
 
 /**
