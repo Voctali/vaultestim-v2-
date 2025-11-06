@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.1.0' // Dernière mise à jour: 2025-11-06
+export const TRAINER_TRANSLATIONS_VERSION = '1.1.1' // Dernière mise à jour: 2025-01-06 - Fix cache "picnic basket"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -291,6 +291,10 @@ const TRAINER_TRANSLATIONS = {
   'orbe teracristal': 'tera orb', // Variante sans accent
   'panier de pique-nique': 'picnic basket', // Objet Dresseur - Scarlet & Violet
   'panier de pique nique': 'picnic basket', // Variante sans tiret
+  'perche à motismart': 'roto-stick', // Objet Dresseur - Prismatic Evolutions (Chercher Supporters)
+  'perche a motismart': 'roto-stick', // Variante sans accent
+  'pièce énergie': 'energy coin', // Objet Dresseur - Permet de manipuler les énergies
+  'piece energie': 'energy coin', // Variante sans accent
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents

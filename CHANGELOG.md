@@ -8,7 +8,7 @@ Historique détaillé de toutes les fonctionnalités implémentées, corrections
 
 - [Fonctionnalités Majeures (1-40)](#fonctionnalités-majeures-1-40)
 - [Traductions et Corrections (41-50)](#traductions-et-corrections-41-50)
-- [Améliorations UX et Fixes (51-76)](#améliorations-ux-et-fixes-51-76)
+- [Améliorations UX et Fixes (51-79)](#améliorations-ux-et-fixes-51-79)
 
 ---
 
@@ -203,7 +203,7 @@ Correction du catch-all capturant les routes API :
 
 ---
 
-## Améliorations UX et Fixes (51-76)
+## Améliorations UX et Fixes (51-79)
 
 ### 51. 🎴 Enrichissement Traductions Dresseurs (11 nouvelles)
 Traductions Paldea (hassa, irido, kassis), Hisui (nacchara), Unova (clown, ludvina), Supporters générales (guide d'exploration, juge, intendant).
@@ -311,6 +311,26 @@ Création de 3 nouveaux dossiers pour organiser les 57 fichiers de la racine :
 
 ### 76. 🎴 Traduction Dresseur - Masque de Monstre
 `'masque de monstre': 'ogre\'s mask'` - Objet Dresseur.
+
+### 77. 🐛 Fix Critique - Cache des Résultats Vides
+**Problème** : Les recherches retournant 0 résultats étaient mises en cache pendant 15 minutes, empêchant les nouvelles recherches même après l'ajout de traductions.
+
+**Solution** : Ne plus mettre en cache les résultats vides (`TCGdxService.js:256-263`).
+
+**Bénéfices** :
+- ✅ Les nouvelles traductions fonctionnent immédiatement
+- ✅ Plus besoin de vider le cache manuellement
+- ✅ Plus besoin d'incrémenter les versions à chaque traduction
+
+**Fichier** : `src/services/TCGdxService.js`
+
+### 78. 🎴 Traduction Dresseur - Perche à Motismart
+`'perche à motismart': 'roto-stick'` + variante sans accent - Objet Dresseur (Prismatic Evolutions).
+
+Permet de chercher des cartes Supporter depuis le deck.
+
+### 79. 🎴 Traduction Dresseur - Pièce Énergie
+`'pièce énergie': 'energy coin'` + variante sans accent - Objet Dresseur (Black Bolt BLK 081).
 
 ---
 

@@ -2,7 +2,7 @@
 
 Guide de référence pour Claude Code lors du travail avec le code de ce dépôt.
 
-> **📋 Historique Détaillé** : Voir [CHANGELOG.md](./CHANGELOG.md) pour l'historique complet des 68 fonctionnalités implémentées.
+> **📋 Historique Détaillé** : Voir [CHANGELOG.md](./CHANGELOG.md) pour l'historique complet des 79 fonctionnalités implémentées.
 
 ---
 

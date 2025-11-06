@@ -253,8 +253,14 @@ export class TCGdxService {
 
       const normalizedCards = this.normalizePokemonTCGData(cards)
 
-      // Mettre en cache pour 15 minutes
-      CacheService.setCache(cacheKey, normalizedCards, 15 * 60 * 1000)
+      // Mettre en cache UNIQUEMENT si des résultats ont été trouvés
+      // Ne pas cacher les résultats vides pour permettre de futures recherches après ajout de traductions
+      if (normalizedCards.length > 0) {
+        CacheService.setCache(cacheKey, normalizedCards, 15 * 60 * 1000)
+        console.log(`💾 ${normalizedCards.length} cartes mises en cache pour 15 minutes`)
+      } else {
+        console.log(`⚠️ Résultat vide non mis en cache (permet futures recherches)`)
+      }
 
       console.log(`✅ Pokemon TCG trouvé ${normalizedCards.length} cartes pour "${query}"`)
       return normalizedCards
