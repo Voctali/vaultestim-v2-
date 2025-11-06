@@ -355,8 +355,24 @@ export function CollectionProvider({ children }) {
       }
     })
 
-    console.log('✅ [useMemo duplicates] Doublons finaux:', uniqueDuplicates.length)
-    return uniqueDuplicates
+    // Trier par extension (plus récent en premier) puis par numéro de carte
+    const sortedDuplicates = uniqueDuplicates.sort((a, b) => {
+      // 1. Trier par date de sortie de l'extension (plus récent en premier)
+      const dateA = a.set?.releaseDate ? new Date(a.set.releaseDate) : new Date(0)
+      const dateB = b.set?.releaseDate ? new Date(b.set.releaseDate) : new Date(0)
+
+      if (dateB.getTime() !== dateA.getTime()) {
+        return dateB.getTime() - dateA.getTime()
+      }
+
+      // 2. Si même extension, trier par numéro de carte
+      const numA = parseInt(a.number) || 0
+      const numB = parseInt(b.number) || 0
+      return numA - numB
+    })
+
+    console.log('✅ [useMemo duplicates] Doublons finaux (triés):', sortedDuplicates.length)
+    return sortedDuplicates
   }, [collection]) // Recalculer uniquement quand collection change
 
   // Gestion des lots de doublons
