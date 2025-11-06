@@ -8,7 +8,7 @@ Historique détaillé de toutes les fonctionnalités implémentées, corrections
 
 - [Fonctionnalités Majeures (1-40)](#fonctionnalités-majeures-1-40)
 - [Traductions et Corrections (41-50)](#traductions-et-corrections-41-50)
-- [Améliorations UX et Fixes (51-68)](#améliorations-ux-et-fixes-51-68)
+- [Améliorations UX et Fixes (51-76)](#améliorations-ux-et-fixes-51-76)
 
 ---
 
@@ -203,7 +203,7 @@ Correction du catch-all capturant les routes API :
 
 ---
 
-## Améliorations UX et Fixes (51-68)
+## Améliorations UX et Fixes (51-76)
 
 ### 51. 🎴 Enrichissement Traductions Dresseurs (11 nouvelles)
 Traductions Paldea (hassa, irido, kassis), Hisui (nacchara), Unova (clown, ludvina), Supporters générales (guide d'exploration, juge, intendant).
@@ -264,6 +264,53 @@ Nomenclature française PCA : 10+ COLLECTOR, 10 NEUF SUP', 9.5 NEUF, ..., 1 TRÈ
 
 ### 68. 🎴 Traduction Dresseur - Rosemary
 `'rosemary': 'marnie'` - Rivale principale de Pokémon Épée/Bouclier (Galar Gen 8).
+
+### 69. 🎴 Traduction Dresseur - Machine Technique : Poing de Crise
+`'machine technique : poing de crise': 'technical machine: crisis punch'` + variante sans deux-points - Carte Objet Dresseur.
+
+### 70. 📂 Réorganisation Structure Projet
+Création de 3 nouveaux dossiers pour organiser les 57 fichiers de la racine :
+- `.debug/` : 24 fichiers HTML de debug (check-*, clear-*, debug-*, etc.)
+- `.scripts/` : 20 scripts utilitaires et fixes (fix-*.cjs, test-*.js, etc.)
+- `.docs/` : 2 fichiers de documentation technique
+- **Impact** : Racine réduite de 57 à 6 fichiers essentiels (config uniquement)
+
+### 71. 📝 Réduction CLAUDE.md (93%)
+- **Avant** : 101,049 caractères (trop large pour lecture)
+- **Après** : 7,217 caractères (guide de référence condensé)
+- **Création CHANGELOG.md** : 14,170 caractères avec historique complet de 68+ fonctionnalités
+- **Organisation** : 3 sections (Fonctionnalités Majeures 1-40, Traductions 41-50, UX/Fixes 51-68)
+
+### 72. 🎴 Traduction Dresseur - Maillet Amélioré
+`'maillet amélioré': 'enhanced hammer'` + variante sans accent - Objet Dresseur.
+
+### 73. 🎴 Traduction Dresseur - Maillet Écrasant
+`'maillet écrasant': 'crushing hammer'` + variante sans accent - Objet Dresseur.
+
+### 74. 🔧 Fix Critique - cleanLegacyApiData()
+- **Problème** : Erreur `TypeError: zs.cleanLegacyApiCache is not a function` bloquait le chargement
+- **Cause** : Double erreur sur le nom de méthode (`cleanOldApiCache` → `cleanLegacyApiCache` → `cleanLegacyApiData`)
+- **Impact** : 0 cartes, 0 extensions, 0 blocs chargés
+- **Fichier** : `src/hooks/useCardDatabase.jsx` ligne 192
+
+### 75. 📦 Système de Backup/Restauration Supabase
+- **DatabaseBackupService** : Export/import complet de toutes les tables Supabase
+- **DatabaseBackupPanel** : Interface admin avec 3 sections :
+  1. **Créer backup** : Télécharge fichier JSON complet (toutes les tables)
+  2. **Analyser backup** : Voir contenu et statistiques sans restaurer
+  3. **Restaurer backup** : Avec confirmation, barre de progression et résultats détaillés
+- **Données incluses** : discovered_cards (base commune), user_collection, user_favorites, user_wishlist, sealed_products, sales, duplicate_lots, user_cardmarket_matches, discovered_sets
+- **Fonctionnalités** :
+  - Restauration intelligente avec upsert (pas de doublons)
+  - Remplace user_id automatiquement lors de la restauration
+  - Fichier JSON portable et compressible
+  - Protection contre perte de données
+  - Multi-device : Restaurez sur n'importe quel appareil
+- **Accès** : Admin → Base de Données → Section "Sauvegarde complète Supabase (Cloud)"
+- **Complémentaire** : S'ajoute au backup IndexedDB existant (local vs cloud)
+
+### 76. 🎴 Traduction Dresseur - Masque de Monstre
+`'masque de monstre': 'ogre\'s mask'` - Objet Dresseur.
 
 ---
 
