@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.7.2' // Dernière mise à jour: 2025-01-07 - Ajout "yell horn"
+export const TRAINER_TRANSLATIONS_VERSION = '1.7.3' // Dernière mise à jour: 2025-01-07 - Ajout "familiar bell"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -410,6 +410,8 @@ const TRAINER_TRANSLATIONS = {
   'chaussures de randonnée': 'trekking shoes', // Objet Dresseur
   'chaussures de randonnee': 'trekking shoes', // Variante sans accent
   'clairon de la team yell': 'yell horn', // Objet Dresseur - Galar
+  'cloche familière': 'familiar bell', // Objet Dresseur
+  'cloche familiere': 'familiar bell', // Variante sans accent
   'civière nocturne': 'night stretcher', // Objet
   'civiere nocturne': 'night stretcher', // Variante sans accent
   'combat au lait': 'fighting au lait', // Objet - Boisson café latte
