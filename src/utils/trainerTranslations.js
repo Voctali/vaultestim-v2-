@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.3.4' // Dernière mise à jour: 2025-01-06 - Ajout "team rocket's great ball"
+export const TRAINER_TRANSLATIONS_VERSION = '1.3.5' // Dernière mise à jour: 2025-01-06 - Ajout "team rocket's transceiver"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -324,6 +324,10 @@ const TRAINER_TRANSLATIONS = {
   'robot-bêtant de la team rocket': 'team rocket\'s bother-bot', // Objet Dresseur - Prismatic Evolutions
   'robot-betant de la team rocket': 'team rocket\'s bother-bot', // Variante sans accent
   'robot betant de la team rocket': 'team rocket\'s bother-bot', // Variante sans tiret ni accent
+  'émetteur-récepteur de la team rocket': 'team rocket\'s transceiver', // Objet Dresseur - Prismatic Evolutions
+  'émetteur-recepteur de la team rocket': 'team rocket\'s transceiver', // Variante sans accent "é"
+  'emetteur-recepteur de la team rocket': 'team rocket\'s transceiver', // Variante sans accents
+  'emetteur recepteur de la team rocket': 'team rocket\'s transceiver', // Variante sans accents ni tiret
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents
