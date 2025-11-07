@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.3.6' // Dernière mise à jour: 2025-01-06 - Ajout "team rocket's venture bomb"
+export const TRAINER_TRANSLATIONS_VERSION = '1.3.7' // Dernière mise à jour: 2025-01-06 - Ajout "tm machine"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -346,6 +346,8 @@ const TRAINER_TRANSLATIONS = {
   'tambour éveil': 'awakening drum', // Objet Dresseur - Sword & Shield
   'tambour eveil': 'awakening drum', // Variante sans accent
   'tampon injuste': 'unfair stamp', // Objet ACE SPEC - Scarlet & Violet
+  'machine à ct': 'tm machine', // Objet Dresseur - Scarlet & Violet
+  'machine a ct': 'tm machine', // Variante sans accent
   'attrape-pokémon': 'pokémon catcher', // Objet classique - Multiple rééditions
   'attrape-pokemon': 'pokemon catcher', // Variante sans accents
   'attrape-ultime': 'prime catcher', // Objet ACE SPEC - Scarlet & Violet
