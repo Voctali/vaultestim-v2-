@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.5.8' // Dernière mise à jour: 2025-01-07 - Ajout "fog crystal"
+export const TRAINER_TRANSLATIONS_VERSION = '1.5.9' // Dernière mise à jour: 2025-01-07 - Ajout "windup arm"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -381,6 +381,8 @@ const TRAINER_TRANSLATIONS = {
   'boîte à désastre': 'box of disaster', // Objet Dresseur
   'boite a desastre': 'box of disaster', // Variante sans accents
   'boule de cristal brume': 'fog crystal', // Objet Dresseur
+  'bras à remontoir': 'windup arm', // Objet Dresseur
+  'bras a remontoir': 'windup arm', // Variante sans accent
   'capsule de redémarrage': 'reboot pod', // Objet
   'capsule de redemarrage': 'reboot pod', // Variante sans accents
   'cendre sacrée': 'sacred ash', // Objet Dresseur - Carte classique
