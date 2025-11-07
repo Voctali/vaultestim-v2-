@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.6.3' // Dernière mise à jour: 2025-01-07 - Ajout "memory capsule"
+export const TRAINER_TRANSLATIONS_VERSION = '1.6.4' // Dernière mise à jour: 2025-01-07 - Ajout "rocky helmet"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -395,6 +395,7 @@ const TRAINER_TRANSLATIONS = {
   'cendre sacrée': 'sacred ash', // Objet Dresseur - Carte classique
   'cendre sacree': 'sacred ash', // Variante sans accents
   'casque miracle': 'miracle headset', // Objet
+  'casque brut': 'rocky helmet', // Objet Dresseur
   'casquette de patrouille': 'patrol cap', // Objet
   'chariot précieux': 'precious trolley', // Objet
   'chariot precieux': 'precious trolley', // Variante sans accent
