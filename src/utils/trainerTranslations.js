@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.5.6' // Dernière mise à jour: 2025-01-07 - Ajout "tool jammer"
+export const TRAINER_TRANSLATIONS_VERSION = '1.5.7' // Dernière mise à jour: 2025-01-07 - Ajout "box of disaster"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -378,6 +378,8 @@ const TRAINER_TRANSLATIONS = {
   'bloqueur d outil': 'tool jammer', // Variante sans apostrophe
   'boîte à secrets': 'secret box', // Objet
   'boite a secrets': 'secret box', // Variante sans accents
+  'boîte à désastre': 'box of disaster', // Objet Dresseur
+  'boite a desastre': 'box of disaster', // Variante sans accents
   'capsule de redémarrage': 'reboot pod', // Objet
   'capsule de redemarrage': 'reboot pod', // Variante sans accents
   'cendre sacrée': 'sacred ash', // Objet Dresseur - Carte classique
