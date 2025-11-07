@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.5.7' // Dernière mise à jour: 2025-01-07 - Ajout "box of disaster"
+export const TRAINER_TRANSLATIONS_VERSION = '1.5.8' // Dernière mise à jour: 2025-01-07 - Ajout "fog crystal"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -380,6 +380,7 @@ const TRAINER_TRANSLATIONS = {
   'boite a secrets': 'secret box', // Variante sans accents
   'boîte à désastre': 'box of disaster', // Objet Dresseur
   'boite a desastre': 'box of disaster', // Variante sans accents
+  'boule de cristal brume': 'fog crystal', // Objet Dresseur
   'capsule de redémarrage': 'reboot pod', // Objet
   'capsule de redemarrage': 'reboot pod', // Variante sans accents
   'cendre sacrée': 'sacred ash', // Objet Dresseur - Carte classique
