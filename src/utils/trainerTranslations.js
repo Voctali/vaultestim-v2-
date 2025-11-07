@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.5.4' // Dernière mise à jour: 2025-01-07 - Ajout "vitality band"
+export const TRAINER_TRANSLATIONS_VERSION = '1.5.5' // Dernière mise à jour: 2025-01-07 - Ajout "big charm"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -421,6 +421,7 @@ const TRAINER_TRANSLATIONS = {
   'flute d accompagnement': 'accompanying flute', // Variante sans apostrophe ni accent
   'générateur électrique': 'electric generator', // Objet
   'generateur electrique': 'electric generator', // Variante sans accents
+  'grande amulette': 'big charm', // Objet Dresseur
   'hyper arôme': 'hyper aroma', // Objet
   'hyper arome': 'hyper aroma', // Variante sans accent
   'hyper ball': 'ultra ball', // Objet classique - Multiple rééditions
