@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.6.8' // Dernière mise à jour: 2025-01-07 - Ajout "crystal cave"
+export const TRAINER_TRANSLATIONS_VERSION = '1.6.9' // Dernière mise à jour: 2025-01-07 - Ajout "choice belt"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -402,6 +402,7 @@ const TRAINER_TRANSLATIONS = {
   'casque marmite': 'pot helmet', // Objet Dresseur
   'casquette de patrouille': 'patrol cap', // Objet
   'caverne de cristal': 'crystal cave', // Objet Dresseur - Stade
+  'ceinture choix': 'choice belt', // Objet Dresseur
   'chariot précieux': 'precious trolley', // Objet
   'chariot precieux': 'precious trolley', // Variante sans accent
   'civière nocturne': 'night stretcher', // Objet
