@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.7.8' // Dernière mise à jour: 2025-01-07 - Ajout "cross switcher"
+export const TRAINER_TRANSLATIONS_VERSION = '1.7.9' // Dernière mise à jour: 2025-01-07 - Ajout "metal saucer"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -443,6 +443,8 @@ const TRAINER_TRANSLATIONS = {
   'échange d\'énergie': 'energy switch', // Objet classique - Multiple rééditions
   'echange d\'energie': 'energy switch', // Variante sans accents
   'echange d energie': 'energy switch', // Variante sans apostrophe ni accents
+  'écusson métal': 'metal saucer', // Objet Dresseur
+  'ecusson metal': 'metal saucer', // Variante sans accent
   'élixir de dragon': 'dragon elixir', // Objet
   'elixir de dragon': 'dragon elixir', // Variante sans accent
   'recycleur d\'énergie': 'energy recycler', // Objet
