@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.6.5' // Dernière mise à jour: 2025-01-07 - Ajout "rugged helmet"
+export const TRAINER_TRANSLATIONS_VERSION = '1.6.6' // Dernière mise à jour: 2025-01-07 - Ajout "full face guard"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -397,6 +397,8 @@ const TRAINER_TRANSLATIONS = {
   'casque miracle': 'miracle headset', // Objet
   'casque brut': 'rocky helmet', // Objet Dresseur
   'casque costaud': 'rugged helmet', // Objet Dresseur
+  'casque intégral': 'full face guard', // Objet Dresseur
+  'casque integral': 'full face guard', // Variante sans accent
   'casquette de patrouille': 'patrol cap', // Objet
   'chariot précieux': 'precious trolley', // Objet
   'chariot precieux': 'precious trolley', // Variante sans accent
