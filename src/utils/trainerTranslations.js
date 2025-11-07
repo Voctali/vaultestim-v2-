@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.7.9' // Dernière mise à jour: 2025-01-07 - Ajout "metal saucer"
+export const TRAINER_TRANSLATIONS_VERSION = '1.8.0' // Dernière mise à jour: 2025-01-07 - Ajout "evolution incense"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -447,6 +447,9 @@ const TRAINER_TRANSLATIONS = {
   'ecusson metal': 'metal saucer', // Variante sans accent
   'élixir de dragon': 'dragon elixir', // Objet
   'elixir de dragon': 'dragon elixir', // Variante sans accent
+  'encens d\'évolution': 'evolution incense', // Objet Dresseur
+  'encens d\'evolution': 'evolution incense', // Variante sans accent
+  'encens d evolution': 'evolution incense', // Variante sans apostrophe ni accent
   'recycleur d\'énergie': 'energy recycler', // Objet
   'recycleur d\'energie': 'energy recycler', // Variante sans accent
   'recycleur d energie': 'energy recycler', // Variante sans apostrophe ni accent
