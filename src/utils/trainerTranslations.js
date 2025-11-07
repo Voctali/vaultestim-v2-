@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.3.2' // Dernière mise à jour: 2025-01-06 - Ajout "unfair stamp"
+export const TRAINER_TRANSLATIONS_VERSION = '1.3.3' // Dernière mise à jour: 2025-01-06 - Ajout "team rocket's bother-bot"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -321,6 +321,9 @@ const TRAINER_TRANSLATIONS = {
   'recuperation d\'energie superieure': 'superior energy retrieval', // Variante sans accents
   'recuperation energie superieure': 'superior energy retrieval', // Variante sans accents ni "d'"
   'registre ami': 'pal pad', // Objet Dresseur - Diamond & Pearl / HeartGold SoulSilver
+  'robot-bêtant de la team rocket': 'team rocket\'s bother-bot', // Objet Dresseur - Prismatic Evolutions
+  'robot-betant de la team rocket': 'team rocket\'s bother-bot', // Variante sans accent
+  'robot betant de la team rocket': 'team rocket\'s bother-bot', // Variante sans tiret ni accent
   'sauvegarde de rose': 'roseanne\'s backup', // Carte Supporter - Diamond & Pearl
   'découverte de l\'aventurière': 'adventurer\'s discovery', // Carte Objet
   'decouverte de l\'aventuriere': 'adventurer\'s discovery', // Variante sans accents
