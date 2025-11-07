@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.4.5' // Dernière mise à jour: 2025-01-07 - Ajout "blunder policy"
+export const TRAINER_TRANSLATIONS_VERSION = '1.4.6' // Dernière mise à jour: 2025-01-07 - Ajout "elemental badge"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -267,6 +267,8 @@ const TRAINER_TRANSLATIONS = {
   // OBJETS ET CARTES DRESSEUR
   // ========================================
 
+  'badge élémentaire': 'elemental badge', // Objet Dresseur
+  'badge elementaire': 'elemental badge', // Variante sans accent
   'bandeau rigide': 'rigid band',
   'lunettes de protection': 'protective goggles',
   'piste cyclable': 'cycling road',
