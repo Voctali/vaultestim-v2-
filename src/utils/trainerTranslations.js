@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.6.2' // Dernière mise à jour: 2025-01-07 - Ajout "cape of toughness"
+export const TRAINER_TRANSLATIONS_VERSION = '1.6.3' // Dernière mise à jour: 2025-01-07 - Ajout "memory capsule"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -390,6 +390,8 @@ const TRAINER_TRANSLATIONS = {
   'cape d endurance': 'cape of toughness', // Variante sans apostrophe
   'capsule de redémarrage': 'reboot pod', // Objet
   'capsule de redemarrage': 'reboot pod', // Variante sans accents
+  'capsule mémoire': 'memory capsule', // Objet Dresseur
+  'capsule memoire': 'memory capsule', // Variante sans accent
   'cendre sacrée': 'sacred ash', // Objet Dresseur - Carte classique
   'cendre sacree': 'sacred ash', // Variante sans accents
   'casque miracle': 'miracle headset', // Objet
