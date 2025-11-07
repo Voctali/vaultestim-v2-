@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.7.6' // Dernière mise à jour: 2025-01-07 - Ajout "echoing horn"
+export const TRAINER_TRANSLATIONS_VERSION = '1.7.7' // Dernière mise à jour: 2025-01-07 - Ajout "spicy seasoned curry"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -416,6 +416,8 @@ const TRAINER_TRANSLATIONS = {
   'corde sortie': 'escape rope', // Objet Dresseur
   'corne résonnante': 'echoing horn', // Objet Dresseur
   'corne resonnante': 'echoing horn', // Variante sans accent
+  'curry épicé aux piments': 'spicy seasoned curry', // Objet Dresseur
+  'curry epice aux piments': 'spicy seasoned curry', // Variante sans accent
   'civière nocturne': 'night stretcher', // Objet
   'civiere nocturne': 'night stretcher', // Variante sans accent
   'combat au lait': 'fighting au lait', // Objet - Boisson café latte
