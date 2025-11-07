@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.3.5' // Dernière mise à jour: 2025-01-06 - Ajout "team rocket's transceiver"
+export const TRAINER_TRANSLATIONS_VERSION = '1.3.6' // Dernière mise à jour: 2025-01-06 - Ajout "team rocket's venture bomb"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -350,6 +350,8 @@ const TRAINER_TRANSLATIONS = {
   'attrape-pokemon': 'pokemon catcher', // Variante sans accents
   'attrape-ultime': 'prime catcher', // Objet ACE SPEC - Scarlet & Violet
   'attrape ultime': 'prime catcher', // Variante sans tiret
+  'bombe risquée de la team rocket': 'team rocket\'s venture bomb', // Objet Dresseur - Prismatic Evolutions
+  'bombe risquee de la team rocket': 'team rocket\'s venture bomb', // Variante sans accent
   'billet à échanger': 'redeemable ticket', // Objet
   'billet a echanger': 'redeemable ticket', // Variante sans accents
   'boîte à secrets': 'secret box', // Objet
