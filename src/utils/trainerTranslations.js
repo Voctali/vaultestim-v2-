@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.5.5' // Dernière mise à jour: 2025-01-07 - Ajout "big charm"
+export const TRAINER_TRANSLATIONS_VERSION = '1.5.6' // Dernière mise à jour: 2025-01-07 - Ajout "tool jammer"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -374,6 +374,8 @@ const TRAINER_TRANSLATIONS = {
   'bombe risquee de la team rocket': 'team rocket\'s venture bomb', // Variante sans accent
   'billet à échanger': 'redeemable ticket', // Objet
   'billet a echanger': 'redeemable ticket', // Variante sans accents
+  'bloqueur d\'outil': 'tool jammer', // Objet Dresseur
+  'bloqueur d outil': 'tool jammer', // Variante sans apostrophe
   'boîte à secrets': 'secret box', // Objet
   'boite a secrets': 'secret box', // Variante sans accents
   'capsule de redémarrage': 'reboot pod', // Objet
