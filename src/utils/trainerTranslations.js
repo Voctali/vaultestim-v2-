@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Traductions Français → Anglais pour les cartes Dresseur
  *
  * Ce fichier contient les traductions des noms de dresseurs (champions d'arène,
@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.4.2' // Dernière mise à jour: 2025-01-06 - Ajout "antique old amber"
+export const TRAINER_TRANSLATIONS_VERSION = '1.4.3' // Dernière mise à jour: 2025-01-07 - Ajout "capturing aroma"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -379,6 +379,8 @@ const TRAINER_TRANSLATIONS = {
   'commande emballee': 'boxed order', // Variante sans accent
   'attrape-riposte': 'counter catcher', // Objet
   'attrape riposte': 'counter catcher', // Variante sans tiret
+  'arôme captivant': 'capturing aroma', // Objet Dresseur
+  'arome captivant': 'capturing aroma', // Variante sans accent
   'détecteur de trésors': 'treasure tracker', // Objet
   'detecteur de tresors': 'treasure tracker', // Variante sans accents
   'drone livreur': 'delivery drone', // Objet
