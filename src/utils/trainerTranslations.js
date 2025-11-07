@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.6.9' // Dernière mise à jour: 2025-01-07 - Ajout "choice belt"
+export const TRAINER_TRANSLATIONS_VERSION = '1.7.0' // Dernière mise à jour: 2025-01-07 - Ajout "switch cart"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -403,6 +403,8 @@ const TRAINER_TRANSLATIONS = {
   'casquette de patrouille': 'patrol cap', // Objet
   'caverne de cristal': 'crystal cave', // Objet Dresseur - Stade
   'ceinture choix': 'choice belt', // Objet Dresseur
+  'chariot échange': 'switch cart', // Objet Dresseur
+  'chariot echange': 'switch cart', // Variante sans accent
   'chariot précieux': 'precious trolley', // Objet
   'chariot precieux': 'precious trolley', // Variante sans accent
   'civière nocturne': 'night stretcher', // Objet
