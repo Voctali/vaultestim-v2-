@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.3.3' // Dernière mise à jour: 2025-01-06 - Ajout "team rocket's bother-bot"
+export const TRAINER_TRANSLATIONS_VERSION = '1.3.4' // Dernière mise à jour: 2025-01-06 - Ajout "team rocket's great ball"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -337,6 +337,7 @@ const TRAINER_TRANSLATIONS = {
   'stickers énergie': 'energy sticker', // Objet Dresseur - Scarlet & Violet
   'stickers energie': 'energy sticker', // Variante sans accent
   'super ball': 'great ball', // Objet Dresseur - Poké Ball classique
+  'super ball de la team rocket': 'team rocket\'s great ball', // Objet Dresseur - Prismatic Evolutions
   'super bonbon': 'rare candy', // Objet Dresseur - Carte classique d'évolution
   'tambour éveil': 'awakening drum', // Objet Dresseur - Sword & Shield
   'tambour eveil': 'awakening drum', // Variante sans accent
