@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.8.0' // Dernière mise à jour: 2025-01-07 - Ajout "evolution incense"
+export const TRAINER_TRANSLATIONS_VERSION = '1.8.1' // Dernière mise à jour: 2025-01-07 - Ajout "scoop up net"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -450,6 +450,8 @@ const TRAINER_TRANSLATIONS = {
   'encens d\'évolution': 'evolution incense', // Objet Dresseur
   'encens d\'evolution': 'evolution incense', // Variante sans accent
   'encens d evolution': 'evolution incense', // Variante sans apostrophe ni accent
+  'épuisette de rappel': 'scoop up net', // Objet Dresseur
+  'epuisette de rappel': 'scoop up net', // Variante sans accent
   'recycleur d\'énergie': 'energy recycler', // Objet
   'recycleur d\'energie': 'energy recycler', // Variante sans accent
   'recycleur d energie': 'energy recycler', // Variante sans apostrophe ni accent
