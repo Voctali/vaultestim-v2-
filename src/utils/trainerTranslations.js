@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.5.2' // Dernière mise à jour: 2025-01-07 - Ajout "air balloon"
+export const TRAINER_TRANSLATIONS_VERSION = '1.5.3' // Dernière mise à jour: 2025-01-07 - Ajout "burning scarf"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -275,6 +275,8 @@ const TRAINER_TRANSLATIONS = {
   'baie prine': 'lum berry', // Objet - Baie
   'baie sitrus': 'sitrus berry', // Objet - Baie
   'ballon': 'air balloon', // Objet Dresseur
+  'bandana brûlant': 'burning scarf', // Objet Dresseur
+  'bandana brulant': 'burning scarf', // Variante sans accent
   'bandeau rigide': 'rigid band',
   'lunettes de protection': 'protective goggles',
   'piste cyclable': 'cycling road',
