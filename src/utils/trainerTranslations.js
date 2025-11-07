@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.5.9' // Dernière mise à jour: 2025-01-07 - Ajout "windup arm"
+export const TRAINER_TRANSLATIONS_VERSION = '1.6.0' // Dernière mise à jour: 2025-01-07 - Ajout "tool box"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -383,6 +383,8 @@ const TRAINER_TRANSLATIONS = {
   'boule de cristal brume': 'fog crystal', // Objet Dresseur
   'bras à remontoir': 'windup arm', // Objet Dresseur
   'bras a remontoir': 'windup arm', // Variante sans accent
+  'caisse à outils': 'tool box', // Objet Dresseur
+  'caisse a outils': 'tool box', // Variante sans accent
   'capsule de redémarrage': 'reboot pod', // Objet
   'capsule de redemarrage': 'reboot pod', // Variante sans accents
   'cendre sacrée': 'sacred ash', // Objet Dresseur - Carte classique
