@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.6.1' // Dernière mise à jour: 2025-01-07 - Ajout "ordinary rod"
+export const TRAINER_TRANSLATIONS_VERSION = '1.6.2' // Dernière mise à jour: 2025-01-07 - Ajout "cape of toughness"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -386,6 +386,8 @@ const TRAINER_TRANSLATIONS = {
   'caisse à outils': 'tool box', // Objet Dresseur
   'caisse a outils': 'tool box', // Variante sans accent
   'canne ordinaire': 'ordinary rod', // Objet Dresseur
+  'cape d\'endurance': 'cape of toughness', // Objet Dresseur
+  'cape d endurance': 'cape of toughness', // Variante sans apostrophe
   'capsule de redémarrage': 'reboot pod', // Objet
   'capsule de redemarrage': 'reboot pod', // Variante sans accents
   'cendre sacrée': 'sacred ash', // Objet Dresseur - Carte classique
