@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.5.3' // Dernière mise à jour: 2025-01-07 - Ajout "burning scarf"
+export const TRAINER_TRANSLATIONS_VERSION = '1.5.4' // Dernière mise à jour: 2025-01-07 - Ajout "vitality band"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -278,6 +278,8 @@ const TRAINER_TRANSLATIONS = {
   'bandana brûlant': 'burning scarf', // Objet Dresseur
   'bandana brulant': 'burning scarf', // Variante sans accent
   'bandeau rigide': 'rigid band',
+  'bandeau vitalité': 'vitality band', // Objet Dresseur
+  'bandeau vitalite': 'vitality band', // Variante sans accent
   'lunettes de protection': 'protective goggles',
   'piste cyclable': 'cycling road',
   'gros ballon': 'big air balloon',
