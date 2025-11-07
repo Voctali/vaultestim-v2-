@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.6.7' // Dernière mise à jour: 2025-01-07 - Ajout "pot helmet"
+export const TRAINER_TRANSLATIONS_VERSION = '1.6.8' // Dernière mise à jour: 2025-01-07 - Ajout "crystal cave"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -401,6 +401,7 @@ const TRAINER_TRANSLATIONS = {
   'casque integral': 'full face guard', // Variante sans accent
   'casque marmite': 'pot helmet', // Objet Dresseur
   'casquette de patrouille': 'patrol cap', // Objet
+  'caverne de cristal': 'crystal cave', // Objet Dresseur - Stade
   'chariot précieux': 'precious trolley', // Objet
   'chariot precieux': 'precious trolley', // Variante sans accent
   'civière nocturne': 'night stretcher', // Objet
