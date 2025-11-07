@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.4.4' // Dernière mise à jour: 2025-01-07 - Ajout "lost vacuum"
+export const TRAINER_TRANSLATIONS_VERSION = '1.4.5' // Dernière mise à jour: 2025-01-07 - Ajout "blunder policy"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -378,6 +378,8 @@ const TRAINER_TRANSLATIONS = {
   'commande emballée': 'boxed order', // Objet
   'commande emballee': 'boxed order', // Variante sans accent
   'aspirateur perdu': 'lost vacuum', // Objet Dresseur
+  'assurance échec': 'blunder policy', // Objet Dresseur - Battle Styles (BRS)
+  'assurance echec': 'blunder policy', // Variante sans accent
   'attrape-riposte': 'counter catcher', // Objet
   'attrape riposte': 'counter catcher', // Variante sans tiret
   'arôme captivant': 'capturing aroma', // Objet Dresseur
