@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.7.7' // Dernière mise à jour: 2025-01-07 - Ajout "spicy seasoned curry"
+export const TRAINER_TRANSLATIONS_VERSION = '1.7.8' // Dernière mise à jour: 2025-01-07 - Ajout "cross switcher"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -434,6 +434,8 @@ const TRAINER_TRANSLATIONS = {
   'detecteur de tresors': 'treasure tracker', // Variante sans accents
   'drone livreur': 'delivery drone', // Objet
   'urne terrestre': 'earthen vessel', // Objet
+  'échange croisé': 'cross switcher', // Objet Dresseur
+  'echange croise': 'cross switcher', // Variante sans accents
   'échange': 'switch', // Objet classique - Multiple rééditions
   'echange': 'switch', // Variante sans accent
   'échange combiné': 'scramble switch', // Objet ACE SPEC
