@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.4.1' // Dernière mise à jour: 2025-01-06 - Ajout "earthen vessel"
+export const TRAINER_TRANSLATIONS_VERSION = '1.4.2' // Dernière mise à jour: 2025-01-06 - Ajout "antique old amber"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -351,6 +351,7 @@ const TRAINER_TRANSLATIONS = {
   'tondeuse de main': 'hand trimmer', // Objet Dresseur - Scarlet & Violet
   'trompette de verre': 'glass trumpet', // Objet Dresseur - Scarlet & Violet
   'urne terrestre': 'earthen vessel', // Objet Dresseur - Scarlet & Violet
+  'vieil ambre ancien': 'antique old amber', // Objet Dresseur - Prismatic Evolutions
   'arrache-outil': 'tool scrapper', // Objet Dresseur - Carte classique
   'arrache outil': 'tool scrapper', // Variante sans tiret
   'attrape-pokémon': 'pokémon catcher', // Objet classique - Multiple rééditions
