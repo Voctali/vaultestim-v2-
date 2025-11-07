@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.8.2' // Dernière mise à jour: 2025-01-07 - Ajout "here comes team rocket"
+export const TRAINER_TRANSLATIONS_VERSION = '1.8.3' // Dernière mise à jour: 2025-01-07 - Ajout "fan of waves"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -454,6 +454,8 @@ const TRAINER_TRANSLATIONS = {
   'epuisette de rappel': 'scoop up net', // Variante sans accent
   'et voila les team rocket !': 'here comes team rocket!', // Supporter - Team Rocket
   'et voila les team rocket': 'here comes team rocket!', // Variante sans point d'exclamation
+  'éventail houleux': 'fan of waves', // Objet Dresseur
+  'eventail houleux': 'fan of waves', // Variante sans accent
   'recycleur d\'énergie': 'energy recycler', // Objet
   'recycleur d\'energie': 'energy recycler', // Variante sans accent
   'recycleur d energie': 'energy recycler', // Variante sans apostrophe ni accent
