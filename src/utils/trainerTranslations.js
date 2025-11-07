@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.4.3' // Dernière mise à jour: 2025-01-07 - Ajout "capturing aroma"
+export const TRAINER_TRANSLATIONS_VERSION = '1.4.4' // Dernière mise à jour: 2025-01-07 - Ajout "lost vacuum"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -377,6 +377,7 @@ const TRAINER_TRANSLATIONS = {
   'combat au lait': 'fighting au lait', // Objet - Boisson café latte
   'commande emballée': 'boxed order', // Objet
   'commande emballee': 'boxed order', // Variante sans accent
+  'aspirateur perdu': 'lost vacuum', // Objet Dresseur
   'attrape-riposte': 'counter catcher', // Objet
   'attrape riposte': 'counter catcher', // Variante sans tiret
   'arôme captivant': 'capturing aroma', // Objet Dresseur
