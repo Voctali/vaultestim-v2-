@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.7.0' // Dernière mise à jour: 2025-01-07 - Ajout "switch cart"
+export const TRAINER_TRANSLATIONS_VERSION = '1.7.1' // Dernière mise à jour: 2025-01-07 - Ajout "trekking shoes"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -407,6 +407,8 @@ const TRAINER_TRANSLATIONS = {
   'chariot echange': 'switch cart', // Variante sans accent
   'chariot précieux': 'precious trolley', // Objet
   'chariot precieux': 'precious trolley', // Variante sans accent
+  'chaussures de randonnée': 'trekking shoes', // Objet Dresseur
+  'chaussures de randonnee': 'trekking shoes', // Variante sans accent
   'civière nocturne': 'night stretcher', // Objet
   'civiere nocturne': 'night stretcher', // Variante sans accent
   'combat au lait': 'fighting au lait', // Objet - Boisson café latte
