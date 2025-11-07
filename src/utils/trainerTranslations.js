@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.7.5' // Dernière mise à jour: 2025-01-07 - Ajout "escape rope"
+export const TRAINER_TRANSLATIONS_VERSION = '1.7.6' // Dernière mise à jour: 2025-01-07 - Ajout "echoing horn"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -414,6 +414,8 @@ const TRAINER_TRANSLATIONS = {
   'cloche familiere': 'familiar bell', // Variante sans accent
   'conserve douteuse': 'suspicious food tin', // Objet Dresseur
   'corde sortie': 'escape rope', // Objet Dresseur
+  'corne résonnante': 'echoing horn', // Objet Dresseur
+  'corne resonnante': 'echoing horn', // Variante sans accent
   'civière nocturne': 'night stretcher', // Objet
   'civiere nocturne': 'night stretcher', // Variante sans accent
   'combat au lait': 'fighting au lait', // Objet - Boisson café latte
