@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.3.8' // Dernière mise à jour: 2025-01-06 - Ajout "hand trimmer"
+export const TRAINER_TRANSLATIONS_VERSION = '1.3.9' // Dernière mise à jour: 2025-01-06 - Ajout "tool scrapper"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -349,6 +349,8 @@ const TRAINER_TRANSLATIONS = {
   'machine à ct': 'tm machine', // Objet Dresseur - Scarlet & Violet
   'machine a ct': 'tm machine', // Variante sans accent
   'tondeuse de main': 'hand trimmer', // Objet Dresseur - Scarlet & Violet
+  'arrache-outil': 'tool scrapper', // Objet Dresseur - Carte classique
+  'arrache outil': 'tool scrapper', // Variante sans tiret
   'attrape-pokémon': 'pokémon catcher', // Objet classique - Multiple rééditions
   'attrape-pokemon': 'pokemon catcher', // Variante sans accents
   'attrape-ultime': 'prime catcher', // Objet ACE SPEC - Scarlet & Violet
