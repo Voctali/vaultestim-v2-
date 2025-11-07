@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.4.7' // Dernière mise à jour: 2025-01-07 - Ajout "snow leaf badge"
+export const TRAINER_TRANSLATIONS_VERSION = '1.4.8' // Dernière mise à jour: 2025-01-07 - Ajout "moon & sun badge"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -270,6 +270,7 @@ const TRAINER_TRANSLATIONS = {
   'badge élémentaire': 'elemental badge', // Objet Dresseur
   'badge elementaire': 'elemental badge', // Variante sans accent
   'badge feuille neige': 'snow leaf badge', // Objet Dresseur
+  'badge lune et soleil': 'moon & sun badge', // Objet Dresseur
   'bandeau rigide': 'rigid band',
   'lunettes de protection': 'protective goggles',
   'piste cyclable': 'cycling road',
