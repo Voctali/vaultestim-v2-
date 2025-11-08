@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.8.4' // Dernière mise à jour: 2025-01-07 - Ajout "imposter professor oak"
+export const TRAINER_TRANSLATIONS_VERSION = '1.8.5' // Dernière mise à jour: 2025-01-07 - Ajout "dark patch"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -457,6 +457,7 @@ const TRAINER_TRANSLATIONS = {
   'éventail houleux': 'fan of waves', // Objet Dresseur
   'eventail houleux': 'fan of waves', // Variante sans accent
   'faux professeur chen': 'imposter professor oak', // Supporter
+  'fortifiant obscur': 'dark patch', // Objet Dresseur
   'recycleur d\'énergie': 'energy recycler', // Objet
   'recycleur d\'energie': 'energy recycler', // Variante sans accent
   'recycleur d energie': 'energy recycler', // Variante sans apostrophe ni accent
