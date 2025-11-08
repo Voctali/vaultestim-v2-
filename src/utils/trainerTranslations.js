@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.0' // Dernière mise à jour: 2025-01-07 - Ajout "struggle gloves"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.1' // Dernière mise à jour: 2025-01-07 - Ajout "rubber gloves"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -465,6 +465,7 @@ const TRAINER_TRANSLATIONS = {
   'gants d\'épreuve': 'struggle gloves', // Objet Dresseur
   'gants d\'epreuve': 'struggle gloves', // Variante sans accent
   'gants d epreuve': 'struggle gloves', // Variante sans apostrophe ni accent
+  'gants de caoutchouc': 'rubber gloves', // Objet Dresseur
   'recycleur d\'énergie': 'energy recycler', // Objet
   'recycleur d\'energie': 'energy recycler', // Variante sans accent
   'recycleur d energie': 'energy recycler', // Variante sans apostrophe ni accent
