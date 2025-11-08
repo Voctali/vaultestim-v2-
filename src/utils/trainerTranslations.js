@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.8.7' // Dernière mise à jour: 2025-01-07 - Ajout "unidentified fossil"
+export const TRAINER_TRANSLATIONS_VERSION = '1.8.8' // Dernière mise à jour: 2025-01-07 - Ajout "rare fossil"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -460,6 +460,7 @@ const TRAINER_TRANSLATIONS = {
   'fortifiant obscur': 'dark patch', // Objet Dresseur
   'fortifiant turbo': 'turbo patch', // Objet Dresseur
   'fossile inconnu': 'unidentified fossil', // Objet Dresseur
+  'fossile rare': 'rare fossil', // Objet Dresseur
   'recycleur d\'énergie': 'energy recycler', // Objet
   'recycleur d\'energie': 'energy recycler', // Variante sans accent
   'recycleur d energie': 'energy recycler', // Variante sans apostrophe ni accent
