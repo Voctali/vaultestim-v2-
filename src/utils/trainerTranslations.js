@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.8.3' // Dernière mise à jour: 2025-01-07 - Ajout "fan of waves"
+export const TRAINER_TRANSLATIONS_VERSION = '1.8.4' // Dernière mise à jour: 2025-01-07 - Ajout "imposter professor oak"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -456,6 +456,7 @@ const TRAINER_TRANSLATIONS = {
   'et voila les team rocket': 'here comes team rocket!', // Variante sans point d'exclamation
   'éventail houleux': 'fan of waves', // Objet Dresseur
   'eventail houleux': 'fan of waves', // Variante sans accent
+  'faux professeur chen': 'imposter professor oak', // Supporter
   'recycleur d\'énergie': 'energy recycler', // Objet
   'recycleur d\'energie': 'energy recycler', // Variante sans accent
   'recycleur d energie': 'energy recycler', // Variante sans apostrophe ni accent
