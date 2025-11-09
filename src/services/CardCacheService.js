@@ -8,6 +8,9 @@ const DB_VERSION = 1
 const STORE_NAME = 'cards'
 const METADATA_STORE = 'metadata'
 
+// Version du cache - INCREMENTER CETTE VALEUR pour forcer un rechargement complet sur tous les appareils
+const CACHE_VERSION = '2.0.0' // Incrémenté pour fix sync delta (2025-01-09)
+
 export class CardCacheService {
   static db = null
   static isInitializing = false
@@ -395,5 +398,56 @@ export class CardCacheService {
     await this.setMetadata('lastSyncTimestamp', timestamp)
     console.log('🕐 Timestamp de sync mis à jour:', timestamp)
     return timestamp
+  }
+
+  /**
+   * Vérifier la version du cache et invalider si obsolète
+   */
+  static async checkCacheVersion() {
+    const cachedVersion = await this.getMetadata('cacheVersion')
+
+    if (!cachedVersion || cachedVersion !== CACHE_VERSION) {
+      console.warn(`⚠️ Version du cache obsolète (${cachedVersion || 'aucune'} → ${CACHE_VERSION})`)
+      console.log('🔄 Invalidation du cache et rechargement complet...')
+
+      // Vider le cache
+      await this.clearCache()
+
+      // Mettre à jour la version
+      await this.setMetadata('cacheVersion', CACHE_VERSION)
+
+      return false // Cache invalide
+    }
+
+    console.log(`✅ Version du cache à jour (${CACHE_VERSION})`)
+    return true // Cache valide
+  }
+
+  /**
+   * Forcer une synchronisation complète depuis Supabase
+   */
+  static async forceSyncFromSupabase(supabaseService) {
+    try {
+      console.log('🔄 Synchronisation forcée depuis Supabase...')
+
+      // Vider le cache local
+      await this.clearCache()
+
+      // Charger toutes les cartes depuis Supabase
+      const cards = await supabaseService.loadDiscoveredCards()
+
+      // Sauvegarder dans le cache
+      await this.saveCards(cards)
+
+      // Mettre à jour les métadonnées
+      await this.updateLastSyncTimestamp()
+      await this.setMetadata('cacheVersion', CACHE_VERSION)
+
+      console.log(`✅ Synchronisation forcée terminée : ${cards.length} cartes`)
+      return cards
+    } catch (error) {
+      console.error('❌ Erreur lors de la synchronisation forcée:', error)
+      throw error
+    }
   }
 }
