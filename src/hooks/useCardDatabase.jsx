@@ -383,11 +383,14 @@ export function CardDatabaseProvider({ children }) {
       setIsLoading(true)
       console.log('🚀 Démarrage chargement intelligent avec cache...')
 
-      // 1. Vérifier si on a un cache local
+      // 1. Vérifier la version du cache (invalide automatiquement si obsolète)
+      const isCacheValid = await CardCacheService.checkCacheVersion()
+
+      // 2. Vérifier si on a un cache local
       const hasCachedData = await CardCacheService.hasCachedData()
       const lastSyncTimestamp = await CardCacheService.getLastSyncTimestamp()
 
-      if (hasCachedData && lastSyncTimestamp) {
+      if (isCacheValid && hasCachedData && lastSyncTimestamp) {
         console.log(`⚡ Cache local trouvé ! Dernière sync: ${lastSyncTimestamp}`)
 
         // 1.1 Charger depuis le cache local (instantané)
