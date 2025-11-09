@@ -1,4 +1,56 @@
-# 📦 Scripts de Migration de Données
+# 📦 Scripts VaultEstim v2
+
+Ce dossier contient tous les scripts d'automatisation pour VaultEstim :
+- 🔄 **Gestion du cache** (CACHE_VERSION)
+- 💾 **Migration de données** (SQLite → PostgreSQL)
+- 🌐 **Gestion des traductions**
+
+---
+
+## 🔄 Gestion du Cache (CACHE_VERSION)
+
+### check-cache-version.cjs
+
+Détecte automatiquement si une incrémentation de `CACHE_VERSION` est nécessaire.
+
+**Utilisation :**
+```bash
+npm run check-cache-version
+```
+
+**Détecte :**
+- ✅ Modifications de `CardCacheService.js` (structure cache)
+- ✅ Modifications de `SupabaseService.js` (ajout colonnes, migrations)
+- ✅ Modifications de `useCardDatabase.jsx` (structure données)
+- ✅ Mots-clés critiques : `createObjectStore`, `ADD COLUMN`, `ALTER TABLE`, `JSONB`
+
+### increment-cache-version.cjs
+
+Incrémente automatiquement `CACHE_VERSION` dans `CardCacheService.js`.
+
+**Utilisation :**
+```bash
+# Incrémentation mineure (par défaut) : 2.0.0 → 2.1.0
+npm run increment-cache-version
+
+# Incrémentation patch : 2.0.0 → 2.0.1
+npm run increment-cache-version patch
+
+# Incrémentation majeure : 2.0.0 → 3.0.0
+npm run increment-cache-version major
+```
+
+**Quand utiliser :**
+
+| Type | Quand | Exemple |
+|------|-------|---------|
+| `patch` | Bug dans le cache | Correction sync delta |
+| `minor` | Ajout massif de cartes (>100) | +771 nouvelles cartes |
+| `major` | Changement structure cache/Supabase | Ajout colonnes JSONB, migration SQL |
+
+---
+
+## 📦 Scripts de Migration de Données
 
 Ce dossier contient tous les scripts nécessaires pour exporter et importer vos données VaultEstim lors du passage de SQLite (développement) vers PostgreSQL (production).
 
