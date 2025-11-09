@@ -58,13 +58,16 @@ src/
 ## Fonctionnalités Clés
 
 ### 🌍 Base de Données Commune
-- **Table** : `discovered_cards` - 14,000+ cartes visibles par TOUS les utilisateurs
+- **Table** : `discovered_cards` - 17,400+ cartes visibles par TOUS les utilisateurs
 - **Comportement** : "Explorer les séries" est commun, "Ma Collection" est personnelle
 - **Déduplication** : Conserve la version la plus complète de chaque carte (score basé sur données disponibles)
 
-### ⚡ Cache Intelligent
+### ⚡ Cache Intelligent avec Versioning
+- **Version actuelle** : `CACHE_VERSION = 2.0.0` dans `CardCacheService.js`
 - **Première connexion** : Téléchargement complet depuis Supabase → sauvegarde IndexedDB
 - **Connexions suivantes** : Chargement instantané depuis IndexedDB (< 1s) → sync arrière-plan des nouvelles cartes
+- **Auto-invalidation** : Si version obsolète → rechargement automatique complet
+- **Sync forcée** : Bouton dans Paramètres pour forcer rechargement manuel
 
 ### 🌐 Recherche Bilingue
 - **Dictionnaires** :

@@ -2,6 +2,89 @@
 
 Historique détaillé de toutes les fonctionnalités implémentées, corrections de bugs et améliorations.
 
+**Dernière mise à jour** : 2025-01-09 | **Version cache** : 2.0.0 | **Cartes totales** : 17,432
+
+---
+
+## Table des Matières
+
+- [Nouvelles Fonctionnalités 2025 (81-86)](#nouvelles-fonctionnalités-2025-81-86)
+- [Fonctionnalités Majeures (1-40)](#fonctionnalités-majeures-1-40)
+- [Traductions et Corrections (41-50)](#traductions-et-corrections-41-50)
+- [Améliorations UX et Fixes (51-80)](#améliorations-ux-et-fixes-51-80)
+
+---
+
+## Nouvelles Fonctionnalités 2025 (81-86)
+
+### 81. 🔄 Système de Versioning du Cache (2025-01-09)
+Gestion automatique des versions de cache IndexedDB pour synchronisation multi-appareils.
+
+**Fonctionnalités** :
+- Constante `CACHE_VERSION` dans `CardCacheService.js`
+- Détection automatique de cache obsolète
+- Invalidation et rechargement automatique
+- Logs détaillés de la version du cache
+
+**Impact** : Résout les problèmes de désynchronisation entre mobile et desktop (16660 vs 17432 cartes)
+
+### 82. 🔧 Synchronisation Forcée Manuelle (2025-01-09)
+Bouton "Forcer la synchronisation" dans page Paramètres.
+
+**Fonctionnalités** :
+- Méthode `forceSyncFromSupabase()` dans `CardCacheService`
+- Vide le cache local
+- Recharge toutes les cartes depuis Supabase
+- Rechargement automatique de la page
+- États visuels : Normal, En cours, Succès, Erreur
+
+**Localisation** : Paramètres → Section "Cache et Synchronisation"
+
+### 83. 🤖 Scripts d'Auto-Détection Cache (2025-01-09)
+Outils automatiques pour détecter quand incrémenter `CACHE_VERSION`.
+
+**Scripts** :
+- `scripts/check-cache-version.cjs` - Analyse les modifications
+- `scripts/increment-cache-version.cjs` - Incrémentation automatique
+
+**Commandes NPM** :
+```bash
+npm run check-cache-version      # Vérifier si incrémentation nécessaire
+npm run increment-cache-version  # Incrémenter (minor/major/patch)
+npm run precommit                # Vérification avant commit
+```
+
+**Détecte** : Modifications de structure cache, migrations SQL, ajouts massifs de cartes, bugs cache
+
+### 84. 📚 Documentation Système Cache (2025-01-09)
+Documentation complète du workflow de versioning.
+
+**Fichiers mis à jour** :
+- `CLAUDE.md` - Section "Gestion de CACHE_VERSION" avec workflow détaillé
+- `scripts/README.md` - Guide complet des scripts et commandes
+
+**Workflow** : Modification → Vérification auto → Proposition incrémentation → Commit
+
+### 85. 🐛 Correction Erreur getDuplicates (2025-01-09)
+Fix de l'erreur `ReferenceError: getDuplicates is not defined` causant écran noir.
+
+**Corrections** :
+- `src/pages/Favorites.jsx` - Remplacement `getDuplicates` par `duplicates`
+- `src/hooks/useCollection.jsx` - Fix `getDuplicates().length` → `duplicates.length`
+
+**Impact** : Résout l'écran noir sur mobile après connexion
+
+### 86. ⚡ Intégration checkCacheVersion (2025-01-09)
+Ajout de la vérification de version dans le flux de chargement.
+
+**Modifications** :
+- `src/hooks/useCardDatabase.jsx` - Appel `checkCacheVersion()` au démarrage
+- Condition : `isCacheValid && hasCachedData && lastSyncTimestamp`
+
+**Comportement** :
+- Cache valide → Chargement instantané
+- Cache obsolète → Invalidation → Rechargement complet automatique
+
 ---
 
 ## Table des Matières
