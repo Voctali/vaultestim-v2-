@@ -4,14 +4,12 @@ import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Settings as SettingsIcon, Users, BarChart, Heart, Star, Package, RefreshCw, Database } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
-import { useCardDatabase } from '@/hooks/useCardDatabase'
 import { CardCacheService } from '@/services/CardCacheService'
 import { SupabaseService } from '@/services/SupabaseService'
 import { useState } from 'react'
 
 export function Settings() {
   const { settings, updateSetting } = useSettings()
-  const { setDiscoveredCards, setSeriesDatabase } = useCardDatabase()
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncStatus, setSyncStatus] = useState(null)
 
@@ -21,43 +19,18 @@ export function Settings() {
       setSyncStatus('sync')
 
       // Forcer la synchronisation depuis Supabase
-      const cards = await CardCacheService.forceSyncFromSupabase(SupabaseService)
-
-      // Mettre à jour l'état React
-      setDiscoveredCards(cards)
-
-      // Reconstruire la base de séries (logique du useCardDatabase)
-      const seriesMap = new Map()
-      cards.forEach(card => {
-        const seriesId = card.set?.id
-        if (!seriesId) return
-
-        if (!seriesMap.has(seriesId)) {
-          seriesMap.set(seriesId, {
-            id: seriesId,
-            name: card.set.name,
-            series: card.set.series,
-            printedTotal: card.set.printedTotal || 0,
-            total: card.set.total || 0,
-            releaseDate: card.set.releaseDate,
-            images: card.set.images,
-            block: card.set.block,
-            cards: []
-          })
-        }
-        seriesMap.get(seriesId).cards.push(card)
-      })
-
-      const seriesArray = Array.from(seriesMap.values())
-      setSeriesDatabase(seriesArray)
+      await CardCacheService.forceSyncFromSupabase(SupabaseService)
 
       setSyncStatus('success')
-      setTimeout(() => setSyncStatus(null), 3000)
+
+      // Recharger la page après 1 seconde pour appliquer les changements
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
     } catch (error) {
       console.error('❌ Erreur lors de la synchronisation forcée:', error)
       setSyncStatus('error')
       setTimeout(() => setSyncStatus(null), 5000)
-    } finally {
       setIsSyncing(false)
     }
   }

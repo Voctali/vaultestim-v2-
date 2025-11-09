@@ -16,7 +16,7 @@ import { translateCardName } from '@/utils/cardTranslations'
 
 export function Favorites() {
   const location = useLocation()
-  const { collection, favorites, wishlist, getDuplicates, toggleFavorite, toggleWishlist } = useCollection()
+  const { collection, favorites, wishlist, duplicates, toggleFavorite, toggleWishlist } = useCollection()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCard, setSelectedCard] = useState(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
@@ -37,7 +37,7 @@ export function Favorites() {
       case 'wishlist':
         return wishlist
       case 'duplicates':
-        return getDuplicates()
+        return duplicates
       default:
         return favorites
     }
