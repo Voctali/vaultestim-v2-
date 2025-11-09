@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.28' // Dernière mise à jour: 2025-11-09 - Ajout "egg incubator"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.77' // Dernière mise à jour: 2025-11-09 - Ajout "billowing smoke"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -476,6 +476,77 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'volutes de fumée': 'billowing smoke', // Objet Dresseur
+  'volutes de fumee': 'billowing smoke', // Variante sans accent
+  'viseur téléscopique': 'telescopic sight', // Objet Dresseur
+  'viseur telescopique': 'telescopic sight', // Variante sans accent
+  'vieux pc': 'old pc', // Objet Dresseur
+  'valise de secours': 'rescue carrier', // Objet Dresseur
+  'urne de vitalité': 'urn of vitality', // Objet Dresseur
+  'urne de vitalite': 'urn of vitality', // Variante sans accent
+  'uniforme de survie': 'expedition uniform', // Objet Dresseur
+  'turbo patience': 'wait and see turbo', // Objet Dresseur
+  'total soin': 'full heal', // Objet Dresseur
+  'bannière de la team yell': 'team yell towel', // Objet Dresseur
+  'banniere de la team yell': 'team yell towel', // Variante sans accent
+  'stade de greenbury': 'turffield stadium', // Objet Dresseur
+  'smarceus': 'arc phone', // Objet Dresseur
+  'épée rouillée': 'rusted sword', // Objet Dresseur
+  'epee rouillee': 'rusted sword', // Variante sans accent
+  'bouclier rouillé': 'rusted shield', // Objet Dresseur
+  'bouclier rouille': 'rusted shield', // Variante sans accent
+  'rouleau tourbillons mille poings': 'rapid strike scroll of swirls', // Objet Dresseur
+  'rouleau perçant poing final': 'single strike scroll of piercing', // Objet Dresseur
+  'rouleau percant poing final': 'single strike scroll of piercing', // Variante sans accent
+  'rouleau du dragon volant mille poings': 'rapid strike scroll of the flying dragon', // Objet Dresseur
+  'rouleau du dragon à crocs poing final': 'single strike scroll of the fanged dragon', // Objet Dresseur
+  'rouleau du dragon a crocs poing final': 'single strike scroll of the fanged dragon', // Variante sans accent
+  'rouleau céleste mille poings': 'rapid strike scroll of the skies', // Objet Dresseur
+  'rouleau celeste mille poings': 'rapid strike scroll of the skies', // Variante sans accent
+  'rouleau acerbe poing final': 'single strike scroll of scorn', // Objet Dresseur
+  'rêve ball': 'dream ball', // Objet Dresseur
+  'reve ball': 'dream ball', // Variante sans accent
+  'recycleur d\'énergie': 'energy recycler', // Objet Dresseur
+  'recycleur d\'energie': 'energy recycler', // Variante sans accent
+  'récupération d\'énergie supérieure': 'superior energy retrieval', // Objet Dresseur
+  'recuperation d\'energie superieure': 'superior energy retrieval', // Variante sans accent
+  'recherche d\'énergie pro': 'energy search pro', // Objet Dresseur
+  'recherche d\'energie pro': 'energy search pro', // Variante sans accent
+  'récepteur croisé': 'crossceiver', // Objet Dresseur
+  'recepteur croise': 'crossceiver', // Variante sans accent
+  'rapide ball': 'quick ball', // Objet Dresseur
+  'quad roc': 'quad stone', // Objet Dresseur
+  'portail mirage': 'mirage gate', // Objet Dresseur
+  'poncho de camouflage feuillu': 'leafy camo poncho', // Objet Dresseur
+  'pompe à dégâts': 'damage pump', // Objet Dresseur
+  'pompe a degats': 'damage pump', // Variante sans accent
+  'plume ball': 'feather ball', // Objet Dresseur
+  'plastron de galar': 'galarian chestplate', // Objet Dresseur
+  'piolet courageux': 'gutsy pickaxe', // Objet Dresseur
+  'pierre scellée terrestre': 'earthen seal stone', // Objet Dresseur
+  'pierre scellee terrestre': 'earthen seal stone', // Variante sans accent
+  'pierre scellée sylvestre': 'forest seal stone', // Objet Dresseur
+  'pierre scellee sylvestre': 'forest seal stone', // Variante sans accent
+  'pierre scellée céleste': 'sky seal stone', // Objet Dresseur
+  'pierre scellee celeste': 'sky seal stone', // Variante sans accent
+  'pépite': 'nugget', // Objet Dresseur
+  'pepite': 'nugget', // Variante sans accent
+  'pelle maudite': 'cursed shovel', // Objet Dresseur
+  'pastille puissance': 'power tablet', // Objet Dresseur
+  'passe de combat vip': 'battle vip pass', // Objet Dresseur
+  'parfum inhibiteur': 'canceling cologne', // Objet Dresseur
+  'pack d\'eaux fraîches': 'fresh water set', // Objet Dresseur
+  'pack d\'eaux fraiches': 'fresh water set', // Variante sans accent
+  'ombrelle géante': 'big parasol', // Objet Dresseur
+  'ombrelle geante': 'big parasol', // Variante sans accent
+  'œuf chance': 'lucky egg', // Objet Dresseur
+  'oeuf chance': 'lucky egg', // Variante sans accent
+  'niveau ball': 'level ball', // Objet Dresseur
+  'nigomix 3000': 'cram-o-matic', // Objet Dresseur
+  'multi exp': 'exp. share', // Objet Dresseur
+  'motismart': 'rotom phone', // Objet Dresseur
+  'motisma drone': 'drone rotom', // Objet Dresseur
+  'moticyclette': 'rotom bike', // Objet Dresseur
   'incubateur d\'oeufs': 'egg incubator', // Objet Dresseur
   'incubateur d\'œufs': 'egg incubator', // Objet Dresseur
   'montagnes orageuses': 'stormy mountains', // Objet Dresseur
