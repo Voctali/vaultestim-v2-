@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.5' // Dernière mise à jour: 2025-11-09 - Ajout "fire-resistant gloves"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.26' // Dernière mise à jour: 2025-11-09 - Ajout "stormy mountains"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -473,6 +473,32 @@ const TRAINER_TRANSLATIONS = {
   'gants devastateurs': 'crushing gloves', // Variante sans accent
   'gants excavateurs': 'digging gloves', // Objet Dresseur
   'gants ignifuges': 'fire-resistant gloves', // Objet Dresseur
+  'gants justiciers': 'justified gloves', // Objet Dresseur
+  'gants purifiants': 'cleansing gloves', // Objet Dresseur
+  'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'montagnes orageuses': 'stormy mountains', // Objet Dresseur
+  'module leurre': 'lure module', // Objet Dresseur
+  'miel': 'sweet honey', // Objet Dresseur
+  'mélange multivitaminé': 'boost shake', // Objet Dresseur
+  'melange multivitamine': 'boost shake', // Variante sans accent
+  'médaille du héros': 'hero's medal', // Objet Dresseur
+  'medaille du heros': 'hero's medal', // Variante sans accent
+  'masse ball de hisui': 'hisuian heavy ball', // Objet Dresseur
+  'masque spirituel': 'spirit mask', // Objet Dresseur
+  'masque de panique': 'panic mask', // Objet Dresseur
+  'lunettes super efficaces': 'supereffective glasses', // Objet Dresseur
+  'loterie d'énergie': 'energy loto', // Objet Dresseur
+  'loterie d'energie': 'energy loto', // Variante sans accent
+  'lanterne accueillante': 'welcoming lantern', // Objet Dresseur
+  'kit de camping': 'camping gear', // Objet Dresseur
+  'jouet attrapeur': 'toy catcher', // Objet Dresseur
+  'grelot d'adieu': 'farewell bell', // Objet Dresseur
+  'grand seau': 'capacious bucket', // Objet Dresseur
+  'gobelets d'échange': 'switching cups', // Objet Dresseur
+  'gobelets d'echange': 'switching cups', // Variante sans accent
+  'glace chanceuse': 'lucky ice pop', // Objet Dresseur
+  'gelée de secours': 'emergency jelly', // Objet Dresseur
+  'gelee de secours': 'emergency jelly', // Variante sans accent
   'recycleur d\'énergie': 'energy recycler', // Objet
   'recycleur d\'energie': 'energy recycler', // Variante sans accent
   'recycleur d energie': 'energy recycler', // Variante sans apostrophe ni accent
