@@ -121,6 +121,15 @@ VITE_SUPABASE_ANON_KEY=xxx       # Requis
 - **Pokémon** : Utiliser `translatePokemonName(frenchName)` depuis `pokemonTranslations.js`
 - **Dresseurs** : Utiliser `translateTrainerName(frenchName)` depuis `trainerTranslations.js`
 - **Vérifier doublons** : `grep -n "nom" fichier.js` avant d'ajouter
+- **⚠️ IMPORTANT - Ajout de traductions** : **TOUJOURS** utiliser le script `add-trainer-translation.cjs` pour ajouter des traductions (bypass de l'outil Edit capricieux)
+  ```bash
+  node add-trainer-translation.cjs "nom français" "nom anglais"
+  # Exemple : node add-trainer-translation.cjs "gants excavateurs" "digging gloves"
+  ```
+  - Ajoute automatiquement la variante sans accent
+  - Incrémente automatiquement la version TRAINER_TRANSLATIONS_VERSION
+  - Insère au bon endroit alphabétique
+  - Option `--after "ligne"` pour positionner manuellement
 
 ### Authentification Supabase
 - **Storage adapter** : **Synchrone** obligatoire (pas async!)
@@ -202,7 +211,7 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ## 🚧 Tâches en Cours
 
-1. **Migration des Attaques** (76.5% complétée) - Relancer Admin → Migration des attaques
+1. **Migration des Attaques** (92.3% complétée - 16,105/17,456 cartes) - Relancer Admin → Migration des attaques
 2. **URLs CardMarket Variantes** - Cartes V1/V2/V3 nécessitent format spécial
 3. **Mapping Codes Extensions** - Seulement sv3pt5 → MEW mappé, ajouter sv1, sv2, sv4, etc.
 

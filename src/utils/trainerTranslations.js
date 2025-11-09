@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.2' // Dernière mise à jour: 2025-01-07 - Ajout "hunting gloves"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.5' // Dernière mise à jour: 2025-11-09 - Ajout "fire-resistant gloves"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -467,6 +467,12 @@ const TRAINER_TRANSLATIONS = {
   'gants d epreuve': 'struggle gloves', // Variante sans apostrophe ni accent
   'gants de caoutchouc': 'rubber gloves', // Objet Dresseur
   'gants de chasse': 'hunting gloves', // Objet Dresseur
+  'gants désherbants': 'weeding gloves', // Objet Dresseur
+  'gants desherbants': 'weeding gloves', // Variante sans accent
+  'gants dévastateurs': 'crushing gloves', // Objet Dresseur
+  'gants devastateurs': 'crushing gloves', // Variante sans accent
+  'gants excavateurs': 'digging gloves', // Objet Dresseur
+  'gants ignifuges': 'fire-resistant gloves', // Objet Dresseur
   'recycleur d\'énergie': 'energy recycler', // Objet
   'recycleur d\'energie': 'energy recycler', // Variante sans accent
   'recycleur d energie': 'energy recycler', // Variante sans apostrophe ni accent
