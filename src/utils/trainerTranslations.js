@@ -476,7 +476,7 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
-  'incubateur d'œufs': 'egg incubator', // Objet Dresseur
+  'incubateur d\'œufs': 'egg incubator', // Objet Dresseur
   'montagnes orageuses': 'stormy mountains', // Objet Dresseur
   'module leurre': 'lure module', // Objet Dresseur
   'miel': 'sweet honey', // Objet Dresseur
