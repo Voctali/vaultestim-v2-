@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.26' // Dernière mise à jour: 2025-11-09 - Ajout "stormy mountains"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.27' // Dernière mise à jour: 2025-11-09 - Ajout "egg incubator"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -476,6 +476,7 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'incubateur d'œufs': 'egg incubator', // Objet Dresseur
   'montagnes orageuses': 'stormy mountains', // Objet Dresseur
   'module leurre': 'lure module', // Objet Dresseur
   'miel': 'sweet honey', // Objet Dresseur
