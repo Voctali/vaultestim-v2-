@@ -58,9 +58,45 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
     let setCode = setId.toUpperCase()
 
     // Mapping des codes d'extension Pokemon TCG API → CardMarket
+    // Format : code API -> code CardMarket
     const setCodeMapping = {
-      'sv3pt5': 'MEW',   // Extension 151
-      'sv3.5': 'MEW'
+      // Scarlet & Violet
+      'sv3pt5': 'MEW',    // 151
+      'sv3.5': 'MEW',     // 151 (alternative)
+      'sv1': 'SVI',       // Scarlet & Violet
+      'sv2': 'PAL',       // Paldea Evolved
+      'sv3': 'OBF',       // Obsidian Flames
+      'sv4': 'PAR',       // Paradox Rift
+      'sv5': 'TEF',       // Temporal Forces
+      'sv6': 'TWM',       // Twilight Masquerade
+      'sv7': 'SFA',       // Shrouded Fable
+      'sv8': 'SCR',       // Stellar Crown
+      // Sword & Shield
+      'swsh1': 'SSH',     // Sword & Shield
+      'swsh2': 'RCL',     // Rebel Clash
+      'swsh3': 'DAA',     // Darkness Ablaze
+      'swsh4': 'VIV',     // Vivid Voltage
+      'swsh5': 'BST',     // Battle Styles
+      'swsh6': 'CRE',     // Chilling Reign
+      'swsh7': 'EVS',     // Evolving Skies
+      'swsh8': 'FST',     // Fusion Strike
+      'swsh9': 'BRS',     // Brilliant Stars
+      'swsh10': 'ASR',    // Astral Radiance
+      'swsh11': 'LOR',    // Lost Origin
+      'swsh12': 'SIT',    // Silver Tempest
+      // Sun & Moon
+      'sm1': 'SUM',       // Sun & Moon
+      'sm2': 'GRI',       // Guardians Rising
+      'sm3': 'BUS',       // Burning Shadows
+      'sm4': 'CIN',       // Crimson Invasion
+      'sm5': 'UPR',       // Ultra Prism
+      'sm6': 'FLI',       // Forbidden Light
+      'sm7': 'CES',       // Celestial Storm
+      'sm8': 'LOT',       // Lost Thunder
+      'sm9': 'TEM',       // Team Up
+      'sm10': 'UNB',      // Unbroken Bonds
+      'sm11': 'UNM',      // Unified Minds
+      'sm12': 'CEC',      // Cosmic Eclipse
     }
 
     setCode = setCodeMapping[setId.toLowerCase()] || setCode
@@ -85,55 +121,50 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
       .replace(/\]/g, '')     // Supprimer ]
   }
 
-  // Déterminer l'URL et le type de lien
+  // Construire l'URL CardMarket
   let cardMarketUrl
   let isDirect = false
-  let isMatchedDirect = false
 
-  // PRIORITÉ 1 : Utiliser cardMarketData.name si disponible (contient les variantes V1, V2, etc.)
-  // Format: https://www.cardmarket.com/en/Pokemon/Products/Singles/{set-name}/{Card-Name-V1-CODE123}?language=2
-  // Exemple: https://www.cardmarket.com/en/Pokemon/Products/Singles/151/Omanyte-V1-MEW138?language=2
-  if (cardMarketData?.name && card.set?.name) {
-    const setName = card.set.name  // "151"
-    const cardSlug = convertCardMarketNameToSlug(cardMarketData.name)
-
-    if (cardSlug) {
-      cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Singles/${setName}/${cardSlug}?language=2`
-      isDirect = true
-      isMatchedDirect = true
-      console.log(`🔗 URL directe CardMarket depuis matching: ${cardMarketUrl} (nom CardMarket: ${cardMarketData.name})`)
-    }
-  }
-  // PRIORITÉ 2 : Construire l'URL avec buildCardMarketCardSlug (sans variantes)
-  // Fonctionne pour les cartes simples comme Hypno, mais pas pour les variantes
-  else if (card.set?.name && card.set?.id && card.name && card.number) {
-    const setName = card.set.name  // "151"
+  // PRIORITÉ 1 : Essayer lien direct V1 si extension mappée
+  if (card.set?.name && card.set?.id && card.name && card.number) {
     const cardSlug = buildCardMarketCardSlug(card.name, card.set.id, card.number)
 
-    if (cardSlug) {
-      cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Singles/${setName}/${cardSlug}?language=2`
+    // Vérifier si l'extension est mappée
+    const setCodeMapping = {
+      'sv3pt5': true, 'sv3.5': true, 'sv1': true, 'sv2': true, 'sv3': true,
+      'sv4': true, 'sv5': true, 'sv6': true, 'sv7': true, 'sv8': true,
+      'swsh1': true, 'swsh2': true, 'swsh3': true, 'swsh4': true, 'swsh5': true,
+      'swsh6': true, 'swsh7': true, 'swsh8': true, 'swsh9': true, 'swsh10': true,
+      'swsh11': true, 'swsh12': true, 'sm1': true, 'sm2': true, 'sm3': true,
+      'sm4': true, 'sm5': true, 'sm6': true, 'sm7': true, 'sm8': true,
+      'sm9': true, 'sm10': true, 'sm11': true, 'sm12': true
+    }
+
+    if (cardSlug && setCodeMapping[card.set.id.toLowerCase()]) {
+      // Essayer avec V1 (la plupart des cartes utilisent V1)
+      const slugWithV1 = cardSlug.replace(/-([A-Z]+\d+)$/, '-V1-$1')
+      cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Singles/${card.set.name}/${slugWithV1}?language=2`
       isDirect = true
-      console.log(`🔗 URL directe CardMarket construite: ${cardMarketUrl} (set.id: ${card.set.id})`)
-    } else {
-      console.warn(`⚠️ Impossible de construire le slug CardMarket pour ${card.name}`)
+      console.log(`🔗 Lien direct V1: ${cardMarketUrl}`)
     }
   }
-  // PRIORITÉ 3 : Utiliser le matching CardMarket pour recherche
-  else if (cardMarketMatch && cardMarketMatch.cardmarket_id_product && cardMarketMatch.match_score >= 0.2) {
-    const searchName = encodeURIComponent(cardMarketMatch.cardmarket_name || card.name)
-    cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${searchName}&language=2`
-    isDirect = false
-    isMatchedDirect = true
-    console.log(`🔗 Recherche CardMarket avec matching: ${cardMarketUrl}`)
-  }
-  // PRIORITÉ 4 : Fallback recherche générique
-  else {
-    const fallbackUrl = buildCardMarketUrl(card, 'auto')
-    cardMarketUrl = fallbackUrl.includes('?')
-      ? `${fallbackUrl}&language=2`
-      : `${fallbackUrl}?language=2`
-    isDirect = false
-    console.log(`🔗 Fallback recherche générique: ${cardMarketUrl}`)
+
+  // PRIORITÉ 2 : Recherche optimisée si pas de lien direct
+  if (!cardMarketUrl) {
+    const searchTerms = [card.name]
+
+    if (card.number) {
+      searchTerms.push(card.number)
+    }
+
+    // Ajouter le nom de l'extension pour filtrer davantage
+    if (card.set?.name) {
+      searchTerms.push(card.set.name)
+    }
+
+    const searchString = searchTerms.join(' ')
+    cardMarketUrl = `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${encodeURIComponent(searchString)}&language=2`
+    console.log(`🔗 Recherche CardMarket: "${searchString}"`)
   }
 
   // TCGPlayer URL
@@ -195,38 +226,12 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
           href={cardMarketUrl}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={handleCardMarketClick}
-          className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:underline transition-colors text-sm group"
-          title={isMatchedDirect
-            ? `CardMarket EUR - Lien direct vers ${card.name} #${card.number} (Match automatique: ${(cardMarketMatch.match_score * 100).toFixed(0)}%)`
-            : isDirect
-            ? `CardMarket EUR - Lien direct vers ${card.name} #${card.number} (API)`
-            : `⚠️ RECHERCHE GÉNÉRIQUE - Affiche TOUTES les cartes "${card.name}"\nVous devrez trouver manuellement #${card.number} dans les résultats\n💡 Astuce: Cliquez sur "Trouver lien direct" ci-dessous`
-          }
+          className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:underline transition-colors text-sm"
+          title={`CardMarket EUR - Recherche "${card.name}${card.number ? ' ' + card.number : ''}"`}
         >
           <ExternalLink className="w-4 h-4" />
           CardMarket (EUR)
-          {isMatchedDirect ? (
-            <Sparkles className="w-3 h-3 text-green-400" title={`Match auto (${(cardMarketMatch.match_score * 100).toFixed(0)}%)`} />
-          ) : isDirect ? (
-            <Zap className="w-3 h-3 text-green-400" title="Lien direct API" />
-          ) : (
-            <AlertCircle className="w-3 h-3 text-orange-400 opacity-50 group-hover:opacity-100" title="Recherche générique - Cliquez 'Trouver lien direct'" />
-          )}
         </a>
-
-        {/* Bouton matching automatique (si pas de lien direct) */}
-        {!isDirect && user && (
-          <button
-            onClick={handleAutoMatch}
-            disabled={isMatching}
-            className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 rounded text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Utiliser l'IA pour trouver le lien direct CardMarket"
-          >
-            <Sparkles className="w-3 h-3" />
-            {isMatching ? 'Recherche...' : 'Trouver lien direct'}
-          </button>
-        )}
 
         {/* TCGPlayer - Alternative rapide en USD */}
         {showTCGPlayer && (
@@ -246,51 +251,6 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
         
       </div>
 
-      {/* Message de succès ou erreur matching */}
-      {matchingError && (
-        <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-400 flex items-start gap-2">
-          <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-          <div>
-            <strong>Erreur matching :</strong> {matchingError}
-          </div>
-        </div>
-      )}
-
-      {isMatchedDirect && cardMarketMatch && (
-        <div className="p-2 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-400 flex items-start gap-2">
-          <Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" />
-          <div>
-            <strong>Lien direct trouvé !</strong> Match automatique avec {(cardMarketMatch.match_score * 100).toFixed(0)}% de confiance.
-            Cette carte est maintenant liée directement à CardMarket.
-          </div>
-        </div>
-      )}
-
-      {/* Avertissement CardMarket recherche */}
-      {showWarning && (
-        <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-400 flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <div>
-            <strong>⚠️ Recherche CardMarket (pas de lien direct) :</strong>
-            <br />
-            <div className="mt-2 space-y-1">
-              <div>• La recherche affiche TOUTES les cartes "{card.name}" (tous numéros/extensions)</div>
-              <div>• CardMarket ne filtre pas par numéro dans la recherche globale</div>
-              <div>• Vous devrez <strong>trouver manuellement</strong> la carte #{card.number} dans les résultats</div>
-            </div>
-            <div className="mt-2 p-2 bg-blue-500/20 border border-blue-500/30 rounded">
-              💡 <strong>Solution :</strong> Cliquez sur <strong>"Trouver lien direct"</strong> ci-dessus !
-              <br />
-              Le système va automatiquement chercher la carte exacte dans notre base de 60,000+ cartes CardMarket.
-              <br />
-              <br />
-              <strong>Alternatives :</strong>
-              <br />
-              • <strong>TCGPlayer</strong> (USD) → Résultats plus précis avec filtres
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
