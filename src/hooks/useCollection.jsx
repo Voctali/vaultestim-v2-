@@ -276,7 +276,7 @@ export function CollectionProvider({ children }) {
       rareCards,
       favoriteCards: favorites.length,
       wishlistCards: wishlist.length,
-      duplicates: getDuplicates().length
+      duplicates: duplicates.length
     }
   }
 
