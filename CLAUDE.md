@@ -124,6 +124,43 @@ VITE_SUPABASE_ANON_KEY=xxx       # Requis
 - **Double redondance** : localStorage + sessionStorage
 - **Procédure de fix** : Se déconnecter → Se reconnecter → Hard refresh
 
+### Gestion de CACHE_VERSION (IMPORTANT!)
+
+**QUAND INCRÉMENTER** - Claude doit **TOUJOURS** proposer d'incrémenter `CACHE_VERSION` dans ces cas :
+
+1. **Ajout massif de cartes** (>100 cartes ajoutées dans Supabase)
+   - Exemple : "J'ai ajouté 771 nouvelles cartes"
+   - Action : `npm run increment-cache-version minor`
+
+2. **Changement de structure du cache**
+   - Modification de `CardCacheService.js` (createObjectStore, createIndex)
+   - Ajout/suppression de colonnes dans IndexedDB
+   - Action : `npm run increment-cache-version major`
+
+3. **Changement de structure Supabase**
+   - Ajout de colonnes JSONB (cardmarket, tcgplayer, attacks, etc.)
+   - Migration SQL (ALTER TABLE, ADD COLUMN)
+   - Action : `npm run increment-cache-version major`
+
+4. **Bug dans le cache**
+   - Corruption de données détectée
+   - Problème de synchronisation delta
+   - Action : `npm run increment-cache-version patch`
+
+**COMMANDES DISPONIBLES** :
+```bash
+npm run check-cache-version      # Vérifie si incrémentation nécessaire
+npm run increment-cache-version  # Incrémente automatiquement (minor par défaut)
+npm run precommit                # Vérifie avant commit (intégré dans workflow)
+```
+
+**WORKFLOW CLAUDE** :
+Quand l'utilisateur demande une modification touchant cache/Supabase :
+1. Effectuer la modification
+2. Lancer `npm run check-cache-version`
+3. Si le script détecte un changement critique → proposer l'incrémentation
+4. Sinon, demander à l'utilisateur : "Cette modification nécessite-t-elle une invalidation du cache sur tous les appareils ?"
+
 ## Déploiement
 
 ### Git + Vercel (Automatique)
