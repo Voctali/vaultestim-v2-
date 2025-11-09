@@ -481,21 +481,21 @@ const TRAINER_TRANSLATIONS = {
   'miel': 'sweet honey', // Objet Dresseur
   'mélange multivitaminé': 'boost shake', // Objet Dresseur
   'melange multivitamine': 'boost shake', // Variante sans accent
-  'médaille du héros': 'hero's medal', // Objet Dresseur
-  'medaille du heros': 'hero's medal', // Variante sans accent
+  'médaille du héros': 'hero\'s medal', // Objet Dresseur
+  'medaille du heros': 'hero\'s medal', // Variante sans accent
   'masse ball de hisui': 'hisuian heavy ball', // Objet Dresseur
   'masque spirituel': 'spirit mask', // Objet Dresseur
   'masque de panique': 'panic mask', // Objet Dresseur
   'lunettes super efficaces': 'supereffective glasses', // Objet Dresseur
-  'loterie d'énergie': 'energy loto', // Objet Dresseur
-  'loterie d'energie': 'energy loto', // Variante sans accent
+  'loterie d\'énergie': 'energy loto', // Objet Dresseur
+  'loterie d\'energie': 'energy loto', // Variante sans accent
   'lanterne accueillante': 'welcoming lantern', // Objet Dresseur
   'kit de camping': 'camping gear', // Objet Dresseur
   'jouet attrapeur': 'toy catcher', // Objet Dresseur
-  'grelot d'adieu': 'farewell bell', // Objet Dresseur
+  'grelot d\'adieu': 'farewell bell', // Objet Dresseur
   'grand seau': 'capacious bucket', // Objet Dresseur
-  'gobelets d'échange': 'switching cups', // Objet Dresseur
-  'gobelets d'echange': 'switching cups', // Variante sans accent
+  'gobelets d\'échange': 'switching cups', // Objet Dresseur
+  'gobelets d\'echange': 'switching cups', // Variante sans accent
   'glace chanceuse': 'lucky ice pop', // Objet Dresseur
   'gelée de secours': 'emergency jelly', // Objet Dresseur
   'gelee de secours': 'emergency jelly', // Variante sans accent

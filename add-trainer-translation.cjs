@@ -48,12 +48,15 @@ function createTranslationLines(french, english, indent = '  ') {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
+  // Échapper les apostrophes dans les valeurs anglaises
+  const escapedEnglish = english.replace(/'/g, "\\'");
+
   const lines = [];
-  lines.push(`${indent}'${frenchWithAccents}': '${english}', // Objet Dresseur`);
+  lines.push(`${indent}'${frenchWithAccents}': '${escapedEnglish}', // Objet Dresseur`);
 
   // Ajouter la variante sans accent seulement si différente
   if (frenchWithAccents !== frenchWithoutAccents) {
-    lines.push(`${indent}'${frenchWithoutAccents}': '${english}', // Variante sans accent`);
+    lines.push(`${indent}'${frenchWithoutAccents}': '${escapedEnglish}', // Variante sans accent`);
   }
 
   return lines;
