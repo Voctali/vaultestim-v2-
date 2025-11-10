@@ -209,11 +209,31 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 - **Debug DB** : Bouton dans interface pour vérifier IndexedDB vs React
 - **Clean storage** : `/clean-storage.html` ou lien sur page login
 
+## ✅ Fonctionnalités Récentes (Janvier 2025)
+
+### Liens CardMarket Optimisés (09/01/2025)
+- **Problème résolu** : 91.7% des cartes avaient des attaques migrées mais les liens CardMarket ne fonctionnaient pas
+- **Cause** : CardMarket utilise des variantes V1/V2/V3 dans les URLs (ex: `Pikachu-V1-MEW025`)
+- **Solution** :
+  - Liens directs V1 pour 40+ extensions mappées (SV1-8, SWSH1-12, SM1-12)
+  - Recherche optimisée "Nom + Numéro + Extension" en fallback
+  - Code simplifié (-40 lignes, suppression logique de matching inutile)
+- **Résultat** : Liens fonctionnels pour majorité des cartes récentes + français (language=2)
+
+### Traductions Dresseur/Objets (09/01/2025)
+- **49 nouvelles traductions** ajoutées (v1.9.28 → v1.9.77)
+- Objets : Ombrelle Géante, Pack d'Eaux Fraîches, Parfum Inhibiteur, Passe de Combat VIP
+- Pastilles et soins : Pastille Puissance, Total Soin, Pépite
+- Outils : Pelle Maudite, Piolet Courageux, Viseur Téléscopique
+- Pierres Scellées : Céleste, Sylvestre, Terrestre
+- Rouleaux (6 variantes) : Acerbe, Céleste, Dragon à Crocs, Dragon Volant, Perçant, Tourbillons
+- Armes rouillées : Bouclier Rouillé, Épée Rouillée
+- Divers : Smarceus, Stade de Greenbury, Bannière Team Yell, Turbo Patience, etc.
+- **Gestion ligatures** : œ/oe (ex: "Œuf Chance" → variantes avec/sans ligature)
+
 ## 🚧 Tâches en Cours
 
-1. **Migration des Attaques** (92.3% complétée - 16,105/17,456 cartes) - Relancer Admin → Migration des attaques
-2. **URLs CardMarket Variantes** - Cartes V1/V2/V3 nécessitent format spécial
-3. **Mapping Codes Extensions** - Seulement sv3pt5 → MEW mappé, ajouter sv1, sv2, sv4, etc.
+1. **Migration des Attaques** (92.3% complétée - 16,105/17,456 cartes) - Relancer Admin → Migration des attaques pour terminer
 
 ## Liens Utiles
 
@@ -224,4 +244,4 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ---
 
-**Dernière mise à jour** : 2025-01-06
+**Dernière mise à jour** : 2025-01-09
