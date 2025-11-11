@@ -53,7 +53,7 @@ src/
 - **SupabaseService** : Stockage cloud avec déduplication intelligente
 - **CardCacheService** : Cache IndexedDB avec reconnexion automatique + retry
 - **CardMarketMatchingService** : Matching automatique (attaques 50% + numéro 25% + nom 15% + suffixes 10%)
-- **PriceRefreshService** : Actualisation automatique quotidienne (150 cartes/jour)
+- **PriceRefreshService** : Actualisation automatique quotidienne (1500 cartes/jour, cycle complet ~12 jours)
 
 ## Fonctionnalités Clés
 
@@ -211,6 +211,17 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ## ✅ Fonctionnalités Récentes (Janvier 2025)
 
+### Actualisation Prix Accélérée (11/01/2025)
+- **Modification** : Augmentation de la capacité d'actualisation quotidienne des prix
+- **Changements** :
+  - **BATCH_SIZE**: 150 → **1500 cartes/jour** (x10 plus rapide)
+  - **REQUEST_DELAY_MS**: 500ms → **1000ms** (protection rate limiting renforcée)
+  - **Cycle complet**: ~3 mois → **~12 jours** pour 17,400 cartes
+  - **Durée estimée**: ~25 minutes par actualisation quotidienne (affichée dans logs)
+- **Impact** : Toutes les cartes de la base auront des prix actualisés en moins de 2 semaines
+- **Monitoring** : Si problèmes API détectés → réduire à 750 cartes ou augmenter délai à 1500ms
+- **Traductions ajoutées** (v1.9.78-79): "gong de combat", "repousse"
+
 ### Liens CardMarket Optimisés V2 (10/01/2025)
 - **Problème résolu** : Les liens redigeaient vers la page d'extension au lieu de la carte spécifique
   - Exemple : `Blastoise ex #009` → redigeait vers `/Singles/151` au lieu de `/Singles/151/Blastoise-ex-V1-MEW009`
@@ -247,4 +258,4 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ---
 
-**Dernière mise à jour** : 2025-01-10
+**Dernière mise à jour** : 2025-01-11
