@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.86' // Dernière mise à jour: 2025-11-11 - Ajout "wally's compassion"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.87' // Dernière mise à jour: 2025-11-11 - Ajout "mega signal"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -476,6 +476,8 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'méga signal': 'mega signal', // Objet Dresseur
+  'mega signal': 'mega signal', // Variante sans accent
   'compassion de timmy': 'wally\'s compassion', // Objet Dresseur
   'forêt de vitalité': 'forest of vitality', // Objet Dresseur
   'foret de vitalite': 'forest of vitality', // Variante sans accent
