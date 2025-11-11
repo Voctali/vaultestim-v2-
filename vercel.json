@@ -4,11 +4,11 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/api/pokemontcg/:path*",
-      "destination": "https://api.pokemontcg.io/:path*"
+      "source": "/api/pokemontcg/:match*",
+      "destination": "https://api.pokemontcg.io/:match*"
     },
     {
-      "source": "/:path((?!api).*)",
+      "source": "/((?!api).*)",
       "destination": "/index.html"
     }
   ],
