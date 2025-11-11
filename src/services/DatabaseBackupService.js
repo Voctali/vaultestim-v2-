@@ -81,25 +81,25 @@ export class DatabaseBackupService {
       console.log(`✅ ${sealed?.length || 0} produits scellés`)
 
       // 6. Ventes
-      console.log('📥 Backup sales...')
+      console.log('📥 Backup user_sales...')
       const { data: sales, error: salesError } = await supabase
-        .from('sales')
+        .from('user_sales')
         .select('*')
         .eq('user_id', userId)
 
       if (salesError) throw salesError
-      backup.data.sales = sales
+      backup.data.user_sales = sales
       console.log(`✅ ${sales?.length || 0} ventes`)
 
       // 7. Lots de doublons
-      console.log('📥 Backup duplicate_lots...')
+      console.log('📥 Backup duplicate_batches...')
       const { data: duplicates, error: dupError } = await supabase
-        .from('duplicate_lots')
+        .from('duplicate_batches')
         .select('*')
         .eq('user_id', userId)
 
       if (dupError) throw dupError
-      backup.data.duplicate_lots = duplicates
+      backup.data.duplicate_batches = duplicates
       console.log(`✅ ${duplicates?.length || 0} lots de doublons`)
 
       // 8. Matchings CardMarket
@@ -185,8 +185,8 @@ export class DatabaseBackupService {
         user_favorites: 0,
         user_wishlist: 0,
         user_sealed_products: 0,
-        sales: 0,
-        duplicate_lots: 0,
+        user_sales: 0,
+        duplicate_batches: 0,
         user_cardmarket_matches: 0,
         discovered_sets: 0,
         errors: []
@@ -312,48 +312,48 @@ export class DatabaseBackupService {
       onProgress?.(Math.round((progress / totalSteps) * 100))
 
       // 6. Restaurer sales
-      if (backup.data.sales?.length > 0) {
-        console.log(`📥 Restauration de ${backup.data.sales.length} ventes...`)
+      if (backup.data.user_sales?.length > 0) {
+        console.log(`📥 Restauration de ${backup.data.user_sales.length} ventes...`)
         try {
-          const salesData = backup.data.sales.map(item => ({
+          const salesData = backup.data.user_sales.map(item => ({
             ...item,
             user_id: userId
           }))
 
           const { error } = await supabase
-            .from('sales')
+            .from('user_sales')
             .upsert(salesData, { onConflict: 'id' })
 
           if (error) throw error
-          results.sales = salesData.length
-          console.log(`✅ ${results.sales} ventes restaurées`)
+          results.user_sales = salesData.length
+          console.log(`✅ ${results.user_sales} ventes restaurées`)
         } catch (error) {
-          console.error('❌ Erreur sales:', error)
-          results.errors.push({ table: 'sales', error: error.message })
+          console.error('❌ Erreur user_sales:', error)
+          results.errors.push({ table: 'user_sales', error: error.message })
         }
       }
       progress++
       onProgress?.(Math.round((progress / totalSteps) * 100))
 
       // 7. Restaurer duplicate_lots
-      if (backup.data.duplicate_lots?.length > 0) {
-        console.log(`📥 Restauration de ${backup.data.duplicate_lots.length} lots doublons...`)
+      if (backup.data.duplicate_batches?.length > 0) {
+        console.log(`📥 Restauration de ${backup.data.duplicate_batches.length} lots doublons...`)
         try {
-          const dupData = backup.data.duplicate_lots.map(item => ({
+          const dupData = backup.data.duplicate_batches.map(item => ({
             ...item,
             user_id: userId
           }))
 
           const { error } = await supabase
-            .from('duplicate_lots')
+            .from('duplicate_batches')
             .upsert(dupData, { onConflict: 'id' })
 
           if (error) throw error
-          results.duplicate_lots = dupData.length
-          console.log(`✅ ${results.duplicate_lots} lots doublons restaurés`)
+          results.duplicate_batches = dupData.length
+          console.log(`✅ ${results.duplicate_batches} lots doublons restaurés`)
         } catch (error) {
-          console.error('❌ Erreur duplicate_lots:', error)
-          results.errors.push({ table: 'duplicate_lots', error: error.message })
+          console.error('❌ Erreur duplicate_batches:', error)
+          results.errors.push({ table: 'duplicate_batches', error: error.message })
         }
       }
       progress++
@@ -437,8 +437,8 @@ export class DatabaseBackupService {
           user_favorites: backup.data.user_favorites?.length || 0,
           user_wishlist: backup.data.user_wishlist?.length || 0,
           user_sealed_products: backup.data.user_sealed_products?.length || 0,
-          sales: backup.data.sales?.length || 0,
-          duplicate_lots: backup.data.duplicate_lots?.length || 0,
+          user_sales: backup.data.user_sales?.length || 0,
+          duplicate_batches: backup.data.duplicate_batches?.length || 0,
           user_cardmarket_matches: backup.data.user_cardmarket_matches?.length || 0,
           discovered_sets: backup.data.discovered_sets?.length || 0
         }
