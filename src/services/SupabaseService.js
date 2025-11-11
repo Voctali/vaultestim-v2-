@@ -32,6 +32,7 @@ export class SupabaseService {
     'weaknesses',  // Faiblesses
     'resistances', // Résistances
     'retreat_cost', // Coût de retraite
+    'has_cosmos_holo', // Indique si la carte existe en version Holo Cosmos
     '_price_updated_at', // Timestamp dernière actualisation des prix
     '_last_viewed'  // Timestamp dernière consultation (pour priorisation actualisation)
   ]
@@ -232,7 +233,7 @@ export class SupabaseService {
           // CHANGEMENT : On ne filtre PLUS par user_id pour charger TOUTES les cartes
           const queryPromise = supabase
             .from('discovered_cards')
-            .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, attacks, abilities, weaknesses, resistances, retreat_cost')
+            .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, attacks, abilities, weaknesses, resistances, retreat_cost, has_cosmos_holo')
             .range(offset, offset + BATCH_SIZE - 1)
 
           console.log('⏳ Attente réponse...')
