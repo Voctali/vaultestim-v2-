@@ -14,7 +14,8 @@ const VERSION_INITIALS = {
   'Full Art': 'FA',
   'AR': 'AR',
   'Alternate Art': 'AA',
-  'Gold': 'G'
+  'Gold': 'G',
+  'Méga Hyper Rare': 'MHR'
 }
 
 /**
