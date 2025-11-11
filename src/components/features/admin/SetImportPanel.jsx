@@ -27,7 +27,6 @@ export function SetImportPanel() {
   const [abortController, setAbortController] = useState(null)
   const [seriesFilter, setSeriesFilter] = useState('all')
   const [series, setSeries] = useState([])
-  const [setIdInput, setSetIdInput] = useState('')
 
   // Charger les extensions au montage
   useEffect(() => {
@@ -70,7 +69,6 @@ export function SetImportPanel() {
       alert(`Extension "${setIdInput}" non trouvée. Vérifiez l'ID (ex: me02, sv08, etc.)`)
     }
   }
-
   const handleSetSelect = async (setId) => {
     try {
       const setInfo = await SetImportService.getSetInfo(setId)
@@ -180,41 +178,9 @@ export function SetImportPanel() {
           </Select>
         </div>
 
-        {/* Recherche par ID d'extension */}
+        {/* Sélection de l'extension */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Ou rechercher par ID (ex: me02, sv08)</label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={setIdInput}
-              onChange={(e) => setSetIdInput(e.target.value.toLowerCase())}
-              placeholder="me02"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              onKeyDown={(e) => e.key === 'Enter' && handleSearchById()}
-            />
-            <Button
-              onClick={handleSearchById}
-              disabled={!setIdInput.trim() || isLoadingSets}
-              variant="outline"
-            >
-              🔍 Rechercher
-            </Button>
-          </div>
-        </div>
-
-        {/* Sélection de l'extension */
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Sélectionner une extension</label>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={loadSets}
-              disabled={isLoadingSets}
-            >
-              🔄 Rafraîchir
-            </Button>
-          </div>
+          <label className="text-sm font-medium">Sélectionner une extension</label>
           <Select onValueChange={handleSetSelect} disabled={isLoadingSets}>
             <SelectTrigger>
               <SelectValue placeholder={isLoadingSets ? "Chargement..." : "Choisir une extension"} />
@@ -235,6 +201,29 @@ export function SetImportPanel() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+
+        {/* Recherche manuelle par ID */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Ou rechercher par ID (ex: me02, sv08)</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={setIdInput}
+              onChange={(e) => setSetIdInput(e.target.value.toLowerCase())}
+              placeholder="me02"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+              onKeyDown={(e) => e.key === 'Enter' && handleSearchById()}
+            />
+            <Button
+              onClick={handleSearchById}
+              disabled={!setIdInput.trim() || isLoadingSets}
+              variant="outline"
+            >
+              🔍 Rechercher
+            </Button>
+          </div>
         </div>
 
         {/* Infos de l'extension sélectionnée */}
