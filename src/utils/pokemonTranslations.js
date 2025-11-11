@@ -801,6 +801,8 @@ export const POKEMON_TRANSLATIONS = {
   'sucreine': 'tsareena',
   'guérilande': 'comfey',
   'guerilande': 'comfey',
+  "guérilande d'alola": 'alolan comfey',
+  "guerilande d'alola": 'alolan comfey',
   'guériaigle': 'braviary',
   'gueriaigle': 'braviary',
   'gouroutan': 'oranguru',
