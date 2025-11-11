@@ -19,6 +19,8 @@ import { translateTrainerName } from '@/utils/trainerTranslations'
 import { translateCardName } from '@/utils/cardTranslations'
 import { translateCardType } from '@/utils/typeTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
+import { CosmosHoloBadge } from '@/components/features/collection/CosmosHoloBadge'
+import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
 import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
 export function Explore() {
@@ -782,6 +784,13 @@ export function Explore() {
                     </Button>
                   </div>
                 </div>
+
+                {/* Badges des versions possédées */}
+                <CardVersionBadges
+                  cardId={card.id}
+                  collection={collection}
+                  className="mb-2"
+                />
 
                 {/* Card Info */}
                 <div className="space-y-1">

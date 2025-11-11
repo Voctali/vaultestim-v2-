@@ -8,6 +8,8 @@ import { useCollection } from '@/hooks/useCollection.jsx'
 import { Search, Filter, BookOpen, Heart, List } from 'lucide-react'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { CardDetailsModal } from '@/components/features/collection/CardDetailsModal'
+import { CosmosHoloBadge } from '@/components/features/collection/CosmosHoloBadge'
+import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { translateCondition } from '@/utils/cardConditions'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
@@ -345,6 +347,13 @@ export function Collection() {
                           </Button>
                         </div>
                       </div>
+
+                      {/* Badges des versions possédées */}
+                      <CardVersionBadges
+                        cardId={card.card_id || card.id}
+                        instances={card.instances}
+                        className="mb-2"
+                      />
 
                       {/* Card Info */}
                       <div className="space-y-2">

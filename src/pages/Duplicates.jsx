@@ -10,6 +10,7 @@ import { CardImage } from '@/components/features/explore/CardImage'
 import { SaleModal } from '@/components/features/collection/SaleModal'
 import { BatchSaleModal } from '@/components/features/collection/BatchSaleModal'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
+import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
 import { translateCondition } from '@/utils/cardConditions'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
 import { translateTrainerName } from '@/utils/trainerTranslations'
@@ -28,7 +29,7 @@ import {
 } from 'lucide-react'
 
 export function Duplicates() {
-  const { duplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale } = useCollection()
+  const { duplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale, collection } = useCollection()
   const [currentTab, setCurrentTab] = useState('duplicates') // 'duplicates' ou 'batches'
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateBatchModal, setShowCreateBatchModal] = useState(false)
@@ -346,6 +347,13 @@ export function Duplicates() {
                         </Button>
                       </div>
                     </div>
+
+                    {/* Badges des versions possédées */}
+                    <CardVersionBadges
+                      cardId={card.card_id || card.id}
+                      collection={collection}
+                      className="mb-2"
+                    />
 
                     {/* Card Info */}
                     <div className="space-y-2">
