@@ -28,6 +28,7 @@ export function SetImportPanel() {
   const [seriesFilter, setSeriesFilter] = useState('all')
   const [series, setSeries] = useState([])
   const [setIdInput, setSetIdInput] = useState('')
+  const [setNameSearch, setSetNameSearch] = useState('')
 
   // Charger les extensions au montage
   useEffect(() => {
@@ -139,10 +140,12 @@ export function SetImportPanel() {
     }
   }
 
-  // Filtrer les extensions par série
-  const filteredSets = seriesFilter === 'all'
-    ? sets
-    : sets.filter(set => set.series === seriesFilter)
+  // Filtrer les extensions par série ET par nom
+  const filteredSets = sets.filter(set => {
+    const matchesSeries = seriesFilter === 'all' || set.series === seriesFilter
+    const matchesName = !setNameSearch || set.name.toLowerCase().includes(setNameSearch.toLowerCase())
+    return matchesSeries && matchesName
+  })
 
   // Calculer le pourcentage de progression
   const progressPercentage = progress
@@ -177,6 +180,21 @@ export function SetImportPanel() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Recherche par nom d'extension */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Rechercher par nom</label>
+          <input
+            type="text"
+            value={setNameSearch}
+            onChange={(e) => setSetNameSearch(e.target.value)}
+            placeholder="Ex: Mega Evolution, Scarlet & Violet..."
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            {filteredSets.length} extension(s) trouvée(s) • Total chargées: {sets.length}
+          </p>
         </div>
 
         {/* Sélection de l'extension */}
@@ -344,6 +362,19 @@ export function SetImportPanel() {
           <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-lg">
             <p className="text-sm text-yellow-600 dark:text-yellow-400">
               ⚠️ <strong>Important :</strong> Ne quittez pas cette page pendant l'import.
+            </p>
+          </div>
+        )}
+
+        {/* Message si pas d'extensions chargées */}
+        {sets.length === 0 && !isLoadingSets && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg">
+            <p className="text-sm text-yellow-600 dark:text-yellow-400">
+              <strong>⚠️ Aucune extension chargée</strong>
+              <br />
+              Le chargement initial peut prendre du temps ou échouer (timeout API).
+              <br />
+              <strong>Solution:</strong> Utilisez la recherche par ID ci-dessus si vous connaissez l'ID de l'extension (ex: xy1, sv8, me02).
             </p>
           </div>
         )}
