@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.89' // Dernière mise à jour: 2025-11-11 - Ajout "iron defender"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.90' // Dernière mise à jour: 2025-11-11 - Ajout "lillie's pearl"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -476,6 +476,7 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'perle de lilie': 'lillie\'s pearl', // Objet Dresseur
   'défense de fer': 'iron defender', // Objet Dresseur
   'defense de fer': 'iron defender', // Variante sans accent
   'négociation de major bob': 'lt. surge\'s bargain', // Objet Dresseur
