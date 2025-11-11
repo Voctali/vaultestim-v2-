@@ -27,6 +27,7 @@ export function SetImportPanel() {
   const [abortController, setAbortController] = useState(null)
   const [seriesFilter, setSeriesFilter] = useState('all')
   const [series, setSeries] = useState([])
+  const [setIdInput, setSetIdInput] = useState('')
 
   // Charger les extensions au montage
   useEffect(() => {
@@ -53,6 +54,20 @@ export function SetImportPanel() {
       setSeries(allSeries)
     } catch (error) {
       console.error('❌ Erreur lors du chargement des séries:', error)
+    }
+  }
+
+
+  const handleSearchById = async () => {
+    if (!setIdInput.trim()) return
+
+    try {
+      const setInfo = await SetImportService.getSetInfo(setIdInput.trim().toLowerCase())
+      setSelectedSet(setInfo)
+      console.log('📦 Extension trouvée par ID:', setInfo)
+    } catch (error) {
+      console.error('❌ Extension non trouvée:', error)
+      alert(`Extension "${setIdInput}" non trouvée. Vérifiez l'ID (ex: me02, sv08, etc.)`)
     }
   }
 
@@ -165,9 +180,41 @@ export function SetImportPanel() {
           </Select>
         </div>
 
-        {/* Sélection de l'extension */}
+        {/* Recherche par ID d'extension */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Sélectionner une extension</label>
+          <label className="text-sm font-medium">Ou rechercher par ID (ex: me02, sv08)</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={setIdInput}
+              onChange={(e) => setSetIdInput(e.target.value.toLowerCase())}
+              placeholder="me02"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              onKeyDown={(e) => e.key === 'Enter' && handleSearchById()}
+            />
+            <Button
+              onClick={handleSearchById}
+              disabled={!setIdInput.trim() || isLoadingSets}
+              variant="outline"
+            >
+              🔍 Rechercher
+            </Button>
+          </div>
+        </div>
+
+        {/* Sélection de l'extension */
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">Sélectionner une extension</label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={loadSets}
+              disabled={isLoadingSets}
+            >
+              🔄 Rafraîchir
+            </Button>
+          </div>
           <Select onValueChange={handleSetSelect} disabled={isLoadingSets}>
             <SelectTrigger>
               <SelectValue placeholder={isLoadingSets ? "Chargement..." : "Choisir une extension"} />
