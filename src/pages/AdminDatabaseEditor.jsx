@@ -1556,6 +1556,25 @@ export function AdminDatabaseEditor() {
                 </div>
               </div>
 
+              {/* Version Holo Cosmos */}
+              <div className="space-y-2 p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="has-cosmos-holo"
+                    checked={formData.has_cosmos_holo || false}
+                    onChange={(e) => setFormData(prev => ({ ...prev, has_cosmos_holo: e.target.checked }))}
+                    className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  />
+                  <label htmlFor="has-cosmos-holo" className="text-sm font-medium cursor-pointer">
+                    Cette carte existe en version Holo Cosmos ✨
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground ml-6">
+                  Cochez si cette carte existe avec une finition Holo Cosmos (motif cosmique spécial)
+                </p>
+              </div>
+
               {/* Type et Sous-types */}
               <div className="grid grid-cols-2 gap-4">
                 <div>

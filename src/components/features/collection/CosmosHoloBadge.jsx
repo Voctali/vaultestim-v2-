@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 export function CosmosHoloBadge({ card, isUserCopy = false, className = '' }) {
   // Vérifier si le badge doit être affiché
   const shouldShow = isUserCopy
-    ? card?.is_cosmos_holo === true  // Exemplaire user marqué comme cosmos
+    ? card?.version === 'Holo Cosmos'  // Exemplaire user avec version Holo Cosmos
     : card?.has_cosmos_holo === true // Carte existe en version cosmos
 
   if (!shouldShow) return null

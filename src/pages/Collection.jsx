@@ -352,9 +352,12 @@ export function Collection() {
                         <p className="text-xs text-muted-foreground">{card.series}</p>
 
                         <div className="space-y-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {card.rarity}
-                          </Badge>
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {card.rarity}
+                            </Badge>
+                            <CosmosHoloBadge card={card} isUserCopy />
+                          </div>
                           <p className="text-xs text-blue-500">{translateCondition(card.condition)}</p>
                         </div>
 

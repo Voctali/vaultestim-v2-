@@ -813,6 +813,9 @@ export function Explore() {
                       </p>
                     )}
 
+                    {/* Badge Holo Cosmos */}
+                    <CosmosHoloBadge card={card} />
+
                     {/* Types Pokémon */}
                     {card.types && card.types.length > 0 ? (
                       <div className="flex flex-wrap gap-1 mt-1">

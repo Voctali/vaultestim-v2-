@@ -375,6 +375,7 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
                       <SelectItem value="Normale">Normale</SelectItem>
                       <SelectItem value="Reverse Holo">Reverse Holo</SelectItem>
                       <SelectItem value="Holo">Holo</SelectItem>
+                      <SelectItem value="Holo Cosmos">✨ Holo Cosmos</SelectItem>
                       <SelectItem value="Tampon (logo extension)">Tampon (logo extension)</SelectItem>
                       <SelectItem value="Full Art">Full Art</SelectItem>
                       <SelectItem value="Alternate Art">Alternate Art</SelectItem>
