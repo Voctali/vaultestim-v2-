@@ -2,7 +2,7 @@
  * Éditeur de Base de Données - Nouvel onglet d'administration
  * Utilise le service centralisé BlockHierarchyService (même logique qu'Explorer)
  */
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Database, Edit3, Trash2, Plus, Search, Package, ChevronRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -104,8 +104,8 @@ export function AdminDatabaseEditor() {
           customExtensions
         )
 
-        // Enrichir les blocs avec leurs images uploadées (comme dans Explorer)
-        const enrichedBlocks = await Promise.all(
+        // Enrichir les blocs avec leurs images uploadées (OPTIMISÉ avec Promise.allSettled)
+        const enrichedBlocks = (await Promise.allSettled(
           blocks.map(async (block) => {
             try {
               // Récupérer les images uploadées pour ce bloc
@@ -139,7 +139,7 @@ export function AdminDatabaseEditor() {
               return block
             }
           })
-        )
+        )).map(result => result.status === 'fulfilled' ? result.value : result.reason)
 
         setBlocksData(enrichedBlocks)
         console.log(`✅ AdminDatabaseEditor - ${enrichedBlocks.length} blocs enrichis (IDENTIQUE À EXPLORER)`)
@@ -181,8 +181,8 @@ export function AdminDatabaseEditor() {
     }
   }
 
-  // Fonction de filtrage des données selon la vue actuelle (comme dans Explorer)
-  const getFilteredData = () => {
+  // Fonction de filtrage des données selon la vue actuelle (OPTIMISÉ avec useMemo)
+  const getFilteredData = useMemo(() => {
     const searchLower = searchQuery.toLowerCase()
 
     switch (currentView) {
@@ -202,33 +202,33 @@ export function AdminDatabaseEditor() {
       default:
         return []
     }
-  }
+  }, [currentView, searchQuery, blocksData, selectedBlock, discoveredCards, selectedExtension])
 
-  // Fonctions de navigation (comme dans Explorer)
-  const handleBlockClick = (block) => {
+  // Fonctions de navigation (OPTIMISÉES avec useCallback)
+  const handleBlockClick = useCallback((block) => {
     setSelectedBlock(block)
     setCurrentView('extensions')
     setNavigationPath([{ name: block.name, view: 'blocks' }])
-  }
+  }, [])
 
-  const handleExtensionClick = (extension) => {
+  const handleExtensionClick = useCallback((extension) => {
     setSelectedExtension(extension)
     setCurrentView('cards')
     setNavigationPath(prev => [...prev, { name: extension.name, view: 'extensions' }])
-  }
+  }, [])
 
-  const handleBackToBlocks = () => {
+  const handleBackToBlocks = useCallback(() => {
     setCurrentView('blocks')
     setSelectedBlock(null)
     setSelectedExtension(null)
     setNavigationPath([])
-  }
+  }, [])
 
-  const handleBackToExtensions = () => {
+  const handleBackToExtensions = useCallback(() => {
     setCurrentView('extensions')
     setSelectedExtension(null)
     setNavigationPath(prev => prev.slice(0, -1))
-  }
+  }, [])
 
   // Fonctions d'édition (comme dans DatabaseAdmin)
   const handleEditBlock = (block) => {
@@ -794,7 +794,7 @@ export function AdminDatabaseEditor() {
     }
   }
 
-  // Note: Le filtrage est maintenant géré par getFilteredData() selon la vue actuelle
+  // Note: Le filtrage est maintenant géré par getFilteredData selon la vue actuelle
 
   // Loading state
   if (isLoading) {
@@ -975,11 +975,11 @@ export function AdminDatabaseEditor() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Blocs ({getFilteredData().length})
+                Blocs ({getFilteredData.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {getFilteredData().length === 0 ? (
+              {getFilteredData.length === 0 ? (
                 <div className="text-center py-8">
                   <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="text-lg font-semibold mb-2">Aucun bloc trouvé</h3>
@@ -989,7 +989,7 @@ export function AdminDatabaseEditor() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {getFilteredData().map((block) => (
+                  {getFilteredData.map((block) => (
                     <div
                       key={block.id}
                       className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
@@ -1145,11 +1145,11 @@ export function AdminDatabaseEditor() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5" />
-              Cartes de {selectedExtension.name} ({getFilteredData().length})
+              Cartes de {selectedExtension.name} ({getFilteredData.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {getFilteredData().length === 0 ? (
+            {getFilteredData.length === 0 ? (
               <div className="text-center py-8">
                 <Database className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">Aucune carte trouvée</h3>
@@ -1159,7 +1159,7 @@ export function AdminDatabaseEditor() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {getFilteredData().map((card, cardIndex) => (
+                {getFilteredData.map((card, cardIndex) => (
                   <Card
                     key={`card-${card.id || cardIndex}`}
                     className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
