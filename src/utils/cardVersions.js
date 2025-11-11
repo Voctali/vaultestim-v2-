@@ -19,25 +19,34 @@ export function getAvailableVersions(card) {
   const name = card.name?.toLowerCase() || ''
 
   // Détection des raretés spéciales
-  // EX (2 étoiles noires)
-  if (
-    rarity.includes('rare ultra') ||
-    rarity.includes('ultra rare') ||
-    name.includes(' ex') ||
-    name.includes('-ex')
-  ) {
-    return [{ value: 'EX', label: 'EX (★★ noires)' }]
-  }
+  // IMPORTANT: Vérifier Full Art AVANT EX car "Ultra Rare" peut être les deux
 
-  // Full Art (2 étoiles grises)
+  // Full Art (2 étoiles grises) - GX, V, VMAX, VSTAR
   if (
     rarity.includes('rare holo gx') ||
     rarity.includes('rare holo v') ||
     rarity.includes('rare holo vmax') ||
+    rarity.includes('rare holo vstar') ||
     rarity.includes('full art') ||
-    name.includes('full art')
+    name.includes('full art') ||
+    name.includes(' gx') ||
+    name.includes('-gx') ||
+    name.includes(' v') ||
+    name.includes('-v') ||
+    name.includes(' vmax') ||
+    name.includes('-vmax') ||
+    name.includes(' vstar') ||
+    name.includes('-vstar')
   ) {
     return [{ value: 'Full Art', label: 'Full Art (★★ grises)' }]
+  }
+
+  // EX (2 étoiles noires) - Uniquement les vraies cartes EX
+  if (
+    name.includes(' ex') ||
+    name.includes('-ex')
+  ) {
+    return [{ value: 'EX', label: 'EX (★★ noires)' }]
   }
 
   // AR - Illustration Rare (1 étoile dorée)
