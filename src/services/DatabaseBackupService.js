@@ -70,14 +70,14 @@ export class DatabaseBackupService {
       console.log(`✅ ${wishlist?.length || 0} items wishlist`)
 
       // 5. Produits scellés
-      console.log('📥 Backup sealed_products...')
+      console.log('📥 Backup user_sealed_products...')
       const { data: sealed, error: sealedError } = await supabase
-        .from('sealed_products')
+        .from('user_sealed_products')
         .select('*')
         .eq('user_id', userId)
 
       if (sealedError) throw sealedError
-      backup.data.sealed_products = sealed
+      backup.data.user_sealed_products = sealed
       console.log(`✅ ${sealed?.length || 0} produits scellés`)
 
       // 6. Ventes
@@ -184,7 +184,7 @@ export class DatabaseBackupService {
         user_collection: 0,
         user_favorites: 0,
         user_wishlist: 0,
-        sealed_products: 0,
+        user_sealed_products: 0,
         sales: 0,
         duplicate_lots: 0,
         user_cardmarket_matches: 0,
@@ -288,24 +288,24 @@ export class DatabaseBackupService {
       onProgress?.(Math.round((progress / totalSteps) * 100))
 
       // 5. Restaurer sealed_products
-      if (backup.data.sealed_products?.length > 0) {
-        console.log(`📥 Restauration de ${backup.data.sealed_products.length} produits scellés...`)
+      if (backup.data.user_sealed_products?.length > 0) {
+        console.log(`📥 Restauration de ${backup.data.user_sealed_products.length} produits scellés...`)
         try {
-          const sealedData = backup.data.sealed_products.map(item => ({
+          const sealedData = backup.data.user_sealed_products.map(item => ({
             ...item,
             user_id: userId
           }))
 
           const { error } = await supabase
-            .from('sealed_products')
+            .from('user_sealed_products')
             .upsert(sealedData, { onConflict: 'id' })
 
           if (error) throw error
-          results.sealed_products = sealedData.length
-          console.log(`✅ ${results.sealed_products} produits scellés restaurés`)
+          results.user_sealed_products = sealedData.length
+          console.log(`✅ ${results.user_sealed_products} produits scellés restaurés`)
         } catch (error) {
-          console.error('❌ Erreur sealed_products:', error)
-          results.errors.push({ table: 'sealed_products', error: error.message })
+          console.error('❌ Erreur user_sealed_products:', error)
+          results.errors.push({ table: 'user_sealed_products', error: error.message })
         }
       }
       progress++
@@ -436,7 +436,7 @@ export class DatabaseBackupService {
           user_collection: backup.data.user_collection?.length || 0,
           user_favorites: backup.data.user_favorites?.length || 0,
           user_wishlist: backup.data.user_wishlist?.length || 0,
-          sealed_products: backup.data.sealed_products?.length || 0,
+          user_sealed_products: backup.data.user_sealed_products?.length || 0,
           sales: backup.data.sales?.length || 0,
           duplicate_lots: backup.data.duplicate_lots?.length || 0,
           user_cardmarket_matches: backup.data.user_cardmarket_matches?.length || 0,
