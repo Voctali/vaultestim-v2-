@@ -211,14 +211,17 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ## ✅ Fonctionnalités Récentes (Janvier 2025)
 
-### Liens CardMarket Optimisés (09/01/2025)
-- **Problème résolu** : 91.7% des cartes avaient des attaques migrées mais les liens CardMarket ne fonctionnaient pas
-- **Cause** : CardMarket utilise des variantes V1/V2/V3 dans les URLs (ex: `Pikachu-V1-MEW025`)
+### Liens CardMarket Optimisés V2 (10/01/2025)
+- **Problème résolu** : Les liens redigeaient vers la page d'extension au lieu de la carte spécifique
+  - Exemple : `Blastoise ex #009` → redigeait vers `/Singles/151` au lieu de `/Singles/151/Blastoise-ex-V1-MEW009`
+- **Cause** : Slug mal construit (espaces non remplacés + regex défaillante + casse incorrecte)
 - **Solution** :
-  - Liens directs V1 pour 40+ extensions mappées (SV1-8, SWSH1-12, SM1-12)
-  - Recherche optimisée "Nom + Numéro + Extension" en fallback
-  - Code simplifié (-40 lignes, suppression logique de matching inutile)
-- **Résultat** : Liens fonctionnels pour majorité des cartes récentes + français (language=2)
+  - **Slugification corrigée** : Remplace espaces par tirets en préservant la casse (`Blastoise ex` → `Blastoise-ex`)
+  - **Format V1 intégré** : Slug contient directement V1 + code extension (`Blastoise-ex-V1-MEW009`)
+  - **Langue française** : URLs en `/fr/` au lieu de `/en/` pour affichage en français
+  - **40+ extensions mappées** : SV1-8, SWSH1-12, SM1-12 avec codes CardMarket (MEW, SVI, PAL, etc.)
+- **Résultat** : Liens directs fonctionnels vers cartes spécifiques pour toutes extensions mappées
+- **Format final** : `https://www.cardmarket.com/fr/Pokemon/Products/Singles/{extension}/{Nom-carte-V1-CODE123}`
 
 ### Traductions Dresseur/Objets (09/01/2025)
 - **49 nouvelles traductions** ajoutées (v1.9.28 → v1.9.77)
@@ -244,4 +247,4 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ---
 
-**Dernière mise à jour** : 2025-01-09
+**Dernière mise à jour** : 2025-01-10
