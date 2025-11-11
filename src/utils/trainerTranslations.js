@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.106' // Dernière mise à jour: 2025-11-11 - Ajout "gift energy" et "lost city"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.107' // Dernière mise à jour: 2025-11-11 - Ajout "lake acuity"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -480,6 +480,7 @@ const TRAINER_TRANSLATIONS = {
   'energie cadeau': 'gift energy', // Variante sans accent
   'énergie piquante': 'spiky energy', // Objet Dresseur
   'energie piquante': 'spiky energy', // Variante sans accent
+  'lac savoir': 'lake acuity', // Stade - Lac légendaire de Sinnoh
   'ville perdue': 'lost city', // Stade
   'paddoxton': 'postwick', // Lieu/Ville
   'levalendura': 'levincia', // Lieu/Ville
