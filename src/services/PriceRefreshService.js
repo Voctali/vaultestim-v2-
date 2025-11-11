@@ -3,8 +3,8 @@
  *
  * Stratégie :
  * - Actualisation quotidienne automatique au démarrage (si > 24h)
- * - Par batch de 150 cartes/jour pour éviter surcharge API
- * - Rotation équitable : cycle complet en ~3 mois pour 14,000 cartes
+ * - Par batch de 1500 cartes/jour pour actualisation accélérée
+ * - Rotation équitable : cycle complet en ~12 jours pour 17,400 cartes
  * - Priorise les cartes consultées récemment ou avec valeur élevée
  */
 
@@ -14,10 +14,11 @@ import { SupabaseService } from './SupabaseService'
 
 export class PriceRefreshService {
   // Configuration
-  static BATCH_SIZE = 150 // Nombre de cartes à actualiser par batch
+  static BATCH_SIZE = 1500 // Nombre de cartes à actualiser par batch (augmenté pour accélérer la rotation)
   static REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000 // 24 heures
   static MIN_PRICE_THRESHOLD = 0.10 // Skip cartes < 0.10€ (peu de variation)
   static PRIORITY_PRICE_THRESHOLD = 5.00 // Cartes > 5€ sont prioritaires
+  static REQUEST_DELAY_MS = 1000 // Pause de 1s entre chaque requête pour éviter rate limiting
 
   /**
    * Vérifier si une actualisation est nécessaire
@@ -116,6 +117,7 @@ export class PriceRefreshService {
     }
 
     console.log(`🔄 Début actualisation de ${cards.length} cartes...`)
+    console.log(`⏱️ Durée estimée: ~${Math.round((cards.length * this.REQUEST_DELAY_MS) / 1000 / 60)} minutes`)
 
     for (let i = 0; i < cards.length; i++) {
       const card = cards[i]
@@ -168,8 +170,8 @@ export class PriceRefreshService {
           })
         }
 
-        // Pause de 500ms entre chaque requête pour éviter rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // Pause de 1s entre chaque requête pour éviter rate limiting
+        await new Promise(resolve => setTimeout(resolve, this.REQUEST_DELAY_MS))
 
       } catch (error) {
         results.errors++
