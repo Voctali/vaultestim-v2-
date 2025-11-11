@@ -19,6 +19,23 @@ const VERSION_INITIALS = {
 }
 
 /**
+ * Ordre d'affichage des versions (pour le tri)
+ */
+const VERSION_ORDER = [
+  'Normale',
+  'Reverse Holo',
+  'Holo',
+  'Holo Cosmos',
+  'Tampon (logo extension)',
+  'EX',
+  'Full Art',
+  'AR',
+  'Alternate Art',
+  'Gold',
+  'Méga Hyper Rare'
+]
+
+/**
  * Composant pour afficher les initiales des versions possédées d'une carte
  *
  * @param {Object} props
@@ -50,9 +67,19 @@ export function CardVersionBadges({ cardId, collection, instances, card, isUserC
     return null
   }
 
+  // Trier les versions selon l'ordre prédéfini
+  const sortedVersions = uniqueVersions.sort((a, b) => {
+    const indexA = VERSION_ORDER.indexOf(a)
+    const indexB = VERSION_ORDER.indexOf(b)
+    // Si une version n'est pas dans VERSION_ORDER, la mettre à la fin
+    if (indexA === -1) return 1
+    if (indexB === -1) return -1
+    return indexA - indexB
+  })
+
   return (
     <div className={`flex flex-wrap gap-1 ${className}`}>
-      {uniqueVersions.map(version => {
+      {sortedVersions.map(version => {
         const initial = VERSION_INITIALS[version] || version.charAt(0).toUpperCase()
 
         return (
