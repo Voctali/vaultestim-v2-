@@ -27,6 +27,7 @@ export function SetImportPanel() {
   const [abortController, setAbortController] = useState(null)
   const [seriesFilter, setSeriesFilter] = useState('all')
   const [series, setSeries] = useState([])
+  const [setIdInput, setSetIdInput] = useState('')
 
   // Charger les extensions au montage
   useEffect(() => {
