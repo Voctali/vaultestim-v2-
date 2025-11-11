@@ -6,7 +6,9 @@
  * sans avoir à rechercher manuellement chaque carte.
  */
 
-const BASE_URL = '/api/pokemontcg/v2'
+// Appel direct à l'API Pokemon TCG (pas de proxy Vercel) pour éviter timeout 10s
+const BASE_URL = 'https://api.pokemontcg.io/v2'
+const API_KEY = import.meta.env.VITE_POKEMON_TCG_API_KEY || ''
 
 // Cache simple pour éviter de recharger les extensions à chaque fois
 let cachedSets = null
@@ -50,7 +52,8 @@ class SetImportService {
       const timeoutId = setTimeout(() => controller.abort(), 15000)
 
       try {
-        const response = await fetch(url, { signal: controller.signal })
+        const headers = API_KEY ? { 'X-Api-Key': API_KEY } : {}
+        const response = await fetch(url, { signal: controller.signal, headers })
         clearTimeout(timeoutId)
 
         if (!response.ok) {
@@ -120,7 +123,8 @@ class SetImportService {
         const url = `${BASE_URL}/cards?q=set.id:${setId}&page=${page}&pageSize=${pageSize}`
         console.log(`📄 Page ${page}: ${url}`)
 
-        const response = await fetch(url)
+        const headers = API_KEY ? { 'X-Api-Key': API_KEY } : {}
+        const response = await fetch(url, { headers })
 
         if (!response.ok) {
           throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`)
@@ -170,7 +174,8 @@ class SetImportService {
   static async getSetInfo(setId) {
     try {
       const url = `${BASE_URL}/sets/${setId}`
-      const response = await fetch(url)
+      const headers = API_KEY ? { 'X-Api-Key': API_KEY } : {}
+        const response = await fetch(url, { headers })
 
       if (!response.ok) {
         throw new Error(`Extension ${setId} non trouvée`)
