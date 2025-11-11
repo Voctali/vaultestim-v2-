@@ -909,7 +909,7 @@ export const POKEMON_TRANSLATIONS = {
   'tutétékri': 'galarian runerigus',
   'crèmy': 'milcery',
   'charmilly': 'alcremie',
-  'balinks': 'falinks',
+  'hexadrone': 'falinks',
   'wimessir': 'indeedee',
   'morpeko': 'morpeko',
   'charibari': 'cufant',
