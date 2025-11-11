@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.95' // Dernière mise à jour: 2025-11-11 - Ajout "spiky energy"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.106' // Dernière mise à jour: 2025-11-11 - Ajout "gift energy" et "lost city"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -476,11 +476,14 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'énergie cadeau': 'gift energy', // Objet Dresseur - Énergie spéciale
+  'energie cadeau': 'gift energy', // Variante sans accent
   'énergie piquante': 'spiky energy', // Objet Dresseur
   'energie piquante': 'spiky energy', // Variante sans accent
-  'paddoxton': 'postwick', // Objet Dresseur
-  'levalendura': 'levincia', // Objet Dresseur
-  'palais de n': 'n\'s castle', // Objet Dresseur
+  'ville perdue': 'lost city', // Stade
+  'paddoxton': 'postwick', // Lieu/Ville
+  'levalendura': 'levincia', // Lieu/Ville
+  'palais de n': 'n\'s castle', // Stade
   'ossatueur d\'alola': 'alolan marowak', // Objet Dresseur
   'perle de lilie': 'lillie\'s pearl', // Objet Dresseur
   'défense de fer': 'iron defender', // Objet Dresseur
