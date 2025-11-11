@@ -211,17 +211,38 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ## ✅ Fonctionnalités Récentes (Janvier 2025)
 
+### Versions de Cartes & Holo Cosmos (11/01/2025)
+- **Système de versions par rareté** (v1.9.90-105) : Versions conditionnelles selon le type de carte
+  - Cartes normales : Normale, Reverse Holo, Holo, Holo Cosmos, Tampon
+  - Cartes spéciales : Version unique (EX, Full Art, AR, Alternate Art, Gold, Méga Hyper Rare, Promo)
+  - Badges initiales sous images (N, R, H, HC, T, P, EX, FA, AR, AA, G, MHR)
+  - Composant `CardVersionBadges.jsx` avec tri automatique
+  - Logique de détection dans `cardVersions.js` (ordre spécifique → général)
+- **Holo Cosmos** (v1.9.90-91) : Support version "✨ Holo Cosmos" (Journey Together sv9)
+  - Deux niveaux : `has_cosmos_holo` (discovered_cards) + `version="Holo Cosmos"` (collection user)
+  - Badge animé purple/pink avec `CosmosHoloBadge.jsx`
+  - SQL: `ALTER TABLE discovered_cards ADD COLUMN has_cosmos_holo BOOLEAN`
+
+### Traductions Pokémon & Dresseur (11/01/2025)
+- **Pokémon** (v1.9.101-104):
+  - Guérilande de Lilie → Lillie's Comfey
+  - Hexadrone → Falinks (correction de "balinks" erroné)
+  - Fulgulairo de Mashynn → Mashynn's Kilowattrel
+- **Dresseur/Objets/Stades** (v1.9.106-108):
+  - Énergie Cadeau → Gift Energy
+  - Ville Perdue → Lost City
+  - Lac Savoir → Lake Acuity
+  - Marais Bouchebée → Gapejaw Bog
+
 ### Actualisation Prix Accélérée (11/01/2025)
-- **Modification** : Augmentation de la capacité d'actualisation quotidienne des prix + correction affichage UI
+- **Modification** : Augmentation de la capacité d'actualisation quotidienne des prix
 - **Changements** :
   - **BATCH_SIZE**: 150 → **1500 cartes/jour** (x10 plus rapide)
   - **REQUEST_DELAY_MS**: 500ms → **1000ms** (protection rate limiting renforcée)
   - **Cycle complet**: ~3 mois → **~12 jours** pour 17,400 cartes
   - **Durée estimée**: ~25 minutes par actualisation quotidienne (affichée dans logs)
-  - **UI corrigée**: L'interface affiche maintenant dynamiquement 1500 cartes (utilisait 150 en dur)
 - **Impact** : Toutes les cartes de la base auront des prix actualisés en moins de 2 semaines
 - **Monitoring** : Si problèmes API détectés → réduire à 750 cartes ou augmenter délai à 1500ms
-- **Traductions ajoutées** (v1.9.78-80): "gong de combat", "repousse", "puissance premium pro"
 
 ### Liens CardMarket Optimisés V2 (10/01/2025)
 - **Problème résolu** : Les liens redigeaient vers la page d'extension au lieu de la carte spécifique
@@ -259,4 +280,4 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ---
 
-**Dernière mise à jour** : 2025-01-11
+**Dernière mise à jour** : 2025-01-11 (v1.9.108)
