@@ -8,6 +8,11 @@
 
 const BASE_URL = '/api/pokemontcg/v2'
 
+// Cache simple pour éviter de recharger les extensions à chaque fois
+let cachedSets = null
+let cacheTimestamp = null
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
 class SetImportService {
   /**
    * Récupère la liste de toutes les extensions disponibles
@@ -16,7 +21,15 @@ class SetImportService {
    */
   static async getAllSets(options = {}) {
     try {
-      console.log('📚 Récupération de la liste des extensions...')
+      // Vérifier le cache si pas de filtres
+      if (!options.series && !options.legalStandardOnly) {
+        if (cachedSets && cacheTimestamp && Date.now() - cacheTimestamp < CACHE_DURATION) {
+          console.log(`✨ Utilisation du cache (${cachedSets.length} extensions)`)
+          return cachedSets
+        }
+      }
+
+      console.log('📚 Récupération de la liste des extensions depuis l\'API...')
 
       // Construire la query si des filtres sont fournis
       let query = ''
@@ -31,20 +44,42 @@ class SetImportService {
       const url = `${BASE_URL}/sets${queryParam}`
 
       console.log(`📡 URL: ${url}`)
-      const response = await fetch(url)
 
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`)
+      // Fetch avec timeout de 15 secondes
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+      try {
+        const response = await fetch(url, { signal: controller.signal })
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`)
+        }
+
+        const result = await response.json()
+        const sets = result.data || []
+
+        // Trier par date de sortie (plus récentes en premier)
+        sets.sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate))
+
+        // Sauvegarder dans le cache si pas de filtres
+        if (!options.series && !options.legalStandardOnly) {
+          cachedSets = sets
+          cacheTimestamp = Date.now()
+          console.log(`✅ ${sets.length} extensions trouvées et mises en cache`)
+        } else {
+          console.log(`✅ ${sets.length} extensions trouvées`)
+        }
+
+        return sets
+      } catch (fetchError) {
+        clearTimeout(timeoutId)
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Timeout: L\'API met trop de temps à répondre (>15s). Utilisez la recherche par ID si vous connaissez l\'extension.')
+        }
+        throw fetchError
       }
-
-      const result = await response.json()
-      const sets = result.data || []
-
-      // Trier par date de sortie (plus récentes en premier)
-      sets.sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate))
-
-      console.log(`✅ ${sets.length} extensions trouvées`)
-      return sets
     } catch (error) {
       console.error('❌ Erreur lors de la récupération des extensions:', error)
       throw error

@@ -30,11 +30,8 @@ export function SetImportPanel() {
   const [setIdInput, setSetIdInput] = useState('')
   const [setNameSearch, setSetNameSearch] = useState('')
 
-  // Charger les extensions au montage
-  useEffect(() => {
-    loadSets()
-    loadSeries()
-  }, [])
+  // NE PAS charger automatiquement pour éviter les timeouts
+  // Les extensions seront chargées à la demande (clic sur dropdown ou bouton)
 
   const loadSets = async () => {
     setIsLoadingSets(true)
@@ -44,17 +41,10 @@ export function SetImportPanel() {
       console.log(`📚 ${allSets.length} extensions chargées`)
     } catch (error) {
       console.error('❌ Erreur lors du chargement des extensions:', error)
+      // Ne pas bloquer l'interface si ça échoue
+      alert(error.message || 'Erreur lors du chargement des extensions. Utilisez la recherche par ID.')
     } finally {
       setIsLoadingSets(false)
-    }
-  }
-
-  const loadSeries = async () => {
-    try {
-      const allSeries = await SetImportService.getAllSeries()
-      setSeries(allSeries)
-    } catch (error) {
-      console.error('❌ Erreur lors du chargement des séries:', error)
     }
   }
 
@@ -166,6 +156,24 @@ export function SetImportPanel() {
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {/* Bouton pour charger les extensions */}
+        {sets.length === 0 && !isLoadingSets && (
+          <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg space-y-3">
+            <p className="text-sm text-blue-600 dark:text-blue-400">
+              <strong>💡 Astuce:</strong> Pour parcourir toutes les extensions disponibles, cliquez ci-dessous.
+              Si vous connaissez l'ID de l'extension (ex: me02), utilisez directement la recherche par ID plus bas.
+            </p>
+            <Button
+              onClick={loadSets}
+              disabled={isLoadingSets}
+              variant="outline"
+              className="w-full"
+            >
+              📚 Charger toutes les extensions (peut prendre 10-15s)
+            </Button>
+          </div>
+        )}
+
         {/* Filtre par série */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Filtrer par série</label>
@@ -366,18 +374,6 @@ export function SetImportPanel() {
           </div>
         )}
 
-        {/* Message si pas d'extensions chargées */}
-        {sets.length === 0 && !isLoadingSets && (
-          <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg">
-            <p className="text-sm text-yellow-600 dark:text-yellow-400">
-              <strong>⚠️ Aucune extension chargée</strong>
-              <br />
-              Le chargement initial peut prendre du temps ou échouer (timeout API).
-              <br />
-              <strong>Solution:</strong> Utilisez la recherche par ID ci-dessus si vous connaissez l'ID de l'extension (ex: xy1, sv8, me02).
-            </p>
-          </div>
-        )}
 
         {/* Informations */}
         <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg">
