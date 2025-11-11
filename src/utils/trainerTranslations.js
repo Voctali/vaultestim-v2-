@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.77' // Dernière mise à jour: 2025-11-09 - Ajout "billowing smoke"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.78' // Dernière mise à jour: 2025-11-11 - Ajout "fighting gong"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -476,6 +476,7 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'gong de combat': 'fighting gong', // Objet Dresseur
   'volutes de fumée': 'billowing smoke', // Objet Dresseur
   'volutes de fumee': 'billowing smoke', // Variante sans accent
   'viseur téléscopique': 'telescopic sight', // Objet Dresseur
