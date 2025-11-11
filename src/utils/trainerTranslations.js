@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.92' // Dernière mise à jour: 2025-11-11 - Ajout "n's castle"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.93' // Dernière mise à jour: 2025-11-11 - Ajout "levincia"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -476,6 +476,7 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'levalendura': 'levincia', // Objet Dresseur
   'palais de n': 'n\'s castle', // Objet Dresseur
   'ossatueur d\'alola': 'alolan marowak', // Objet Dresseur
   'perle de lilie': 'lillie\'s pearl', // Objet Dresseur
