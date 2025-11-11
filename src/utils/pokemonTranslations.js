@@ -998,6 +998,7 @@ export const POKEMON_TRANSLATIONS = {
   'ampibidou': 'bellibolt',
   'zapétrel': 'wattrel',
   'fulgulairo': 'kilowattrel',
+  "fulgulairo de mashynn": "mashynn's kilowattrel",
   'grondogue': 'maschiff',
   'dogrino': 'mabosstiff',
   'gribouraigne': 'shroodle',
