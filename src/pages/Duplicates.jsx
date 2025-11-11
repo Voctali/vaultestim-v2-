@@ -352,6 +352,8 @@ export function Duplicates() {
                     <CardVersionBadges
                       cardId={card.card_id || card.id}
                       collection={collection}
+                      card={card}
+                      isUserCopy={true}
                       className="mb-2"
                     />
 

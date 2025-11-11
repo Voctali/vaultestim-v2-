@@ -8,7 +8,6 @@ import { useCollection } from '@/hooks/useCollection.jsx'
 import { Search, Filter, BookOpen, Heart, List } from 'lucide-react'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { CardDetailsModal } from '@/components/features/collection/CardDetailsModal'
-import { CosmosHoloBadge } from '@/components/features/collection/CosmosHoloBadge'
 import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { translateCondition } from '@/utils/cardConditions'
@@ -352,6 +351,8 @@ export function Collection() {
                       <CardVersionBadges
                         cardId={card.card_id || card.id}
                         instances={card.instances}
+                        card={card}
+                        isUserCopy={true}
                         className="mb-2"
                       />
 
@@ -361,12 +362,9 @@ export function Collection() {
                         <p className="text-xs text-muted-foreground">{card.series}</p>
 
                         <div className="space-y-1">
-                          <div className="flex flex-wrap gap-1">
-                            <Badge variant="secondary" className="text-xs">
-                              {card.rarity}
-                            </Badge>
-                            <CosmosHoloBadge card={card} isUserCopy />
-                          </div>
+                          <Badge variant="secondary" className="text-xs">
+                            {card.rarity}
+                          </Badge>
                           <p className="text-xs text-blue-500">{translateCondition(card.condition)}</p>
                         </div>
 

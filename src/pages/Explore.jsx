@@ -19,7 +19,6 @@ import { translateTrainerName } from '@/utils/trainerTranslations'
 import { translateCardName } from '@/utils/cardTranslations'
 import { translateCardType } from '@/utils/typeTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
-import { CosmosHoloBadge } from '@/components/features/collection/CosmosHoloBadge'
 import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
 import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
@@ -789,6 +788,8 @@ export function Explore() {
                 <CardVersionBadges
                   cardId={card.id}
                   collection={collection}
+                  card={card}
+                  isUserCopy={false}
                   className="mb-2"
                 />
 
@@ -821,9 +822,6 @@ export function Explore() {
                         Rareté inconnue
                       </p>
                     )}
-
-                    {/* Badge Holo Cosmos */}
-                    <CosmosHoloBadge card={card} />
 
                     {/* Types Pokémon */}
                     {card.types && card.types.length > 0 ? (

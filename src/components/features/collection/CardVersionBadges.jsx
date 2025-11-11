@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge'
+import { CosmosHoloBadge } from './CosmosHoloBadge'
 
 /**
  * Mapping des versions vers leurs initiales
@@ -23,9 +24,11 @@ const VERSION_INITIALS = {
  * @param {string} props.cardId - ID de la carte (pour chercher dans collection)
  * @param {Array} props.collection - Collection complète de l'utilisateur
  * @param {Array} props.instances - Instances de cette carte (si déjà regroupées)
+ * @param {Object} props.card - La carte (pour afficher badge Holo Cosmos si c'est une carte de base)
+ * @param {boolean} props.isUserCopy - true si c'est dans la collection user (pour badge Holo Cosmos)
  * @param {string} props.className - Classes CSS additionnelles
  */
-export function CardVersionBadges({ cardId, collection, instances, className = '' }) {
+export function CardVersionBadges({ cardId, collection, instances, card, isUserCopy = false, className = '' }) {
   // Récupérer toutes les instances de cette carte
   const cardInstances = instances || collection.filter(c =>
     (c.card_id === cardId || c.id === cardId)
@@ -62,6 +65,9 @@ export function CardVersionBadges({ cardId, collection, instances, className = '
           </Badge>
         )
       })}
+
+      {/* Badge Holo Cosmos après les initiales */}
+      {card && <CosmosHoloBadge card={card} isUserCopy={isUserCopy} />}
     </div>
   )
 }
