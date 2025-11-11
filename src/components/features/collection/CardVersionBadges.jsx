@@ -9,8 +9,11 @@ const VERSION_INITIALS = {
   'Holo': 'H',
   'Holo Cosmos': 'HC',
   'Tampon (logo extension)': 'T',
+  'EX': 'EX',
   'Full Art': 'FA',
-  'Alternate Art': 'AA'
+  'AR': 'AR',
+  'Alternate Art': 'AA',
+  'Gold': 'G'
 }
 
 /**

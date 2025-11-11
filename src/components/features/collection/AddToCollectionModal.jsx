@@ -11,6 +11,7 @@ import { CardMarketLink } from '@/components/features/collection/CardMarketLinks
 import { AVAILABLE_CONDITIONS, translateCondition } from '@/utils/cardConditions'
 import { formatCardPriceWithCondition, formatCardPrice } from '@/utils/priceFormatter'
 import { translateCardName } from '@/utils/cardTranslations'
+import { getAvailableVersions, getDefaultVersion } from '@/utils/cardVersions'
 import { ArrowLeft, Plus, Minus, Trash2, ExternalLink, Package } from 'lucide-react'
 import { useCollection } from '@/hooks/useCollection.jsx'
 import { useToast } from '@/hooks/useToast'
@@ -18,10 +19,15 @@ import { useToast } from '@/hooks/useToast'
 export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
   const { collection, updateCardInCollection, removeFromCollection } = useCollection()
   const { toast } = useToast()
+
+  // Obtenir les versions disponibles pour cette carte
+  const availableVersions = getAvailableVersions(card)
+  const defaultVersion = getDefaultVersion(card)
+
   const [formData, setFormData] = useState({
     quantity: 1,
     condition: 'near_mint', // État par défaut (Quasi-neuf)
-    version: 'Normale',
+    version: defaultVersion,
     language: 'Français', // Langue par défaut
     purchasePrice: '',
     isGraded: false
@@ -372,13 +378,11 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
                       <SelectValue placeholder="Normale" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Normale">Normale</SelectItem>
-                      <SelectItem value="Reverse Holo">Reverse Holo</SelectItem>
-                      <SelectItem value="Holo">Holo</SelectItem>
-                      <SelectItem value="Holo Cosmos">✨ Holo Cosmos</SelectItem>
-                      <SelectItem value="Tampon (logo extension)">Tampon (logo extension)</SelectItem>
-                      <SelectItem value="Full Art">Full Art</SelectItem>
-                      <SelectItem value="Alternate Art">Alternate Art</SelectItem>
+                      {availableVersions.map(version => (
+                        <SelectItem key={version.value} value={version.value}>
+                          {version.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
