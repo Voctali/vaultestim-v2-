@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.84' // Dernière mise à jour: 2025-11-11 - Ajout "lillie's determination"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.85' // Dernière mise à jour: 2025-11-11 - Ajout "forest of vitality"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -476,6 +476,8 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'forêt de vitalité': 'forest of vitality', // Objet Dresseur
+  'foret de vitalite': 'forest of vitality', // Variante sans accent
   'détermination de lilie': 'lillie\'s determination', // Objet Dresseur
   'determination de lilie': 'lillie\'s determination', // Variante sans accent
   'compteur de temps étrange': 'strange timepiece', // Objet Dresseur
