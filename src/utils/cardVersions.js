@@ -3,6 +3,7 @@
  *
  * Règles :
  * - Cartes normales : Normale, Reverse Holo, Holo, Holo Cosmos, Tampon
+ * - Cartes Promo : Uniquement "Promo"
  * - Cartes EX (★★ noires) : Uniquement "EX"
  * - Full Art (★★ grises) : Uniquement "Full Art"
  * - AR (★ dorée) : Uniquement "AR"
@@ -21,6 +22,11 @@ export function getAvailableVersions(card) {
 
   // Détection des raretés spéciales
   // ORDRE IMPORTANT: Du plus spécifique au plus général
+
+  // 0. Cartes Promo - Rareté unique
+  if (rarity.includes('promo')) {
+    return [{ value: 'Promo', label: 'Promo' }]
+  }
 
   // 1. Méga Hyper Rare (M-Pokémon-EX avec Hyper Rare) - ★ noire/dorée
   if (
