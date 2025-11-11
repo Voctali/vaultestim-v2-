@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.80' // Dernière mise à jour: 2025-11-11 - Ajout "premium power pro"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.81' // Dernière mise à jour: 2025-11-11 - Ajout "surfing beach"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -476,6 +476,7 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'plage de surf': 'surfing beach', // Objet Dresseur
   'puissance premium pro': 'premium power pro', // Objet Dresseur
   'repousse': 'repel', // Objet Dresseur
   'gong de combat': 'fighting gong', // Objet Dresseur
