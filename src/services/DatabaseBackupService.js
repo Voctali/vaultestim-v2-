@@ -113,16 +113,6 @@ export class DatabaseBackupService {
       backup.data.user_cardmarket_matches = matches
       console.log(`✅ ${matches?.length || 0} matchings CardMarket`)
 
-      // 9. Extensions découvertes
-      console.log('📥 Backup discovered_sets...')
-      const { data: sets, error: setsError } = await supabase
-        .from('discovered_sets')
-        .select('*')
-
-      if (setsError) throw setsError
-      backup.data.discovered_sets = sets
-      console.log(`✅ ${sets?.length || 0} extensions découvertes`)
-
       console.log('✅ Backup créé avec succès')
       return backup
 
@@ -188,12 +178,11 @@ export class DatabaseBackupService {
         user_sales: 0,
         duplicate_batches: 0,
         user_cardmarket_matches: 0,
-        discovered_sets: 0,
         errors: []
       }
 
       let progress = 0
-      const totalSteps = 9
+      const totalSteps = 8
 
       // 1. Restaurer discovered_cards (base commune)
       if (backup.data.discovered_cards?.length > 0) {
@@ -383,25 +372,6 @@ export class DatabaseBackupService {
       progress++
       onProgress?.(Math.round((progress / totalSteps) * 100))
 
-      // 9. Restaurer discovered_sets
-      if (backup.data.discovered_sets?.length > 0) {
-        console.log(`📥 Restauration de ${backup.data.discovered_sets.length} extensions...`)
-        try {
-          const { error } = await supabase
-            .from('discovered_sets')
-            .upsert(backup.data.discovered_sets, { onConflict: 'id' })
-
-          if (error) throw error
-          results.discovered_sets = backup.data.discovered_sets.length
-          console.log(`✅ ${results.discovered_sets} extensions restaurées`)
-        } catch (error) {
-          console.error('❌ Erreur discovered_sets:', error)
-          results.errors.push({ table: 'discovered_sets', error: error.message })
-        }
-      }
-      progress++
-      onProgress?.(Math.round((progress / totalSteps) * 100))
-
       console.log('✅ Restauration terminée')
       console.log('📊 Résultats:', results)
 
@@ -440,7 +410,6 @@ export class DatabaseBackupService {
           user_sales: backup.data.user_sales?.length || 0,
           duplicate_batches: backup.data.duplicate_batches?.length || 0,
           user_cardmarket_matches: backup.data.user_cardmarket_matches?.length || 0,
-          discovered_sets: backup.data.discovered_sets?.length || 0
         }
       }
     } catch (error) {
