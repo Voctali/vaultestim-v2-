@@ -16,7 +16,7 @@ import { useCollection } from '@/hooks/useCollection.jsx'
 import { useToast } from '@/hooks/useToast'
 
 export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
-  const { collection, updateCardQuantity, removeFromCollection } = useCollection()
+  const { collection, updateCardInCollection, removeFromCollection } = useCollection()
   const { toast } = useToast()
   const [formData, setFormData] = useState({
     quantity: 1,
@@ -82,7 +82,7 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
 
     if (matchingCards.length > 0) {
       // Augmenter la quantité de la première carte trouvée
-      updateCardQuantity(matchingCards[0].id, (matchingCards[0].quantity || 1) + 1)
+      updateCardInCollection(matchingCards[0].id, { ...matchingCards[0], quantity: (matchingCards[0].quantity || 1) + 1 })
       toast({
         title: 'Quantité augmentée',
         description: `${translateCardName(card.name)} (${version}, ${translateCondition(condition)})`,
@@ -103,7 +103,7 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
     if (matchingCards.length > 0) {
       const newQuantity = (matchingCards[0].quantity || 1) - 1
       if (newQuantity > 0) {
-        updateCardQuantity(matchingCards[0].id, newQuantity)
+        updateCardInCollection(matchingCards[0].id, { ...matchingCards[0], quantity: newQuantity })
         toast({
           title: 'Quantité diminuée',
           description: `${translateCardName(card.name)} (${version}, ${translateCondition(condition)})`,
