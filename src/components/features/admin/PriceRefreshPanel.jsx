@@ -114,7 +114,7 @@ export function PriceRefreshPanel() {
           Actualisation Automatique des Prix
         </CardTitle>
         <CardDescription>
-          Mise à jour intelligente quotidienne : 150 cartes/jour, cycle complet en ~{Math.ceil(stats.total / 150)} jours
+          Mise à jour intelligente quotidienne : {PriceRefreshService.BATCH_SIZE} cartes/jour, cycle complet en ~{Math.ceil(stats.total / PriceRefreshService.BATCH_SIZE)} jours
         </CardDescription>
       </CardHeader>
 
@@ -214,9 +214,9 @@ export function PriceRefreshPanel() {
             <div className="text-sm space-y-1">
               <div className="font-medium">📊 Stratégie d'actualisation intelligente :</div>
               <ul className="ml-4 space-y-1 text-muted-foreground">
-                <li>• <strong>Automatique</strong> : 150 cartes/jour au démarrage (si {'>'} 24h)</li>
+                <li>• <strong>Automatique</strong> : {PriceRefreshService.BATCH_SIZE} cartes/jour au démarrage (si {'>'} 24h)</li>
                 <li>• <strong>Priorisation</strong> : Cartes à forte valeur et consultées récemment</li>
-                <li>• <strong>Cycle complet</strong> : {Math.ceil(stats.total / 150)} jours pour actualiser toutes les cartes</li>
+                <li>• <strong>Cycle complet</strong> : {Math.ceil(stats.total / PriceRefreshService.BATCH_SIZE)} jours pour actualiser toutes les cartes</li>
                 <li>• <strong>Skip</strong> : Cartes &lt; 0.10€ sont moins prioritaires</li>
               </ul>
             </div>
@@ -232,7 +232,7 @@ export function PriceRefreshPanel() {
             className="flex-1"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Actualiser Batch Quotidien (150 cartes)
+            Actualiser Batch Quotidien ({PriceRefreshService.BATCH_SIZE} cartes)
           </Button>
 
           <Button
