@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.82' // Dernière mise à jour: 2025-11-11 - Ajout "mystery garden"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.83' // Dernière mise à jour: 2025-11-11 - Ajout "strange timepiece"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -476,6 +476,8 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'compteur de temps étrange': 'strange timepiece', // Objet Dresseur
+  'compteur de temps etrange': 'strange timepiece', // Variante sans accent
   'jardin mystère': 'mystery garden', // Objet Dresseur
   'jardin mystere': 'mystery garden', // Variante sans accent
   'plage de surf': 'surfing beach', // Objet Dresseur
