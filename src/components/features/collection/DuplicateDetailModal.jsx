@@ -184,40 +184,69 @@ export function DuplicateDetailModal({ isOpen, onClose, card, collection }) {
                         Total possédé: {data.totalQuantity} • En collection: 1 • En double: {data.duplicateCount}
                       </div>
 
-                      {/* Liste des instances */}
+                      {/* Liste des instances regroupées par condition et langue */}
                       <div className="space-y-2 pl-4">
-                        {data.instances.map((instance, idx) => {
-                          const instanceQuantity = instance.quantity || 1
+                        {(() => {
+                          // Grouper les instances par condition + langue
+                          const groupedByCondition = {}
 
-                          return (
-                            <div
-                              key={instance.id || idx}
-                              className="flex items-center justify-between text-xs bg-primary/5 rounded-lg p-2 border border-primary/10"
-                            >
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-primary">
-                                    Quantité: {instanceQuantity}x
-                                  </span>
-                                  <span className="text-muted-foreground">•</span>
-                                  <span className="text-muted-foreground">
-                                    {translateCondition(instance.condition)}
-                                  </span>
+                          data.instances.forEach(instance => {
+                            const condition = instance.condition || 'Non spécifié'
+                            const language = instance.language || 'Français'
+                            const key = `${condition}-${language}`
+
+                            if (!groupedByCondition[key]) {
+                              groupedByCondition[key] = {
+                                condition,
+                                language,
+                                totalQuantity: 0,
+                                values: []
+                              }
+                            }
+
+                            const qty = instance.quantity || 1
+                            groupedByCondition[key].totalQuantity += qty
+                            if (instance.value) {
+                              groupedByCondition[key].values.push(parseFloat(instance.value))
+                            }
+                          })
+
+                          return Object.values(groupedByCondition).map((group, idx) => {
+                            // Calculer le prix moyen si plusieurs valeurs
+                            const avgValue = group.values.length > 0
+                              ? (group.values.reduce((sum, v) => sum + v, 0) / group.values.length).toFixed(2)
+                              : null
+
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between text-xs bg-primary/5 rounded-lg p-2 border border-primary/10"
+                              >
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-primary">
+                                      Quantité: {group.totalQuantity}x
+                                    </span>
+                                    <span className="text-muted-foreground">•</span>
+                                    <span className="text-muted-foreground">
+                                      {translateCondition(group.condition)}
+                                    </span>
+                                  </div>
+                                  {group.language !== 'Français' && (
+                                    <div className="text-muted-foreground">
+                                      Langue: {group.language}
+                                    </div>
+                                  )}
                                 </div>
-                                {instance.language && instance.language !== 'Français' && (
-                                  <div className="text-muted-foreground">
-                                    Langue: {instance.language}
+                                {avgValue && (
+                                  <div className="text-green-500 font-semibold">
+                                    {avgValue}€ / unité
                                   </div>
                                 )}
                               </div>
-                              {instance.value && (
-                                <div className="text-green-500 font-semibold">
-                                  {instance.value}€ / unité
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
+                            )
+                          })
+                        })()}
                       </div>
                     </div>
                   ))}
