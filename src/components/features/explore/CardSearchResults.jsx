@@ -11,6 +11,7 @@ import { formatCardPrice } from '@/utils/priceFormatter'
 import { translateCardName } from '@/utils/cardTranslations'
 import { translateCardType } from '@/utils/typeTranslations'
 import { Heart, List, Plus, Eye, Settings } from 'lucide-react'
+import { getDefaultVersion } from '@/utils/cardVersions'
 
 export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = true }) {
   const [selectedCard, setSelectedCard] = useState(null)
@@ -27,6 +28,10 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
   const handleQuickAdd = async (card) => {
     console.log('🚀 [Quick Add] Ajout rapide de:', card.name)
 
+    // Détecter automatiquement la version correcte selon la rareté
+    const detectedVersion = getDefaultVersion(card)
+    console.log('🔍 [Quick Add] Version détectée:', detectedVersion, 'pour rareté:', card.rarity)
+
     // Mapper correctement les données de la carte pour Supabase
     const cardData = {
       id: card.id,
@@ -38,7 +43,7 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
       images: card.images || null,
       quantity: 1,
       condition: 'near_mint', // État quasi-neuf par défaut
-      version: 'Normale',
+      version: detectedVersion, // Version détectée automatiquement
       language: 'Français', // Langue française par défaut
       purchasePrice: null,
       marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,

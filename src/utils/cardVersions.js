@@ -10,6 +10,8 @@
  * - Alternative (★★ dorées) : Uniquement "Alternate Art"
  * - Gold (★★★ dorées) : Uniquement "Gold"
  * - Méga Hyper Rare (★ noire/dorée) : Uniquement "Méga Hyper Rare"
+ * - Cas spéciaux : Amphinobi EX 106/167 (version Métal)
+ * - Extensions spéciales : Black Bolt, White Flare, Prismatic Evolution (Reverse Pokéball/Masterball pour Common/Uncommon)
  *
  * @param {Object} card - La carte
  * @returns {Array} Liste des versions disponibles { value, label }
@@ -19,6 +21,9 @@ export function getAvailableVersions(card) {
 
   const rarity = card.rarity?.toLowerCase() || ''
   const name = card.name?.toLowerCase() || ''
+  const number = card.number || ''
+  const setId = card.set?.id?.toLowerCase() || card.extension?.toLowerCase() || ''
+  const setName = card.set?.name?.toLowerCase() || card.extension?.toLowerCase() || ''
 
   // Détection des raretés spéciales
   // ORDRE IMPORTANT: Du plus spécifique au plus général
@@ -26,6 +31,19 @@ export function getAvailableVersions(card) {
   // 0. Cartes Promo - Rareté unique
   if (rarity.includes('promo')) {
     return [{ value: 'Promo', label: 'Promo' }]
+  }
+
+  // 0.1. Cas spécial : Amphinobi EX 106/167 (Twilight Mascarade) - Version Métal
+  if (
+    (name.includes('greninja') || name.includes('amphinobi')) &&
+    name.includes('ex') &&
+    number === '106' &&
+    (setName.includes('twilight masquerade') || setName.includes('mascarade') || setId.includes('tmp'))
+  ) {
+    return [
+      { value: 'EX', label: 'EX (★★ noires)' },
+      { value: 'Métal', label: 'Métal' }
+    ]
   }
 
   // 1. Méga Hyper Rare (M-Pokémon-EX avec Hyper Rare) - ★ noire/dorée
@@ -91,6 +109,28 @@ export function getAvailableVersions(card) {
     name.includes('-ex')
   ) {
     return [{ value: 'EX', label: 'EX (★★ noires)' }]
+  }
+
+  // 7. Cas spécial : Extensions Black Bolt, White Flare, Prismatic Evolution
+  // Pour les cartes Common et Uncommon : ajouter Reverse (Pokéball) et Reverse (Masterball)
+  const specialSets = ['sv8', 'sv8a', 'sv9', 'black bolt', 'white flare', 'prismatic evolution']
+  const isSpecialSet = specialSets.some(set =>
+    setId.includes(set) || setName.includes(set)
+  )
+
+  if (
+    isSpecialSet &&
+    (rarity.includes('common') || rarity.includes('uncommon'))
+  ) {
+    return [
+      { value: 'Normale', label: 'Normale' },
+      { value: 'Reverse Holo', label: 'Reverse Holo' },
+      { value: 'Reverse (Pokéball)', label: 'Reverse (Pokéball)' },
+      { value: 'Reverse (Masterball)', label: 'Reverse (Masterball)' },
+      { value: 'Holo', label: 'Holo' },
+      { value: 'Holo Cosmos', label: '✨ Holo Cosmos' },
+      { value: 'Tampon (logo extension)', label: 'Tampon (logo extension)' }
+    ]
   }
 
   // Cartes normales : toutes les versions standard
