@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,23 +31,30 @@ import {
 export function Duplicates() {
   const { duplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale, collection } = useCollection()
 
-  // 🔍 Fonction de debug pour vérifier les doublons d'une carte
-  window.debugCardInstances = (cardName) => {
-    console.log(`🔎 [DEBUG] Recherche de toutes les instances de "${cardName}" dans la collection complète`)
-    const instances = collection.filter(card => card.name.toLowerCase().includes(cardName.toLowerCase()))
-    console.log(`📦 [DEBUG] ${instances.length} instance(s) trouvée(s):`)
-    instances.forEach((card, idx) => {
-      console.log(`  ${idx + 1}. ID: ${card.id}`)
-      console.log(`     Nom: ${card.name}`)
-      console.log(`     Version: ${card.version || 'Normale'}`)
-      console.log(`     Quantité: ${card.quantity || 1}`)
-      console.log(`     Extension: ${card.extension || card.series}`)
-      console.log(`     Condition: ${card.condition}`)
-      console.log(`     card_id (API): ${card.card_id || 'N/A'}`)
-      console.log(`  ---`)
-    })
-    return instances
-  }
+  // 🔍 Fonction de debug pour vérifier les doublons d'une carte - disponible globalement
+  useEffect(() => {
+    window.debugCardInstances = (cardName) => {
+      console.log(`🔎 [DEBUG] Recherche de toutes les instances de "${cardName}" dans la collection complète`)
+      const instances = collection.filter(card => card.name.toLowerCase().includes(cardName.toLowerCase()))
+      console.log(`📦 [DEBUG] ${instances.length} instance(s) trouvée(s):`)
+      instances.forEach((card, idx) => {
+        console.log(`  ${idx + 1}. ID: ${card.id}`)
+        console.log(`     Nom: ${card.name}`)
+        console.log(`     Version: ${card.version || 'Normale'}`)
+        console.log(`     Quantité: ${card.quantity || 1}`)
+        console.log(`     Extension: ${card.extension || card.series}`)
+        console.log(`     Condition: ${card.condition}`)
+        console.log(`     card_id (API): ${card.card_id || 'N/A'}`)
+        console.log(`  ---`)
+      })
+      return instances
+    }
+    console.log('🔧 [DEBUG] Fonction window.debugCardInstances() disponible. Utilisez: window.debugCardInstances("nom de carte")')
+
+    return () => {
+      delete window.debugCardInstances
+    }
+  }, [collection])
 
   const [currentTab, setCurrentTab] = useState('duplicates') // 'duplicates' ou 'batches'
   const [searchTerm, setSearchTerm] = useState('')
