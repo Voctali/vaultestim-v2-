@@ -10,7 +10,7 @@ import { TCGdxService } from '@/services/TCGdxService'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { translateCardName } from '@/utils/cardTranslations'
 import { translateCardType } from '@/utils/typeTranslations'
-import { Heart, List, Plus, Eye, Settings } from 'lucide-react'
+import { Heart, List, Plus } from 'lucide-react'
 import { getDefaultVersion } from '@/utils/cardVersions'
 
 export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = true }) {
@@ -249,7 +249,7 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
                   )}
 
                   {/* Action buttons */}
-                  <div className="absolute top-2 right-2 flex flex-col gap-1">
+                  <div className="absolute top-2 right-2">
                     <Button
                       size="sm"
                       className="w-8 h-8 p-0 bg-green-500 hover:bg-green-600 text-white"
@@ -260,17 +260,6 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
                       title="Ajout rapide (état quasi-neuf)"
                     >
                       <Plus className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="w-8 h-8 p-0 bg-blue-500 hover:bg-blue-600 text-white"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleAddToCollection(card)
-                      }}
-                      title="Options d'ajout personnalisées"
-                    >
-                      <Settings className="w-4 h-4" />
                     </Button>
                   </div>
 
