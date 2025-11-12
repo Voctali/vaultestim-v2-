@@ -536,12 +536,13 @@ export function Duplicates() {
                       </div>
                     </div>
 
-                    {/* Badges des versions possédées */}
+                    {/* Badges des versions en double uniquement */}
                     <CardVersionBadges
                       cardId={card.card_id || card.id}
                       collection={collection}
                       card={card}
                       isUserCopy={true}
+                      showOnlyDuplicateVersions={true}
                       className="mb-2"
                     />
 
