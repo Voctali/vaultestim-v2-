@@ -159,7 +159,13 @@ export function Explore() {
           // Si pas de recherche active, afficher toutes les cartes de l'extension
           if (!searchLower || searchLower.trim() === '') return true
 
-          // Recherche bilingue : français et anglais
+          // Recherche par numéro de carte
+          const cardNumber = card.number || ''
+          if (cardNumber.toLowerCase().includes(searchLower)) {
+            return true
+          }
+
+          // Recherche bilingue : français et anglais (par nom)
           const cardNameLower = card.name.toLowerCase()
 
           // Recherche directe dans le nom anglais de la carte (par mot complet)
@@ -254,12 +260,14 @@ export function Explore() {
     setSelectedBlock(block)
     setCurrentView('extensions')
     setNavigationPath([{ name: block.name, view: 'blocks' }])
+    setFilterTerm('') // Réinitialiser la recherche locale
   }
 
   const handleExtensionClick = (extension) => {
     setSelectedExtension(extension)
     setCurrentView('cards')
     setNavigationPath(prev => [...prev, { name: extension.name, view: 'extensions' }])
+    setFilterTerm('') // Réinitialiser la recherche locale
   }
 
   const handleBackToBlocks = () => {
@@ -267,12 +275,14 @@ export function Explore() {
     setSelectedBlock(null)
     setSelectedExtension(null)
     setNavigationPath([])
+    setFilterTerm('') // Réinitialiser la recherche locale
   }
 
   const handleBackToExtensions = () => {
     setCurrentView('extensions')
     setSelectedExtension(null)
     setNavigationPath(prev => prev.slice(0, 1))
+    setFilterTerm('') // Réinitialiser la recherche locale
   }
 
   const handleAddCard = (cardData) => {
@@ -496,12 +506,16 @@ export function Explore() {
 
       {/* Barres de recherche séparées */}
       <div className="space-y-3">
-        {/* Champ 1 : Filtrage local des blocs/extensions/cartes */}
+        {/* Champ 1 : Filtrage local des blocs/extensions OU recherche dans extension */}
         {currentView !== 'search' && (
           <div className="relative">
             <Database className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Filtrer les blocs, extensions ou cartes..."
+              placeholder={
+                currentView === 'cards'
+                  ? "Rechercher par nom ou numéro de carte dans cette extension..."
+                  : "Filtrer les blocs, extensions ou cartes..."
+              }
               value={filterTerm}
               onChange={(e) => setFilterTerm(e.target.value)}
               className="pl-10 golden-border"
@@ -510,37 +524,39 @@ export function Explore() {
           </div>
         )}
 
-        {/* Champ 2 : Recherche API globale */}
-        <div className="flex gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher une carte dans l'API Pokemon TCG (traduction automatique français → anglais)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="pl-10 golden-border"
-              style={{ textTransform: 'none' }}
-            />
-          </div>
-          <Button
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-            onClick={handleSearch}
-            disabled={isSearching}
-          >
-            {isSearching ? 'Recherche...' : 'Rechercher'}
-          </Button>
-          {isSearching && (
+        {/* Champ 2 : Recherche API globale - Cachée si dans une extension */}
+        {currentView !== 'cards' && (
+          <div className="flex gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher une carte dans l'API Pokemon TCG (traduction automatique français → anglais)"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="pl-10 golden-border"
+                style={{ textTransform: 'none' }}
+              />
+            </div>
             <Button
-              variant="destructive"
-              onClick={handleCancelSearch}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={handleSearch}
+              disabled={isSearching}
             >
-              <X className="w-4 h-4 mr-2" />
-              Annuler
+              {isSearching ? 'Recherche...' : 'Rechercher'}
             </Button>
-          )}
-        </div>
+            {isSearching && (
+              <Button
+                variant="destructive"
+                onClick={handleCancelSearch}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Annuler
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Content Area */}
