@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.110' // Dernière mise à jour: 2025-01-12 - Ajout Festival Grounds + Boomerang Energy
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.111' // Dernière mise à jour: 2025-01-12 - Ajout Community Center
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -486,6 +486,7 @@ const TRAINER_TRANSLATIONS = {
   'energie cadeau': 'gift energy', // Variante sans accent
   'énergie piquante': 'spiky energy', // Objet Dresseur
   'energie piquante': 'spiky energy', // Variante sans accent
+  'centre culturel': 'community center', // Stade
   'lac savoir': 'lake acuity', // Stade - Lac légendaire de Sinnoh
   'lieu de la fête': 'festival grounds', // Stade
   'lieu de la fete': 'festival grounds', // Variante sans accent
