@@ -9,6 +9,7 @@ import { useCollection } from '@/hooks/useCollection.jsx'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { SaleModal } from '@/components/features/collection/SaleModal'
 import { BatchSaleModal } from '@/components/features/collection/BatchSaleModal'
+import { DuplicateDetailModal } from '@/components/features/collection/DuplicateDetailModal'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
 import { translateCondition } from '@/utils/cardConditions'
@@ -65,8 +66,10 @@ export function Duplicates() {
   const [batchName, setBatchName] = useState('')
   const [showSaleModal, setShowSaleModal] = useState(false)
   const [showBatchSaleModal, setShowBatchSaleModal] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
   const [cardToSell, setCardToSell] = useState(null)
   const [batchToSell, setBatchToSell] = useState(null)
+  const [selectedCardForDetail, setSelectedCardForDetail] = useState(null)
 
   // Filtrer les doublons selon la recherche (duplicates vient du Context et est déjà mémorisé)
   const duplicateCards = duplicates.filter(card => {
@@ -349,6 +352,16 @@ export function Duplicates() {
     setShowSaleModal(true)
   }
 
+  const handleCardClick = (card) => {
+    setSelectedCardForDetail(card)
+    setShowDetailModal(true)
+  }
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false)
+    setSelectedCardForDetail(null)
+  }
+
   const handleSellBatch = (batch) => {
     setBatchToSell(batch)
     setShowBatchSaleModal(true)
@@ -496,7 +509,11 @@ export function Duplicates() {
                       {/* GRILLE DE CARTES */}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                         {extension.cards.map((card) => (
-                <Card key={card.id} className="golden-border card-hover cursor-pointer group overflow-hidden">
+                <Card
+                  key={card.id}
+                  className="golden-border card-hover cursor-pointer group overflow-hidden"
+                  onClick={() => handleCardClick(card)}
+                >
                   <CardContent className="p-4">
                     {/* Card Image */}
                     <div className="relative aspect-[3/4] mb-3 rounded-lg overflow-hidden group-hover:scale-105 transition-transform duration-200">
@@ -845,6 +862,14 @@ export function Duplicates() {
         }}
         onSubmit={handleSaleSubmit}
         batch={batchToSell}
+      />
+
+      {/* Duplicate Detail Modal */}
+      <DuplicateDetailModal
+        isOpen={showDetailModal}
+        onClose={handleCloseDetailModal}
+        card={selectedCardForDetail}
+        collection={collection}
       />
     </div>
   )
