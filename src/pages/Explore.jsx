@@ -524,39 +524,37 @@ export function Explore() {
           </div>
         )}
 
-        {/* Champ 2 : Recherche API globale - Cachée si dans une extension */}
-        {currentView !== 'cards' && (
-          <div className="flex gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher une carte dans l'API Pokemon TCG (traduction automatique français → anglais)"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="pl-10 golden-border"
-                style={{ textTransform: 'none' }}
-              />
-            </div>
-            <Button
-              className="bg-blue-500 hover:bg-blue-600 text-white"
-              onClick={handleSearch}
-              disabled={isSearching}
-            >
-              {isSearching ? 'Recherche...' : 'Rechercher'}
-            </Button>
-            {isSearching && (
-              <Button
-                variant="destructive"
-                onClick={handleCancelSearch}
-                className="bg-red-500 hover:bg-red-600 text-white"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Annuler
-              </Button>
-            )}
+        {/* Champ 2 : Recherche API globale */}
+        <div className="flex gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher une carte dans l'API Pokemon TCG (traduction automatique français → anglais)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="pl-10 golden-border"
+              style={{ textTransform: 'none' }}
+            />
           </div>
-        )}
+          <Button
+            className="bg-blue-500 hover:bg-blue-600 text-white"
+            onClick={handleSearch}
+            disabled={isSearching}
+          >
+            {isSearching ? 'Recherche...' : 'Rechercher'}
+          </Button>
+          {isSearching && (
+            <Button
+              variant="destructive"
+              onClick={handleCancelSearch}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Annuler
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Content Area */}
