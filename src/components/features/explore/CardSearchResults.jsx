@@ -230,7 +230,11 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
           const uniqueKey = `${card.id || 'unknown'}-${card.setId || 'noset'}-${index}`
 
           return (
-            <Card key={uniqueKey} className="golden-border card-hover cursor-pointer group overflow-hidden">
+            <Card
+              key={uniqueKey}
+              className="golden-border card-hover cursor-pointer group overflow-hidden"
+              onClick={() => handleAddToCollection(card)}
+            >
               <CardContent className="p-4">
                 {/* Card Image */}
                 <div className="relative aspect-[3/4] mb-3 rounded-lg overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 group-hover:scale-105 transition-transform duration-200">
