@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.109' // Dernière mise à jour: 2025-01-12 - Ajout Team Rocket + Cynthia
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.110' // Dernière mise à jour: 2025-01-12 - Ajout Festival Grounds + Boomerang Energy
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -480,11 +480,15 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'énergie boomerang': 'boomerang energy', // Énergie spéciale
+  'energie boomerang': 'boomerang energy', // Variante sans accent
   'énergie cadeau': 'gift energy', // Objet Dresseur - Énergie spéciale
   'energie cadeau': 'gift energy', // Variante sans accent
   'énergie piquante': 'spiky energy', // Objet Dresseur
   'energie piquante': 'spiky energy', // Variante sans accent
   'lac savoir': 'lake acuity', // Stade - Lac légendaire de Sinnoh
+  'lieu de la fête': 'festival grounds', // Stade
+  'lieu de la fete': 'festival grounds', // Variante sans accent
   'marais bouchebée': 'gapejaw bog', // Stade
   'marais bouchebee': 'gapejaw bog', // Variante sans accent
   'ville perdue': 'lost city', // Stade
