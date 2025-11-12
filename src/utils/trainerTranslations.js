@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.108' // Dernière mise à jour: 2025-11-11 - Ajout "gapejaw bog"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.109' // Dernière mise à jour: 2025-01-12 - Ajout Team Rocket + Cynthia
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -167,6 +167,7 @@ const TRAINER_TRANSLATIONS = {
   'charisme de giovanni': 'giovanni\'s charisma',
   'amis de paldea': 'friends in paldea', // Supporter Gen 9
   'ambition de cynthia': 'cynthia\'s ambition', // Maîtresse de la Ligue Sinnoh - Carte Supporter
+  'poids pouvoir de cynthia': 'cynthia\'s power weight', // Objet Dresseur
   'amis de galar': 'friends in galar', // Supporter Gen 8
   'amis de hisui': 'friends in hisui', // Supporter Hisui (Legends Arceus)
   'amis de sinnoh': 'friends in sinnoh', // Supporter Sinnoh (Gen 4)
@@ -354,6 +355,9 @@ const TRAINER_TRANSLATIONS = {
   'stickers energie': 'energy sticker', // Variante sans accent
   'super ball': 'great ball', // Objet Dresseur - Poké Ball classique
   'super ball de la team rocket': 'team rocket\'s great ball', // Objet Dresseur - Prismatic Evolutions
+  'usine de la team rocket': 'team rocket\'s factory', // Stade
+  'énergie de la team rocket': 'team rocket\'s energy', // Énergie spéciale
+  'energie de la team rocket': 'team rocket\'s energy', // Variante sans accent
   'super bonbon': 'rare candy', // Objet Dresseur - Carte classique d'évolution
   'tambour éveil': 'awakening drum', // Objet Dresseur - Sword & Shield
   'tambour eveil': 'awakening drum', // Variante sans accent
