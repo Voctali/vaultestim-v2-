@@ -74,6 +74,62 @@ export function Duplicates() {
     return matchesEnglish || matchesTranslated
   })
 
+  // Grouper les doublons par bloc et extension (comme dans Collection.jsx)
+  const groupedDuplicates = useMemo(() => {
+    // Grouper par bloc (series)
+    const cardsByBlock = duplicateCards.reduce((acc, card) => {
+      const blockName = card.set?.series || card.series || 'Sans bloc'
+
+      if (!acc[blockName]) {
+        acc[blockName] = {
+          name: blockName,
+          extensions: {}
+        }
+      }
+
+      // Grouper par extension au sein du bloc
+      const extensionKey = card.set?.id || card.extension || 'Sans extension'
+      const extensionName = card.set?.name || card.extension || 'Sans extension'
+      const releaseDate = card.set?.releaseDate || null
+
+      if (!acc[blockName].extensions[extensionKey]) {
+        acc[blockName].extensions[extensionKey] = {
+          name: extensionName,
+          releaseDate: releaseDate,
+          cards: []
+        }
+      }
+
+      acc[blockName].extensions[extensionKey].cards.push(card)
+      return acc
+    }, {})
+
+    // Trier les extensions par date (plus récent en premier)
+    const blockGroups = Object.entries(cardsByBlock).map(([blockName, blockData]) => {
+      const sortedExtensions = Object.values(blockData.extensions).sort((a, b) => {
+        const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date(0)
+        const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date(0)
+        return dateB - dateA
+      })
+
+      // Trouver la date la plus récente du bloc pour le tri final
+      const blockMostRecentDate = sortedExtensions[0]?.releaseDate || null
+
+      return {
+        name: blockName,
+        mostRecentDate: blockMostRecentDate,
+        extensions: sortedExtensions
+      }
+    }).sort((a, b) => {
+      // Trier les blocs par date (plus récent en premier)
+      const dateA = a.mostRecentDate ? new Date(a.mostRecentDate) : new Date(0)
+      const dateB = b.mostRecentDate ? new Date(b.mostRecentDate) : new Date(0)
+      return dateB - dateA
+    })
+
+    return blockGroups
+  }, [duplicateCards])
+
   // Calculer la valeur totale d'un lot
   const calculateBatchValue = (cards) => {
     return cards.reduce((total, card) => {
@@ -308,8 +364,43 @@ export function Duplicates() {
           })()}
 
           {duplicateCards.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-              {duplicateCards.map((card) => (
+            <div className="space-y-12">
+              {groupedDuplicates.map((block, blockIndex) => (
+                <div key={blockIndex} className="space-y-8">
+                  {/* SÉPARATEUR DE BLOC */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                      <h1 className="text-2xl font-bold golden-glow uppercase tracking-wide">{block.name}</h1>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                    </div>
+                    <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
+                  </div>
+
+                  {/* EXTENSIONS DU BLOC */}
+                  {block.extensions.map((extension, extIndex) => (
+                    <div key={extIndex} className="space-y-4">
+                      {/* SÉPARATEUR D'EXTENSION */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-lg font-semibold golden-glow">{extension.name}</h2>
+                          {extension.releaseDate && (
+                            <span className="text-sm text-muted-foreground">
+                              ({new Date(extension.releaseDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })})
+                            </span>
+                          )}
+                          <Badge variant="outline" className="ml-2">
+                            {extension.cards.length} carte{extension.cards.length > 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                      </div>
+
+                      {/* GRILLE DE CARTES */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                        {extension.cards.map((card) => (
                 <Card key={card.id} className="golden-border card-hover cursor-pointer group overflow-hidden">
                   <CardContent className="p-4">
                     {/* Card Image */}
@@ -377,6 +468,11 @@ export function Duplicates() {
                     </div>
                   </CardContent>
                 </Card>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ))}
             </div>
           ) : (

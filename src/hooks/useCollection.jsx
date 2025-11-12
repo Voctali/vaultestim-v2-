@@ -301,7 +301,7 @@ export function CollectionProvider({ children }) {
     // Cartes avec quantité > 1
     collection.forEach(card => {
       if (card.quantity > 1) {
-        console.log('✅ [useMemo duplicates] Carte avec quantity > 1:', card.name, '(quantité:', card.quantity, ')')
+        console.log('✅ [useMemo duplicates] Carte avec quantity > 1:', card.name, `(${card.version || 'Normale'})`, 'quantité:', card.quantity, 'id:', card.id)
         duplicatesList.push({
           ...card,
           quantity: card.quantity
@@ -311,9 +311,10 @@ export function CollectionProvider({ children }) {
 
     console.log('📊 [useMemo duplicates] Cartes avec quantity > 1:', duplicatesList.length)
 
-    // Cartes identiques multiples
+    // Cartes identiques multiples (même nom + extension + version)
     collection.forEach(card => {
-      const key = `${card.name}-${card.series || card.extension}`
+      const version = card.version || 'Normale'
+      const key = `${card.name}-${card.series || card.extension}-${version}`
       if (cardCounts[key]) {
         cardCounts[key].push(card)
       } else {
@@ -323,7 +324,9 @@ export function CollectionProvider({ children }) {
 
     Object.values(cardCounts).forEach(cards => {
       if (cards.length > 1) {
-        console.log('📦 [useMemo duplicates] Cartes identiques trouvées:', cards[0].name, '(', cards.length, 'exemplaires)')
+        console.log('📦 [useMemo duplicates] Cartes identiques trouvées:', cards[0].name, `(${cards[0].version || 'Normale'})`, 'série:', cards[0].series, '(', cards.length, 'exemplaires)')
+        console.log('   → IDs des exemplaires:', cards.map(c => `${c.id} (qty:${c.quantity})`).join(', '))
+
         // Prioriser les cartes en moins bon état pour les doublons
         const sortedCards = cards.sort((a, b) => {
           const conditionOrder = {
@@ -338,7 +341,9 @@ export function CollectionProvider({ children }) {
         })
 
         // Ajouter tous sauf le meilleur exemplaire
-        duplicatesList.push(...sortedCards.slice(0, -1))
+        const duplicatesToAdd = sortedCards.slice(0, -1)
+        console.log('   → Ajout comme doublons (sauf le meilleur):', duplicatesToAdd.map(c => `${c.id} (${c.condition})`).join(', '))
+        duplicatesList.push(...duplicatesToAdd)
       }
     })
 
