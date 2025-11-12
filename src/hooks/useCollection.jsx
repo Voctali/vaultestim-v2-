@@ -311,10 +311,11 @@ export function CollectionProvider({ children }) {
 
     console.log('📊 [useMemo duplicates] Cartes avec quantity > 1:', duplicatesList.length)
 
-    // Cartes identiques multiples (même nom + extension + version)
+    // Cartes identiques multiples (même nom + extension + version + card_id)
     collection.forEach(card => {
       const version = card.version || 'Normale'
-      const key = `${card.name}-${card.series || card.extension}-${version}`
+      const cardId = card.card_id || 'no-id'
+      const key = `${card.name}-${card.series || card.extension}-${version}-${cardId}`
       if (cardCounts[key]) {
         cardCounts[key].push(card)
       } else {
