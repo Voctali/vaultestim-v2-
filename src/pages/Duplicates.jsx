@@ -30,6 +30,25 @@ import {
 
 export function Duplicates() {
   const { duplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale, collection } = useCollection()
+
+  // 🔍 Fonction de debug pour vérifier les doublons d'une carte
+  window.debugCardInstances = (cardName) => {
+    console.log(`🔎 [DEBUG] Recherche de toutes les instances de "${cardName}" dans la collection complète`)
+    const instances = collection.filter(card => card.name.toLowerCase().includes(cardName.toLowerCase()))
+    console.log(`📦 [DEBUG] ${instances.length} instance(s) trouvée(s):`)
+    instances.forEach((card, idx) => {
+      console.log(`  ${idx + 1}. ID: ${card.id}`)
+      console.log(`     Nom: ${card.name}`)
+      console.log(`     Version: ${card.version || 'Normale'}`)
+      console.log(`     Quantité: ${card.quantity || 1}`)
+      console.log(`     Extension: ${card.extension || card.series}`)
+      console.log(`     Condition: ${card.condition}`)
+      console.log(`     card_id (API): ${card.card_id || 'N/A'}`)
+      console.log(`  ---`)
+    })
+    return instances
+  }
+
   const [currentTab, setCurrentTab] = useState('duplicates') // 'duplicates' ou 'batches'
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateBatchModal, setShowCreateBatchModal] = useState(false)
@@ -129,6 +148,75 @@ export function Duplicates() {
 
     return blockGroups
   }, [duplicateCards])
+
+  // Consolider les cartes identiques pour l'affichage (grouper par carte et afficher avec badge quantité)
+  const consolidatedDuplicates = useMemo(() => {
+    console.log('🔄 [Consolidation] Début de la consolidation des doublons')
+
+    return groupedDuplicates.map(block => ({
+      ...block,
+      extensions: block.extensions.map(extension => {
+        // Grouper les cartes par identité (nom + version + card_id)
+        const cardGroups = {}
+
+        extension.cards.forEach(card => {
+          const version = card.version || 'Normale'
+          const cardId = card.card_id || card.id
+          const key = `${card.name}-${version}-${cardId}`
+
+          if (!cardGroups[key]) {
+            cardGroups[key] = {
+              representativeCard: card, // La carte représentative
+              instances: [],
+              totalQuantity: 0
+            }
+          }
+
+          cardGroups[key].instances.push(card)
+          cardGroups[key].totalQuantity += (card.quantity || 1)
+        })
+
+        // Log des cartes consolidées
+        Object.entries(cardGroups).forEach(([key, group]) => {
+          if (group.instances.length > 1) {
+            console.log(`🔀 [Consolidation] ${group.instances[0].name} (${group.instances[0].version || 'Normale'}):`,
+              group.instances.length, 'instances →', group.totalQuantity, 'quantité totale',
+              'IDs:', group.instances.map(c => c.id).join(', '))
+          }
+        })
+
+        // Convertir en tableau et garder la meilleure condition comme représentant
+        const consolidatedCards = Object.values(cardGroups).map(group => {
+          const conditionOrder = {
+            'Neuf': 5,
+            'Proche du neuf': 4,
+            'Excellent': 3,
+            'Bon': 2,
+            'Acceptable': 1,
+            'Endommagé': 0
+          }
+
+          // Trouver la carte avec la meilleure condition
+          const bestCard = group.instances.reduce((best, current) => {
+            const bestScore = conditionOrder[best.condition] || 0
+            const currentScore = conditionOrder[current.condition] || 0
+            return currentScore > bestScore ? current : best
+          }, group.instances[0])
+
+          return {
+            ...bestCard,
+            consolidatedQuantity: group.totalQuantity,
+            instanceIds: group.instances.map(c => c.id)
+          }
+        })
+
+        return {
+          ...extension,
+          cards: consolidatedCards
+        }
+      })
+    }))
+  }, [groupedDuplicates])
 
   // Calculer la valeur totale d'un lot
   const calculateBatchValue = (cards) => {
@@ -365,7 +453,7 @@ export function Duplicates() {
 
           {duplicateCards.length > 0 ? (
             <div className="space-y-12">
-              {groupedDuplicates.map((block, blockIndex) => (
+              {consolidatedDuplicates.map((block, blockIndex) => (
                 <div key={blockIndex} className="space-y-8">
                   {/* SÉPARATEUR DE BLOC */}
                   <div className="flex items-center gap-4">
@@ -409,9 +497,11 @@ export function Duplicates() {
                         card={card}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                        x{card.quantity || 2}
-                      </div>
+                      {card.consolidatedQuantity > 1 && (
+                        <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          x{card.consolidatedQuantity}
+                        </div>
+                      )}
                       <div className="absolute bottom-2 left-2 right-2 flex gap-1">
                         <Button
                           size="sm"
