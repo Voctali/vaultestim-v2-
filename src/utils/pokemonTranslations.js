@@ -2,7 +2,7 @@
 // Utilisé pour rechercher les cartes TCG avec l'API en anglais
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const POKEMON_TRANSLATIONS_VERSION = '1.0.0' // Dernière mise à jour: 2025-11-06
+export const POKEMON_TRANSLATIONS_VERSION = '1.0.2' // Dernière mise à jour: 2025-01-12
 
 export const POKEMON_TRANSLATIONS = {
   // Génération 1
@@ -49,6 +49,7 @@ export const POKEMON_TRANSLATIONS = {
   'grosdoudou': 'wigglytuff',
   'nosferapti': 'zubat',
   'nosferalto': 'golbat',
+  'nosferalto de la team rocket': "team rocket's golbat",
   'mystherbe': 'oddish',
   'ortide': 'gloom',
   'rafflesia': 'vileplume',
@@ -878,6 +879,7 @@ export const POKEMON_TRANSLATIONS = {
   'coléodôme': 'dottler',
   'coleodome': 'dottler', // Variante sans accents
   'astronelle': 'orbeetle',
+  'astronelle de la team rocket': "team rocket's orbeetle",
   'tournicoton': 'gossifleur',
   'blancoton': 'eldegoss',
   'moumouton': 'wooloo',
