@@ -2,7 +2,7 @@
 // Utilisé pour rechercher les cartes TCG avec l'API en anglais
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const POKEMON_TRANSLATIONS_VERSION = '1.0.2' // Dernière mise à jour: 2025-01-12
+export const POKEMON_TRANSLATIONS_VERSION = '1.0.3' // Dernière mise à jour: 2025-01-12
 
 export const POKEMON_TRANSLATIONS = {
   // Génération 1
@@ -96,6 +96,7 @@ export const POKEMON_TRANSLATIONS = {
   'otaria': 'seel',
   'lamantine': 'dewgong',
   'tadmorv': 'grimer',
+  'tadmorv de la team rocket': "team rocket's grimer",
   'grotadmorv': 'muk',
   'kokiyas': 'shellder',
   'crustabri': 'cloyster',
