@@ -54,6 +54,9 @@ src/
 - **CardCacheService** : Cache IndexedDB avec reconnexion automatique + retry
 - **CardMarketMatchingService** : Matching automatique (attaques 50% + numéro 25% + nom 15% + suffixes 10%)
 - **PriceRefreshService** : Actualisation automatique quotidienne (1500 cartes/jour, cycle complet ~12 jours)
+- **HybridPriceService** : Système hybride intelligent RapidAPI + Pokemon TCG (100 req/jour → fallback automatique)
+- **RapidAPIService** : Connexion CardMarket API TCG via RapidAPI (prix EUR précis, cartes gradées)
+- **QuotaTracker** : Gestion quota quotidien avec localStorage et reset automatique
 
 ## Fonctionnalités Clés
 
@@ -75,10 +78,20 @@ src/
   - `src/utils/trainerTranslations.js` - 230+ Dresseurs et Objets (313 avec variantes)
 - **Comportement** : Recherche "salamèche" → trouve "Charmander"
 
-### 💰 Gestion des Prix
+### 💰 Système Hybride de Prix (Nouveau - 13/11/2025)
+- **Stratégie intelligente** : RapidAPI (100 req/jour) → Fallback Pokemon TCG API
+- **RapidAPI (CardMarket API TCG)** :
+  - Prix précis en EUR (Near Mint, Allemagne, France)
+  - Prix cartes gradées (PSA 10/9, CGC 9)
+  - Moyennes 7 jours et 30 jours
+  - 100 requêtes gratuites par jour
+  - Host : `cardmarket-api-tcg.p.rapidapi.com`
+- **Fallback automatique** : Pokemon TCG API si quota épuisé ou erreur
+- **Gestion quota** : QuotaTracker avec localStorage, reset quotidien à minuit
+- **Activation** : Variable `.env` `VITE_USE_RAPIDAPI=true`
+- **Test** : Page `/test-hybrid-system.html` pour validation complète
 - **Formats** : CardMarket (EUR) + TCGPlayer (USD)
 - **Stockage** : JSONB Supabase (`cardmarket`, `tcgplayer`) + IndexedDB
-- **Migration** : Outil admin avec barre de progression et reprise intelligente
 
 ## Configuration
 
@@ -87,6 +100,12 @@ src/
 VITE_POKEMON_TCG_API_KEY=xxx     # Optionnel
 VITE_SUPABASE_URL=xxx            # Requis
 VITE_SUPABASE_ANON_KEY=xxx       # Requis
+
+# Système Hybride RapidAPI (Nouveau)
+VITE_USE_RAPIDAPI=true           # Activer/désactiver RapidAPI
+VITE_RAPIDAPI_KEY=xxx            # Clé API RapidAPI (obtenir sur rapidapi.com)
+VITE_RAPIDAPI_HOST=cardmarket-api-tcg.p.rapidapi.com
+VITE_RAPIDAPI_DAILY_QUOTA=100   # Quota quotidien (plan Basic gratuit)
 ```
 
 ### Alias de Chemins
@@ -209,7 +228,31 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 - **Debug DB** : Bouton dans interface pour vérifier IndexedDB vs React
 - **Clean storage** : `/clean-storage.html` ou lien sur page login
 
-## ✅ Fonctionnalités Récentes (Janvier 2025)
+## ✅ Fonctionnalités Récentes (Novembre 2024 - Janvier 2025)
+
+### 🚀 Système Hybride de Prix RapidAPI (13/11/2025)
+- **Implémentation complète** (v2.0.0) : Système intelligent de récupération des prix
+  - **HybridPriceService** : Orchestrateur avec tentative RapidAPI → fallback Pokemon TCG API
+  - **RapidAPIService** : Connexion à CardMarket API TCG via RapidAPI
+  - **QuotaTracker** : Gestion quota quotidien (100 req/jour, reset automatique à minuit)
+- **Fonctionnalités** :
+  - Prix EUR précis (Near Mint global + localisés DE/FR)
+  - Prix cartes gradées (PSA 10/9, CGC 9) - **exclusif RapidAPI**
+  - Moyennes 7 jours et 30 jours
+  - Fallback automatique sur Pokemon TCG API si quota épuisé
+  - Feature flag `.env` pour activation/désactivation
+- **Endpoints RapidAPI disponibles** :
+  - `/pokemon/cards/search` - Recherche cartes avec prix détaillés
+  - `/pokemon/cards/{id}` - Détails carte spécifique
+  - `/pokemon/cards/expansion/{slug}` - Cartes par extension
+  - `/pokemon/products/search` - Produits scellés (boosters, ETB, cases)
+  - `/pokemon/products/expansion/{slug}` - Produits par extension
+  - `/pokemon/expansions` - Liste des extensions
+- **Test** : Page `/test-hybrid-system.html` avec interface complète
+  - 4 modes de test (Hybride, Force RapidAPI, Force Pokemon TCG, Produits scellés)
+  - Affichage stats quota en temps réel
+  - Détails prix complets (Near Mint, DE, FR, gradées, moyennes)
+- **Résultats** : 20 cartes Charizard testées, 100% via RapidAPI, quota 1/100
 
 ### Interface Explorer les Séries & Doublons (12/01/2025)
 - **Recherche dans extensions** (v1.9.119, v1.9.122) : Champ de recherche dédié par nom/numéro
