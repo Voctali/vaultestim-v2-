@@ -38,21 +38,21 @@ export class HybridPriceService {
       return this.fallbackToPokemonTCGAPI(searchTerm, limit)
     }
 
-    // 2. Vérifier le quota
-    const quotaCheck = QuotaTracker.canMakeRequest()
-    if (!quotaCheck.allowed) {
-      console.log(`⏭️ ${quotaCheck.message} → Fallback Pokemon TCG API`)
+    // 2. Réserver une requête dans le quota AVANT l'appel HTTP
+    const reserved = QuotaTracker.reserveRequest()
+    if (!reserved) {
+      console.log(`⏭️ Quota épuisé ou limite atteinte → Fallback Pokemon TCG API`)
       return this.fallbackToPokemonTCGAPI(searchTerm, limit)
     }
 
     // 3. Essayer RapidAPI
     try {
-      console.log(`🚀 Tentative RapidAPI (${quotaCheck.remaining} requêtes restantes)...`)
+      console.log(`🚀 Tentative RapidAPI (requête réservée)...`)
 
       const result = await RapidAPIService.searchCards(searchTerm, { limit })
 
-      // Incrémenter le quota
-      QuotaTracker.incrementUsage()
+      // Confirmer l'utilisation du quota (requête réussie)
+      QuotaTracker.confirmRequest()
 
       // Convertir au format VaultEstim
       const cards = this.formatRapidAPICards(result.data || [])
@@ -61,6 +61,9 @@ export class HybridPriceService {
       return cards
 
     } catch (error) {
+      // Libérer la réservation en cas d'erreur
+      QuotaTracker.releaseRequest()
+
       console.warn(`⚠️ Erreur RapidAPI: ${error.message}`)
       console.log('⏭️ Fallback sur Pokemon TCG API')
       return this.fallbackToPokemonTCGAPI(searchTerm, limit)
@@ -268,5 +271,146 @@ export class HybridPriceService {
    */
   static async forcePokemonTCGAPI(searchTerm, limit = 10) {
     return this.fallbackToPokemonTCGAPI(searchTerm, limit)
+  }
+
+  /**
+   * Rechercher des produits scellés avec fallback intelligent
+   *
+   * @param {string} searchTerm - Terme de recherche
+   * @param {number} limit - Nombre de résultats
+   * @returns {Promise<Array>} Produits scellés avec prix
+   */
+  static async searchProducts(searchTerm, limit = 50) {
+    console.log(`📦 HybridPrice: Recherche produits "${searchTerm}"...`)
+
+    // 1. Vérifier si RapidAPI est disponible et activé
+    if (!RapidAPIService.isAvailable()) {
+      console.log('⏭️ RapidAPI désactivé → Fallback Supabase CardMarket')
+      return this.fallbackToSupabaseProducts(searchTerm, limit)
+    }
+
+    // 2. Réserver une requête dans le quota AVANT l'appel HTTP
+    const reserved = QuotaTracker.reserveRequest()
+    if (!reserved) {
+      console.log(`⏭️ Quota épuisé ou limite atteinte → Fallback Supabase CardMarket`)
+      return this.fallbackToSupabaseProducts(searchTerm, limit)
+    }
+
+    // 3. Essayer RapidAPI
+    try {
+      console.log(`🚀 Tentative RapidAPI (requête réservée)...`)
+
+      const result = await RapidAPIService.searchProducts(searchTerm, { limit })
+
+      // Confirmer l'utilisation du quota (requête réussie)
+      QuotaTracker.confirmRequest()
+
+      // Formater les produits
+      const products = this.formatRapidAPIProducts(result.data || [])
+
+      console.log(`✅ ${products.length} produits récupérés via RapidAPI`)
+      return products
+
+    } catch (error) {
+      // Libérer la réservation en cas d'erreur
+      QuotaTracker.releaseRequest()
+
+      console.warn(`⚠️ Erreur RapidAPI: ${error.message}`)
+      console.log('⏭️ Fallback sur Supabase CardMarket')
+      return this.fallbackToSupabaseProducts(searchTerm, limit)
+    }
+  }
+
+  /**
+   * Fallback sur la base Supabase CardMarket pour produits scellés
+   */
+  static async fallbackToSupabaseProducts(searchTerm, limit = 50) {
+    console.log(`📊 Utilisation Supabase CardMarket pour produits "${searchTerm}"...`)
+
+    const { CardMarketSupabaseService } = await import('./CardMarketSupabaseService')
+
+    try {
+      // Recherche dans Supabase CardMarket
+      const products = await CardMarketSupabaseService.searchSealedProducts(searchTerm, null, limit, 0)
+
+      // Charger les prix pour tous les produits
+      if (products.length > 0) {
+        const productIds = products.map(p => p.id_product)
+        const priceMap = await CardMarketSupabaseService.getPricesForProducts(productIds)
+
+        // Associer les prix
+        const productsWithPrices = products.map(product => {
+          const price = priceMap.get(product.id_product)
+          return {
+            ...product,
+            price: price?.avg || price?.trend || null,
+            priceLow: price?.low || null,
+            priceDetails: price,
+            _price_source: 'supabase-cardmarket'
+          }
+        })
+
+        console.log(`✅ ${productsWithPrices.length} produits récupérés via Supabase`)
+        return productsWithPrices
+      }
+
+      return []
+
+    } catch (error) {
+      console.error(`❌ Erreur Supabase CardMarket:`, error)
+      return []
+    }
+  }
+
+  /**
+   * Formatter les produits RapidAPI au format VaultEstim
+   *
+   * @param {Array} rapidApiProducts - Produits depuis RapidAPI
+   * @returns {Array} Produits formatés
+   */
+  static formatRapidAPIProducts(rapidApiProducts) {
+    return rapidApiProducts.map(product => {
+      // Extraire les prix CardMarket
+      const cm = product.prices?.cardmarket || {}
+
+      // Déterminer le prix principal
+      const price = cm.avg || cm.trend || cm.low || 0
+
+      return {
+        // Identifiants
+        id_product: product.id || `rapid-${Math.random()}`,
+        name: product.name,
+
+        // Image
+        image_url: product.image || null,
+
+        // Catégorie
+        category_id: product.category?.id || null,
+        category_name: product.category?.name || 'Non spécifié',
+
+        // Extension/Série
+        expansion_id: product.expansion?.id || product.episode?.id || null,
+        expansion_name: product.expansion?.name || product.episode?.name || null,
+
+        // Détails
+        rarity: product.rarity || null,
+        number: product.number || null,
+
+        // Prix
+        price: price,
+        priceLow: cm.low || null,
+        priceDetails: {
+          avg: cm.avg || null,
+          trend: cm.trend || null,
+          low: cm.low || null,
+          currency: 'EUR'
+        },
+
+        // Métadonnées
+        _price_updated_at: new Date().toISOString(),
+        _price_source: 'rapidapi',
+        _rapidapi_id: product.id
+      }
+    })
   }
 }

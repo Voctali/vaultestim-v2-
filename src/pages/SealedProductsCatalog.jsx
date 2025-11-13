@@ -3,10 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Package, Search, ExternalLink, Euro, Filter, Plus } from 'lucide-react'
+import { Package, Search, ExternalLink, Euro, Filter, Plus, Zap } from 'lucide-react'
 import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
 import { UserSealedProductsService } from '@/services/UserSealedProductsService'
+import { HybridPriceService } from '@/services/HybridPriceService'
 import { AddSealedProductModal } from '@/components/features/collection/AddSealedProductModal'
+import { PriceSourceBadge } from '@/components/ui/PriceSourceBadge'
 import { useAuth } from '@/hooks/useAuth'
 
 export function SealedProductsCatalog() {
@@ -14,6 +16,8 @@ export function SealedProductsCatalog() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [apiSearchTerm, setApiSearchTerm] = useState('') // Recherche API séparée
+  const [isApiSearch, setIsApiSearch] = useState(false) // Mode recherche API
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -26,6 +30,7 @@ export function SealedProductsCatalog() {
   const loadSealedProducts = async () => {
     try {
       setLoading(true)
+      setIsApiSearch(false)
       console.log('📦 Chargement du catalogue CardMarket...')
 
       // Charger tous les produits scellés par batches (Supabase limite à 1000 par requête)
@@ -66,13 +71,38 @@ export function SealedProductsCatalog() {
           ...product,
           price: price?.avg || price?.trend || null,
           priceLow: price?.low || null,
-          priceDetails: price
+          priceDetails: price,
+          _price_source: 'supabase-cardmarket'
         }
       })
 
       setProducts(productsWithPrices)
     } catch (error) {
       console.error('❌ Erreur chargement catalogue:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleApiSearch = async () => {
+    if (!apiSearchTerm.trim()) {
+      // Si vide, revenir au catalogue complet
+      loadSealedProducts()
+      return
+    }
+
+    try {
+      setLoading(true)
+      setIsApiSearch(true)
+      console.log(`🔍 Recherche API produits: "${apiSearchTerm}"`)
+
+      // Utiliser le système hybride
+      const results = await HybridPriceService.searchProducts(apiSearchTerm, 100)
+
+      console.log(`✅ ${results.length} produits trouvés via API`)
+      setProducts(results)
+    } catch (error) {
+      console.error('❌ Erreur recherche API:', error)
     } finally {
       setLoading(false)
     }
@@ -142,18 +172,67 @@ export function SealedProductsCatalog() {
         </div>
 
         <div className="space-y-6">
+          {/* Recherche API Hybride */}
+          <Card className="border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-yellow-500/5">
+            <CardContent className="pt-6">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="w-5 h-5 text-amber-400" />
+                  <h3 className="font-semibold text-amber-400">Recherche API (RapidAPI → Supabase)</h3>
+                  <Badge variant="outline" className="text-xs">
+                    Prix EUR actualisés
+                  </Badge>
+                </div>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher via API (booster, display, ETB...)..."
+                      value={apiSearchTerm}
+                      onChange={(e) => setApiSearchTerm(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleApiSearch()}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleApiSearch}
+                    disabled={loading}
+                    className="bg-amber-500 hover:bg-amber-600"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Rechercher
+                  </Button>
+                  {isApiSearch && (
+                    <Button
+                      onClick={loadSealedProducts}
+                      variant="outline"
+                    >
+                      Réinitialiser
+                    </Button>
+                  )}
+                </div>
+                {isApiSearch && (
+                  <p className="text-xs text-amber-400">
+                    🔍 Mode recherche API actif - Résultats en temps réel depuis RapidAPI ou Supabase
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Barre de recherche et filtres */}
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row gap-4">
-                {/* Recherche */}
+                {/* Recherche locale */}
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Rechercher un produit..."
+                    placeholder="Filtrer localement..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9"
+                    disabled={isApiSearch}
                   />
                 </div>
 
@@ -164,6 +243,7 @@ export function SealedProductsCatalog() {
                     size="sm"
                     onClick={() => setSelectedCategory(null)}
                     className="flex-shrink-0"
+                    disabled={isApiSearch}
                   >
                     <Filter className="h-4 w-4 mr-2" />
                     Toutes
@@ -175,6 +255,7 @@ export function SealedProductsCatalog() {
                       size="sm"
                       onClick={() => setSelectedCategory(category)}
                       className="flex-shrink-0"
+                      disabled={isApiSearch}
                     >
                       {category}
                     </Button>
@@ -261,11 +342,14 @@ export function SealedProductsCatalog() {
                         {/* Prix */}
                         {product.price && (
                           <div className="mb-3">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Euro className="w-4 h-4 text-yellow-500" />
-                              <span className="font-bold text-yellow-500">
-                                {parseFloat(product.price).toFixed(2)} €
-                              </span>
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-2">
+                                <Euro className="w-4 h-4 text-yellow-500" />
+                                <span className="font-bold text-yellow-500">
+                                  {parseFloat(product.price).toFixed(2)} €
+                                </span>
+                              </div>
+                              <PriceSourceBadge source={product._price_source} size="small" />
                             </div>
                             {product.priceLow && (
                               <div className="text-xs text-muted-foreground">

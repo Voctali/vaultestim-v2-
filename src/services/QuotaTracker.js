@@ -12,6 +12,8 @@ export class QuotaTracker {
   static STORAGE_KEY = 'rapidapi_quota'
   static DAILY_LIMIT = parseInt(import.meta.env.VITE_RAPIDAPI_DAILY_QUOTA || '100')
   static WARNING_THRESHOLD = 0.9 // Alerte à 90%
+  static requestLock = false // Verrou pour empêcher requêtes simultanées
+  static pendingRequests = 0 // Compteur de requêtes en cours
 
   /**
    * Obtenir les données du quota depuis localStorage
@@ -81,31 +83,80 @@ export class QuotaTracker {
    */
   static canMakeRequest() {
     const data = this.getQuotaData()
-    const remaining = data.limit - data.used
+    // Prendre en compte les requêtes en cours pour calculer le remaining réel
+    const effectiveUsed = data.used + this.pendingRequests
+    const remaining = data.limit - effectiveUsed
 
-    if (data.used >= data.limit) {
+    if (effectiveUsed >= data.limit) {
       const resetDate = new Date(data.resetAt)
       return {
         allowed: false,
         remaining: 0,
-        used: data.used,
+        used: effectiveUsed,
         limit: data.limit,
-        message: `Quota quotidien épuisé (${data.used}/${data.limit}). Reset à ${resetDate.toLocaleTimeString('fr-FR')}`
+        message: `Quota quotidien épuisé (${effectiveUsed}/${data.limit}). Reset à ${resetDate.toLocaleTimeString('fr-FR')}`
       }
     }
 
     // Alerte si proche de la limite
-    const percentUsed = data.used / data.limit
+    const percentUsed = effectiveUsed / data.limit
     if (percentUsed >= this.WARNING_THRESHOLD && percentUsed < 1) {
-      console.warn(`⚠️ QuotaTracker: ${Math.round(percentUsed * 100)}% du quota utilisé (${data.used}/${data.limit})`)
+      console.warn(`⚠️ QuotaTracker: ${Math.round(percentUsed * 100)}% du quota utilisé (${effectiveUsed}/${data.limit})`)
     }
 
     return {
       allowed: true,
       remaining,
-      used: data.used,
+      used: effectiveUsed,
       limit: data.limit,
       message: `${remaining} requêtes restantes sur ${data.limit}`
+    }
+  }
+
+  /**
+   * Réserver une requête (incrémenter le compteur en cours)
+   * À appeler AVANT de faire la requête HTTP
+   *
+   * @returns {boolean} true si réservation réussie, false si quota dépassé
+   */
+  static reserveRequest() {
+    const check = this.canMakeRequest()
+
+    if (!check.allowed) {
+      console.warn(`🚫 QuotaTracker: Requête refusée - ${check.message}`)
+      return false
+    }
+
+    this.pendingRequests++
+    console.log(`🔒 QuotaTracker: Requête réservée (${this.pendingRequests} en cours, ${check.remaining - 1} disponibles)`)
+    return true
+  }
+
+  /**
+   * Confirmer une requête réussie (convertir réservation en utilisation)
+   * À appeler APRÈS une requête HTTP réussie
+   */
+  static confirmRequest() {
+    if (this.pendingRequests > 0) {
+      this.pendingRequests--
+    }
+
+    const data = this.getQuotaData()
+    data.used += 1
+    data.lastUpdated = Date.now()
+    this.saveQuotaData(data)
+
+    console.log(`✅ QuotaTracker: Requête confirmée - ${data.used}/${data.limit} utilisées (${data.limit - data.used} restantes)`)
+    return data
+  }
+
+  /**
+   * Annuler une requête réservée (en cas d'erreur avant l'appel HTTP)
+   */
+  static releaseRequest() {
+    if (this.pendingRequests > 0) {
+      this.pendingRequests--
+      console.log(`🔓 QuotaTracker: Requête libérée (${this.pendingRequests} en cours)`)
     }
   }
 
