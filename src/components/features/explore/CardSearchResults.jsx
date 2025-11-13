@@ -10,6 +10,7 @@ import { TCGdxService } from '@/services/TCGdxService'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { translateCardName } from '@/utils/cardTranslations'
 import { translateCardType } from '@/utils/typeTranslations'
+import { PriceSourceBadge } from '@/components/ui/PriceSourceBadge'
 import { Heart, List, Plus } from 'lucide-react'
 import { getDefaultVersion } from '@/utils/cardVersions'
 
@@ -341,7 +342,8 @@ export function CardSearchResults({ cards, isLoading, searchQuery, showHeader = 
 
                   {/* Prix et HP */}
                   <div className="flex justify-between items-center">
-                    <div className="text-right">
+                    <div className="flex flex-col items-start gap-1">
+                      <PriceSourceBadge source={card._price_source} size="small" />
                       <p className="font-semibold text-green-500">
                         {formatCardPrice(card)}
                       </p>

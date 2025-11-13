@@ -20,6 +20,7 @@ import { translateCardName } from '@/utils/cardTranslations'
 import { translateCardType } from '@/utils/typeTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
+import { PriceSourceBadge } from '@/components/ui/PriceSourceBadge'
 import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
 export function Explore() {
@@ -863,8 +864,11 @@ export function Explore() {
                   </div>
 
                   {/* Prix de la carte */}
-                  <div className="mt-2 text-right">
-                    <p className="font-semibold text-green-500 text-sm">{formatCardPrice(card)}</p>
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <PriceSourceBadge source={card._price_source} size="small" />
+                      <p className="font-semibold text-green-500 text-sm">{formatCardPrice(card)}</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>

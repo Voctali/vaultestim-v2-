@@ -7,6 +7,7 @@ import { CacheService } from './CacheService'
 import { translatePokemonName, POKEMON_TRANSLATIONS_VERSION } from '@/utils/pokemonTranslations'
 import { translateTrainerName, TRAINER_TRANSLATIONS_VERSION } from '@/utils/trainerTranslations'
 import { translateRarity } from '@/utils/cardConditions'
+import { HybridPriceService } from './HybridPriceService.js'
 
 export class TCGdxService {
   static BASE_URL = '/api/pokemontcg/v2'
@@ -145,10 +146,10 @@ export class TCGdxService {
   }
 
   /**
-   * Recherche de cartes avec l'API Pokemon TCG
+   * Recherche de cartes avec système hybride (RapidAPI + Pokemon TCG)
    */
   static async searchCards(query, limit = 50) {
-    console.log(`🔍 Recherche Pokemon TCG: "${query}"`)
+    console.log(`🔍 Recherche Hybride: "${query}"`)
 
     // Traduire le nom français vers anglais si nécessaire AVANT de vérifier le cache
     const translatedQuery = this.translateToEnglish(query)
@@ -164,6 +165,39 @@ export class TCGdxService {
       console.log(`⚡ Résultats depuis cache: ${cached.length} cartes`)
       return cached
     }
+
+    try {
+      // Utiliser le système hybride (RapidAPI → Pokemon TCG API)
+      console.log(`🚀 Recherche via HybridPriceService...`)
+      const cards = await HybridPriceService.searchCards(translatedQuery, limit)
+
+      // Les cartes sont déjà normalisées par HybridPriceService
+      // (format RapidAPI ou Pokemon TCG API)
+
+      // Mettre en cache UNIQUEMENT si des résultats ont été trouvés
+      // Ne pas cacher les résultats vides pour permettre de futures recherches après ajout de traductions
+      if (cards.length > 0) {
+        CacheService.setCache(cacheKey, cards, 15 * 60 * 1000)
+        console.log(`💾 ${cards.length} cartes mises en cache pour 15 minutes`)
+      } else {
+        console.log(`⚠️ Résultat vide non mis en cache (permet futures recherches)`)
+      }
+
+      console.log(`✅ Recherche terminée: ${cards.length} cartes pour "${query}"`)
+      return cards
+
+    } catch (error) {
+      console.error('❌ Erreur système hybride:', error.message)
+      throw new Error(`Recherche impossible: ${error.message}`)
+    }
+  }
+
+  /**
+   * Recherche directe avec l'API Pokemon TCG (sans système hybride)
+   * INTERNE: Utilisé par HybridPriceService pour éviter une boucle infinie
+   */
+  static async searchCardsDirect(translatedQuery, limit = 50) {
+    console.log(`📊 Recherche directe Pokemon TCG API: "${translatedQuery}"`)
 
     try {
       let cards = []
@@ -249,25 +283,15 @@ export class TCGdxService {
           console.log(`⚠️ Aucune correspondance valide pour "${translatedQuery}" - ${cards.length} résultats ignorés car non pertinents`)
         }
       }
-      console.log(`🔍 Total: ${cards.length} cartes pour "${query}"`)
+      console.log(`🔍 Total: ${cards.length} cartes pour "${translatedQuery}"`)
 
       const normalizedCards = this.normalizePokemonTCGData(cards)
 
-      // Mettre en cache UNIQUEMENT si des résultats ont été trouvés
-      // Ne pas cacher les résultats vides pour permettre de futures recherches après ajout de traductions
-      if (normalizedCards.length > 0) {
-        CacheService.setCache(cacheKey, normalizedCards, 15 * 60 * 1000)
-        console.log(`💾 ${normalizedCards.length} cartes mises en cache pour 15 minutes`)
-      } else {
-        console.log(`⚠️ Résultat vide non mis en cache (permet futures recherches)`)
-      }
-
-      console.log(`✅ Pokemon TCG trouvé ${normalizedCards.length} cartes pour "${query}"`)
+      console.log(`✅ Pokemon TCG trouvé ${normalizedCards.length} cartes`)
       return normalizedCards
 
     } catch (error) {
       console.error('❌ Erreur Pokemon TCG après retry:', error.message)
-      // Plus de fallback - retourner une erreur claire
       throw new Error(`API Pokemon TCG indisponible: ${error.message}`)
     }
   }

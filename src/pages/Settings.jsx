@@ -2,16 +2,37 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
-import { Settings as SettingsIcon, Users, BarChart, Heart, Star, Package, RefreshCw, Database } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Settings as SettingsIcon, Users, BarChart, Heart, Star, Package, RefreshCw, Database, Zap } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { CardCacheService } from '@/services/CardCacheService'
 import { SupabaseService } from '@/services/SupabaseService'
-import { useState } from 'react'
+import { HybridPriceService } from '@/services/HybridPriceService'
+import { QuotaTracker } from '@/services/QuotaTracker'
+import { useState, useEffect } from 'react'
 
 export function Settings() {
   const { settings, updateSetting } = useSettings()
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncStatus, setSyncStatus] = useState(null)
+  const [quotaStats, setQuotaStats] = useState(null)
+
+  // Charger les stats RapidAPI au montage
+  useEffect(() => {
+    loadQuotaStats()
+  }, [])
+
+  const loadQuotaStats = () => {
+    const stats = HybridPriceService.getStats()
+    setQuotaStats(stats)
+  }
+
+  const handleResetQuota = () => {
+    if (confirm('Réinitialiser le quota à 0 ? (Uniquement pour tests)')) {
+      QuotaTracker.forceReset()
+      loadQuotaStats()
+    }
+  }
 
   const handleForceSync = async () => {
     try {
@@ -178,6 +199,122 @@ export function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Statistiques RapidAPI */}
+      {quotaStats && (
+        <Card className="golden-border">
+          <CardHeader>
+            <CardTitle className="golden-glow flex items-center gap-2">
+              <Zap className="w-5 h-5" />
+              Système Hybride de Prix
+            </CardTitle>
+            <CardDescription>
+              Gestion automatique RapidAPI (précis) → Pokemon TCG API (fallback gratuit)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* État RapidAPI */}
+            <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">RapidAPI</span>
+                <Badge variant={quotaStats.rapidApiEnabled ? 'default' : 'secondary'}>
+                  {quotaStats.rapidApiEnabled ? '✅ Activé' : '❌ Désactivé'}
+                </Badge>
+              </div>
+              {quotaStats.rapidApiEnabled && (
+                <span className="text-xs text-muted-foreground">
+                  Prix EUR précis + cartes gradées
+                </span>
+              )}
+            </div>
+
+            {/* Quota */}
+            {quotaStats.rapidApiEnabled && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Quota quotidien</span>
+                  <Badge
+                    variant={quotaStats.quota.isExhausted ? 'destructive' : quotaStats.quota.isNearLimit ? 'warning' : 'default'}
+                  >
+                    {quotaStats.quota.used} / {quotaStats.quota.limit}
+                  </Badge>
+                </div>
+
+                {/* Barre de progression */}
+                <div className="w-full bg-secondary rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all ${
+                      quotaStats.quota.isExhausted
+                        ? 'bg-red-500'
+                        : quotaStats.quota.isNearLimit
+                        ? 'bg-yellow-500'
+                        : 'bg-green-500'
+                    }`}
+                    style={{ width: `${quotaStats.quota.percentUsed}%` }}
+                  />
+                </div>
+
+                {/* Détails */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground">Utilisées</p>
+                    <p className="font-semibold text-lg">{quotaStats.quota.used}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground">Restantes</p>
+                    <p className="font-semibold text-lg text-green-500">{quotaStats.quota.remaining}</p>
+                  </div>
+                </div>
+
+                {/* Reset */}
+                <div className="flex items-center justify-between p-2 bg-secondary/30 rounded">
+                  <span className="text-xs text-muted-foreground">
+                    Réinitialisation automatique : {quotaStats.quota.resetAt.toLocaleTimeString('fr-FR')}
+                  </span>
+                </div>
+
+                {/* Recommandation */}
+                <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                  <p className="text-sm text-blue-400">
+                    💡 {quotaStats.recommendation}
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={loadQuotaStats}
+                    className="flex-1"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Rafraîchir
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleResetQuota}
+                    className="flex-1"
+                  >
+                    Reset Quota (Test)
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Message si désactivé */}
+            {!quotaStats.rapidApiEnabled && (
+              <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <p className="text-sm text-yellow-400">
+                  ℹ️ RapidAPI désactivé. L'application utilise uniquement Pokemon TCG API.
+                  Pour activer RapidAPI, configurez VITE_USE_RAPIDAPI=true dans .env
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Informations */}
       <Card className="golden-border">

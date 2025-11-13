@@ -76,7 +76,9 @@ export class HybridPriceService {
     const { TCGdxService } = await import('./TCGdxService')
 
     try {
-      const cards = await TCGdxService.searchCards(searchTerm, limit)
+      // IMPORTANT: Utiliser searchCardsDirect au lieu de searchCards
+      // pour éviter une boucle infinie (searchCards appelle HybridPriceService)
+      const cards = await TCGdxService.searchCardsDirect(searchTerm, limit)
 
       // Ajouter un marqueur de source
       return cards.map(card => ({

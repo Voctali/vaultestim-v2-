@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Fallback Pokemon TCG API</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #d4af37; }
+    h2 { color: #4CAF50; margin-top: 30px; }
+    .section {
+      background: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #4CAF50;
+    }
+    .error {
+      border-left-color: #f44336;
+      background: #3a2a2a;
+    }
+    .warning {
+      border-left-color: #ff9800;
+      background: #3a3020;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 5px;
+    }
+    button:hover { background: #45a049; }
+    button.danger {
+      background: #f44336;
+    }
+    button.danger:hover {
+      background: #da190b;
+    }
+    pre {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      font-size: 12px;
+    }
+    .stat {
+      display: inline-block;
+      margin: 10px 20px 10px 0;
+      padding: 10px 20px;
+      background: #333;
+      border-radius: 4px;
+    }
+    .stat strong { color: #d4af37; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test Fallback Pokemon TCG API</h1>
+
+  <!-- Quota Control -->
+  <div class="section warning">
+    <h2>⚠️ Contrôle du Quota</h2>
+    <div id="stats"></div>
+    <button onclick="exhaustQuota()">🔴 Épuiser le quota (forcer à 100/100)</button>
+    <button onclick="resetQuota()">♻️ Reset quota (0/100)</button>
+    <button onclick="refreshStats()">🔄 Rafraîchir stats</button>
+  </div>
+
+  <!-- Test -->
+  <div class="section">
+    <h2>🧪 Test de Recherche</h2>
+    <p>Cette recherche va automatiquement détecter si le quota est épuisé et basculer sur Pokemon TCG API.</p>
+    <button onclick="testSearch()">🔍 Rechercher "pikachu"</button>
+  </div>
+
+  <!-- Results -->
+  <div id="results"></div>
+
+  <script type="module">
+    import { HybridPriceService } from './src/services/HybridPriceService.js'
+    import { QuotaTracker } from './src/services/QuotaTracker.js'
+
+    window.HybridPriceService = HybridPriceService
+    window.QuotaTracker = QuotaTracker
+
+    // Rafraîchir les stats
+    window.refreshStats = function() {
+      const stats = HybridPriceService.getStats()
+      const percentClass = stats.quota.isExhausted ? 'error' : stats.quota.isNearLimit ? 'warning' : ''
+
+      const html = `
+        <div class="${percentClass}">
+          <div class="stat">
+            <strong>Quota:</strong> ${stats.quota.used} / ${stats.quota.limit} (${stats.quota.percentUsed}%)
+          </div>
+          <div class="stat">
+            <strong>Restant:</strong> ${stats.quota.remaining} requêtes
+          </div>
+          <div class="stat">
+            <strong>État:</strong> ${stats.quota.isExhausted ? '🔴 ÉPUISÉ' : (stats.quota.isNearLimit ? '🟠 PROCHE' : '🟢 OK')}
+          </div>
+        </div>
+        <p><strong>Recommandation:</strong> ${stats.recommendation}</p>
+      `
+      document.getElementById('stats').innerHTML = html
+    }
+
+    // Épuiser le quota
+    window.exhaustQuota = function() {
+      if (confirm('⚠️ Ceci va forcer le quota à 100/100 (épuisé). Continuer ?')) {
+        // Forcer l'épuisement
+        const tomorrow = new Date()
+        tomorrow.setHours(24, 0, 0, 0)
+
+        const data = {
+          used: 100,
+          limit: 100,
+          resetAt: tomorrow.getTime(),
+          lastUpdated: Date.now()
+        }
+
+        localStorage.setItem('rapidapi_quota', JSON.stringify(data))
+        refreshStats()
+        addResult('Quota épuisé', { message: 'Quota forcé à 100/100. Le prochain test utilisera Pokemon TCG API.' }, 'warning')
+      }
+    }
+
+    // Reset quota
+    window.resetQuota = function() {
+      if (confirm('Reset le quota à 0/100 ?')) {
+        QuotaTracker.forceReset()
+        refreshStats()
+        addResult('Reset quota', { message: 'Quota réinitialisé à 0/100' }, '')
+      }
+    }
+
+    // Test recherche
+    window.testSearch = async function() {
+      refreshStats()
+      addResult('Test en cours...', { status: 'Recherche "pikachu" via système hybride' }, 'warning')
+
+      try {
+        const cards = await HybridPriceService.searchCards('pikachu', 10)
+
+        // Vérifier la source
+        const sources = cards.map(c => c._price_source).filter(Boolean)
+        const uniqueSources = [...new Set(sources)]
+
+        const result = {
+          total: cards.length,
+          sources: uniqueSources,
+          sourceBreakdown: uniqueSources.map(s => ({
+            source: s,
+            count: sources.filter(src => src === s).length
+          })),
+          exemples: cards.slice(0, 3).map(c => ({
+            nom: c.name,
+            source: c._price_source,
+            prix: c.marketPrice ? `${c.marketPrice} ${c.marketPriceDetails?.currency || 'EUR'}` : 'N/A'
+          }))
+        }
+
+        addResult(`✅ Recherche réussie (${cards.length} cartes)`, result, '')
+        refreshStats()
+      } catch (error) {
+        addResult('❌ Erreur', { error: error.message }, 'error')
+      }
+    }
+
+    // Ajouter un résultat
+    function addResult(title, data, type = '') {
+      const div = document.createElement('div')
+      div.className = `section ${type}`
+      div.innerHTML = `<h2>${title}</h2><pre>${JSON.stringify(data, null, 2)}</pre>`
+      document.getElementById('results').prepend(div)
+    }
+
+    // Initialisation
+    refreshStats()
+  </script>
+</body>
+</html>
