@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migration URLs CardMarket dans discovered_cards</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    .container {
+      background: #1e293b;
+      padding: 2rem;
+      border-radius: 0.5rem;
+      border: 1px solid #334155;
+    }
+    h1 {
+      color: #f59e0b;
+      margin-bottom: 1rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .stat-card {
+      background: #334155;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #475569;
+    }
+    .stat-label {
+      font-size: 0.875rem;
+      color: #94a3b8;
+      margin-bottom: 0.5rem;
+    }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #f59e0b;
+    }
+    button {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-right: 1rem;
+      margin-top: 1rem;
+    }
+    button:hover:not(:disabled) {
+      background: #059669;
+    }
+    button:disabled {
+      background: #475569;
+      cursor: not-allowed;
+    }
+    button.secondary {
+      background: #3b82f6;
+    }
+    button.secondary:hover:not(:disabled) {
+      background: #2563eb;
+    }
+    .progress {
+      margin-top: 1.5rem;
+    }
+    .progress-bar {
+      background: #334155;
+      height: 2rem;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+    .progress-fill {
+      background: linear-gradient(90deg, #10b981, #059669);
+      height: 100%;
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+    }
+    .log {
+      background: #0f172a;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-top: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
+    }
+    .log-entry {
+      padding: 0.25rem 0;
+      border-bottom: 1px solid #1e293b;
+    }
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    .error {
+      color: #ef4444;
+    }
+    .success {
+      color: #10b981;
+    }
+    .warning {
+      color: #f59e0b;
+    }
+    .info {
+      color: #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔗 Migration URLs CardMarket</h1>
+    <p>Ce script ajoute les URLs CardMarket directement dans <code>discovered_cards.cardmarket.url</code> en utilisant le matching par attaques.</p>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Cartes totales</div>
+        <div class="stat-value" id="totalCards">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avec attaques</div>
+        <div class="stat-value" id="cardsWithAttacks">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">URLs ajoutées</div>
+        <div class="stat-value" id="urlsAdded">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Échecs matching</div>
+        <div class="stat-value" id="matchingFailed">0</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <input type="email" id="emailInput" placeholder="Email" style="padding: 0.75rem; border-radius: 0.5rem; background: #0f172a; border: 1px solid #475569; color: #e2e8f0; flex: 1; max-width: 300px;">
+        <input type="password" id="passwordInput" placeholder="Mot de passe" style="padding: 0.75rem; border-radius: 0.5rem; background: #0f172a; border: 1px solid #475569; color: #e2e8f0; flex: 1; max-width: 300px;">
+        <button id="loginBtn" onclick="login()">🔐 Se connecter</button>
+      </div>
+    </div>
+
+    <div>
+      <button id="analyzeBtn" onclick="analyzeData()" disabled>📊 Analyser les données</button>
+      <button id="testBtn" onclick="testMigration()" disabled class="secondary">🧪 Test (10 cartes)</button>
+      <button id="migrateBtn" onclick="startMigration()" disabled>🚀 Lancer migration complète</button>
+    </div>
+
+    <div class="progress" id="progressContainer" style="display: none;">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+      </div>
+      <div style="color: #94a3b8; font-size: 0.875rem;" id="progressText">En attente...</div>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAwMDIsImV4cCI6MjA3NTUxNjAwMn0.7d0303MNw__AVC9wkS7BodK2WG8Rvb2IY2V-0wv0l7Q'
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    let stats = {
+      totalCards: 0,
+      cardsWithAttacks: 0,
+      urlsAdded: 0,
+      matchingFailed: 0
+    }
+
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log')
+      const entry = document.createElement('div')
+      entry.className = `log-entry ${type}`
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`
+      logDiv.appendChild(entry)
+      logDiv.scrollTop = logDiv.scrollHeight
+      console.log(message)
+    }
+
+    function updateStats() {
+      document.getElementById('totalCards').textContent = stats.totalCards.toLocaleString()
+      document.getElementById('cardsWithAttacks').textContent = stats.cardsWithAttacks.toLocaleString()
+      document.getElementById('urlsAdded').textContent = stats.urlsAdded.toLocaleString()
+      document.getElementById('matchingFailed').textContent = stats.matchingFailed.toLocaleString()
+    }
+
+    function updateProgress(current, total) {
+      const percent = Math.round((current / total) * 100)
+      document.getElementById('progressFill').style.width = `${percent}%`
+      document.getElementById('progressFill').textContent = `${percent}%`
+      document.getElementById('progressText').textContent = `${current.toLocaleString()} / ${total.toLocaleString()} cartes traitées`
+    }
+
+    window.analyzeData = async function() {
+      log('📊 Analyse des données...', 'info')
+      document.getElementById('analyzeBtn').disabled = true
+
+      try {
+        // Compter toutes les cartes
+        const { count: total, error: errorTotal } = await supabase
+          .from('discovered_cards')
+          .select('*', { count: 'exact', head: true })
+
+        if (errorTotal) throw errorTotal
+
+        stats.totalCards = total || 0
+        log(`✅ Total: ${stats.totalCards.toLocaleString()} cartes`, 'success')
+
+        // Compter cartes avec attaques
+        const { count: withAttacks, error: errorAttacks } = await supabase
+          .from('discovered_cards')
+          .select('*', { count: 'exact', head: true })
+          .not('attacks', 'is', null)
+
+        if (errorAttacks) throw errorAttacks
+
+        stats.cardsWithAttacks = withAttacks || 0
+        log(`✅ Avec attaques: ${stats.cardsWithAttacks.toLocaleString()} cartes (${stats.totalCards > 0 ? ((stats.cardsWithAttacks/stats.totalCards)*100).toFixed(1) : 0}%)`, 'success')
+
+        // Compter cartes avec URL CardMarket existante
+        const { count: withUrl, error: errorUrl } = await supabase
+          .from('discovered_cards')
+          .select('*', { count: 'exact', head: true })
+          .not('cardmarket->url', 'is', null)
+
+        if (errorUrl) throw errorUrl
+
+        const urlCount = withUrl || 0
+        log(`✅ Avec URL existante: ${urlCount.toLocaleString()} cartes`, 'success')
+        log(`📝 Cartes à traiter: ${(stats.cardsWithAttacks - urlCount).toLocaleString()}`, 'info')
+
+        updateStats()
+        document.getElementById('testBtn').disabled = false
+        document.getElementById('migrateBtn').disabled = false
+
+      } catch (error) {
+        log(`❌ Erreur analyse: ${error?.message || JSON.stringify(error)}`, 'error')
+        console.error('Détails erreur complète:', error)
+        if (error?.details) console.error('Détails:', error.details)
+        if (error?.hint) console.error('Hint:', error.hint)
+      } finally {
+        document.getElementById('analyzeBtn').disabled = false
+      }
+    }
+
+    // Fonction de matching (similaire à CardMarketMatchingService)
+    async function matchCardWithCardMarket(card) {
+      // Extraire nom de base (sans suffixes V, VMAX, etc.)
+      const baseName = extractPokemonBaseName(card.name)
+
+      // Rechercher candidats CardMarket
+      const { data: candidates } = await supabase
+        .from('cardmarket_cards')
+        .select('*')
+        .ilike('name', `%${baseName}%`)
+        .limit(50)
+
+      if (!candidates || candidates.length === 0) {
+        return null
+      }
+
+      // Extraire attaques de la carte
+      const cardAttacks = card.attacks?.map(a => a.name) || []
+      if (cardAttacks.length === 0) {
+        return null
+      }
+
+      // Calculer score pour chaque candidat
+      let bestMatch = null
+      let bestScore = 0
+
+      for (const candidate of candidates) {
+        // Extraire attaques du nom CardMarket (format: "Hypno [Hypnosis, Dream Eater]")
+        const cmAttacks = extractAttacksFromName(candidate.name)
+
+        if (cmAttacks.length === 0) continue
+
+        // Calculer score basé sur attaques
+        let score = calculateAttackMatchScore(cardAttacks, cmAttacks) * 0.7
+
+        // Bonus similarité nom
+        const nameScore = calculateNameSimilarity(card.name, candidate.name)
+        score += nameScore * 0.2
+
+        // Bonus suffixes
+        if (hasSameSuffixes(card.name, candidate.name)) {
+          score += 0.1
+        }
+
+        if (score > bestScore) {
+          bestScore = score
+          bestMatch = candidate
+        }
+      }
+
+      // Seuil à 0.3 (30%)
+      if (bestScore >= 0.3) {
+        return {
+          match: bestMatch,
+          score: bestScore
+        }
+      }
+
+      return null
+    }
+
+    function extractPokemonBaseName(name) {
+      const suffixes = ['VMAX', 'VSTAR', 'V', 'GX', 'EX', 'ex', 'Radiant', 'Shining', 'Prism Star', 'Break', 'Mega', 'M']
+      let baseName = name
+      suffixes.forEach(suffix => {
+        const regex = new RegExp(`\\b${suffix}\\b`, 'gi')
+        baseName = baseName.replace(regex, '')
+      })
+      return baseName.replace(/\s+/g, ' ').trim()
+    }
+
+    function extractAttacksFromName(name) {
+      const match = name.match(/\[(.*?)\]/)
+      if (!match) return []
+      return match[1].split(',').map(a => a.trim()).filter(Boolean)
+    }
+
+    function calculateAttackMatchScore(attacks1, attacks2) {
+      if (attacks1.length === 0 || attacks2.length === 0) return 0
+
+      let matchCount = 0
+      attacks1.forEach(a1 => {
+        if (attacks2.some(a2 => a1.toLowerCase() === a2.toLowerCase())) {
+          matchCount++
+        }
+      })
+
+      return matchCount / Math.max(attacks1.length, attacks2.length)
+    }
+
+    function calculateNameSimilarity(name1, name2) {
+      const n1 = name1.toLowerCase().trim()
+      const n2 = name2.toLowerCase().trim()
+      if (n1 === n2) return 1.0
+      if (n2.includes(n1) || n1.includes(n2)) return 0.8
+      return 0.3
+    }
+
+    function hasSameSuffixes(name1, name2) {
+      const suffixes = ['VMAX', 'VSTAR', 'V', 'GX', 'EX', 'ex']
+      const suffixes1 = suffixes.filter(s => new RegExp(`\\b${s}\\b`, 'i').test(name1))
+      const suffixes2 = suffixes.filter(s => new RegExp(`\\b${s}\\b`, 'i').test(name2))
+      if (suffixes1.length !== suffixes2.length) return false
+      return suffixes1.every(s => suffixes2.includes(s))
+    }
+
+    async function processCards(cards, isTest = false) {
+      document.getElementById('progressContainer').style.display = 'block'
+
+      let processed = 0
+      const batchSize = 10
+
+      for (let i = 0; i < cards.length; i += batchSize) {
+        const batch = cards.slice(i, i + batchSize)
+        const updates = []
+
+        for (const card of batch) {
+          try {
+            const result = await matchCardWithCardMarket(card)
+
+            if (result && result.match) {
+              // Construire URL CardMarket
+              const cardMarketUrl = buildCardMarketUrl(result.match, card)
+
+              if (cardMarketUrl) {
+                updates.push({
+                  id: card.id,
+                  cardmarket: {
+                    ...card.cardmarket,
+                    url: cardMarketUrl,
+                    matched_name: result.match.name,
+                    match_score: result.score,
+                    matched_at: new Date().toISOString()
+                  }
+                })
+
+                stats.urlsAdded++
+                log(`✅ Match: ${card.name} → ${result.match.name} (${(result.score * 100).toFixed(0)}%)`, 'success')
+              }
+            } else {
+              stats.matchingFailed++
+              if (!isTest) {
+                log(`⚠️ Pas de match: ${card.name}`, 'warning')
+              }
+            }
+          } catch (error) {
+            log(`❌ Erreur ${card.name}: ${error.message}`, 'error')
+            stats.matchingFailed++
+          }
+
+          processed++
+          updateProgress(processed, cards.length)
+          updateStats()
+        }
+
+        // Mettre à jour en batch
+        if (updates.length > 0) {
+          for (const update of updates) {
+            const { error } = await supabase
+              .from('discovered_cards')
+              .update({ cardmarket: update.cardmarket })
+              .eq('id', update.id)
+
+            if (error) {
+              log(`❌ Erreur update ${update.id}: ${error.message}`, 'error')
+            }
+          }
+        }
+
+        // Pause pour éviter rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200))
+      }
+    }
+
+    function buildCardMarketUrl(cmCard, tcgCard) {
+      // Construire URL directe vers la carte CardMarket
+      // Format: /en/Pokemon/Products/Singles/{set-name}/{Card-Name-CODE123}
+      if (cmCard.id_expansion && tcgCard.set?.name) {
+        const slug = convertCardMarketNameToSlug(cmCard.name)
+        return `https://www.cardmarket.com/en/Pokemon/Products/Singles/${tcgCard.set.name}/${slug}?language=2`
+      }
+
+      // Fallback: recherche
+      const searchString = encodeURIComponent(cmCard.name)
+      return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${searchString}&language=2`
+    }
+
+    function convertCardMarketNameToSlug(name) {
+      return name.replace(/\s+/g, '-').replace(/\[/g, '').replace(/\]/g, '')
+    }
+
+    window.testMigration = async function() {
+      log('🧪 Test migration sur 10 cartes...', 'info')
+      document.getElementById('testBtn').disabled = true
+
+      try {
+        // Récupérer 10 cartes avec attaques mais sans URL
+        const { data: cards } = await supabase
+          .from('discovered_cards')
+          .select('*')
+          .not('attacks', 'is', null)
+          .is('cardmarket->url', null)
+          .limit(10)
+
+        log(`📝 ${cards.length} cartes à tester`, 'info')
+        await processCards(cards, true)
+        log('✅ Test terminé !', 'success')
+
+      } catch (error) {
+        log(`❌ Erreur test: ${error.message}`, 'error')
+      } finally {
+        document.getElementById('testBtn').disabled = false
+      }
+    }
+
+    window.startMigration = async function() {
+      if (!confirm('⚠️ Lancer la migration complète ? Cela peut prendre plusieurs heures.')) {
+        return
+      }
+
+      log('🚀 Début migration complète...', 'info')
+      document.getElementById('migrateBtn').disabled = true
+
+      try {
+        let offset = 0
+        const limit = 100
+        let hasMore = true
+
+        while (hasMore) {
+          // Récupérer cartes par batch
+          const { data: cards } = await supabase
+            .from('discovered_cards')
+            .select('*')
+            .not('attacks', 'is', null)
+            .is('cardmarket->url', null)
+            .range(offset, offset + limit - 1)
+
+          if (!cards || cards.length === 0) {
+            hasMore = false
+            break
+          }
+
+          log(`📦 Traitement batch ${offset}-${offset + cards.length}...`, 'info')
+          await processCards(cards, false)
+
+          offset += limit
+        }
+
+        log('✅ Migration terminée !', 'success')
+        log(`📊 Résultats: ${stats.urlsAdded} URLs ajoutées, ${stats.matchingFailed} échecs`, 'info')
+
+      } catch (error) {
+        log(`❌ Erreur migration: ${error.message}`, 'error')
+      } finally {
+        document.getElementById('migrateBtn').disabled = false
+      }
+    }
+
+    // Fonction de connexion
+    window.login = async function() {
+      const email = document.getElementById('emailInput').value
+      const password = document.getElementById('passwordInput').value
+
+      if (!email || !password) {
+        log('⚠️ Veuillez entrer votre email et mot de passe', 'warning')
+        return
+      }
+
+      log('🔐 Connexion à Supabase...', 'info')
+      document.getElementById('loginBtn').disabled = true
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        })
+
+        if (error) throw error
+
+        log('✅ Connexion réussie !', 'success')
+        log(`👤 Connecté en tant que: ${data.user.email}`, 'success')
+
+        document.getElementById('analyzeBtn').disabled = false
+        document.getElementById('loginBtn').textContent = '✅ Connecté'
+        document.getElementById('emailInput').disabled = true
+        document.getElementById('passwordInput').disabled = true
+
+      } catch (error) {
+        log(`❌ Erreur connexion: ${error?.message || 'Email ou mot de passe incorrect'}`, 'error')
+        console.error('Erreur:', error)
+      } finally {
+        document.getElementById('loginBtn').disabled = false
+      }
+    }
+
+    // Auto-vérification session au chargement
+    window.addEventListener('load', async () => {
+      log('👋 Prêt ! Cliquez sur "Se connecter" pour commencer.', 'info')
+
+      // Vérifier si déjà connecté
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          log('✅ Session détectée ! Vous êtes connecté.', 'success')
+          document.getElementById('analyzeBtn').disabled = false
+          document.getElementById('loginBtn').textContent = '✅ Connecté'
+          document.getElementById('loginBtn').disabled = true
+        }
+      } catch (error) {
+        console.error('Erreur vérification session:', error)
+      }
+    })
+  </script>
+</body>
+</html>

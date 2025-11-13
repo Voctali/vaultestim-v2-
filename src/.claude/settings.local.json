@@ -110,7 +110,12 @@
       "Bash(powershell:*)",
       "Bash(nslookup:*)",
       "Bash(ping:*)",
-      "Bash(move scriptsincrement-translation-version.js scriptsincrement-translation-version.cjs)"
+      "Bash(move scriptsincrement-translation-version.js scriptsincrement-translation-version.cjs)",
+      "Bash(fuser:*)",
+      "Bash(nul)",
+      "Bash(grep:*)",
+      "Bash(git reset:*)",
+      "WebFetch(domain:rapidapi.com)"
     ],
     "deny": [],
     "ask": []

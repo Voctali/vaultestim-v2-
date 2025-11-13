@@ -10,8 +10,14 @@
  * - Alternative (★★ dorées) : Uniquement "Alternate Art"
  * - Gold (★★★ dorées) : Uniquement "Gold"
  * - Méga Hyper Rare (★ noire/dorée) : Uniquement "Méga Hyper Rare"
- * - Cas spéciaux : Amphinobi EX 106/167 (version Métal)
- * - Extensions spéciales : Black Bolt, White Flare, Prismatic Evolution (Reverse Pokéball/Masterball pour Common/Uncommon)
+ * - Cas spéciaux :
+ *   - Amphinobi EX 106/167 Twilight Mascarade (versions EX + Métal)
+ *   - Kyurem EX 048/191 Surging Sparks (versions EX + Tampon)
+ * - Extensions spéciales SV8.5, SV11B, SV11W :
+ *   - Prismatic Evolution / Évolutions Prismatiques (SV8.5)
+ *   - Black Bolt / Foudre Noire (SV11B)
+ *   - White Flare / Flamme Blanche (SV11W)
+ *   → Cartes Common/Uncommon ont Reverse (Pokéball) + Reverse (Masterball)
  *
  * @param {Object} card - La carte
  * @returns {Array} Liste des versions disponibles { value, label }
@@ -43,6 +49,19 @@ export function getAvailableVersions(card) {
     return [
       { value: 'EX', label: 'EX (★★ noires)' },
       { value: 'Métal', label: 'Métal' }
+    ]
+  }
+
+  // 0.2. Cas spécial : Kyurem EX 048/191 (Surging Sparks) - Version Tampon
+  if (
+    (name.includes('kyurem') || name.includes('hekran')) &&
+    name.includes('ex') &&
+    number === '048' &&
+    (setName.includes('surging sparks') || setId.includes('sv08') || setId.includes('ssp'))
+  ) {
+    return [
+      { value: 'EX', label: 'EX (★★ noires)' },
+      { value: 'Tampon (logo extension)', label: 'Tampon (logo extension)' }
     ]
   }
 
@@ -113,7 +132,14 @@ export function getAvailableVersions(card) {
 
   // 7. Cas spécial : Extensions Black Bolt, White Flare, Prismatic Evolution
   // Pour les cartes Common et Uncommon : ajouter Reverse (Pokéball) et Reverse (Masterball)
-  const specialSets = ['sv8', 'sv8a', 'sv9', 'black bolt', 'white flare', 'prismatic evolution']
+  const specialSets = [
+    'sv8.5', 'sv85', 'sv8-5', // Prismatic Evolution / Évolutions Prismatiques
+    'sv11b', 'sv-11b', // Black Bolt / Foudre Noire
+    'sv11w', 'sv-11w', // White Flare / Flamme Blanche
+    'black bolt', 'foudre noire', 'foudre-noire',
+    'white flare', 'flamme blanche', 'flamme-blanche',
+    'prismatic evolution', 'evolutions prismatiques', 'évolutions prismatiques'
+  ]
   const isSpecialSet = specialSets.some(set =>
     setId.includes(set) || setName.includes(set)
   )

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Recherche Tatsugiri/Nigirigon</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: #fff; }
+    pre { background: #2a2a2a; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    .result { margin: 10px 0; padding: 10px; background: #2a2a2a; border-left: 3px solid #4CAF50; }
+    .error { border-left-color: #f44336; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Recherche Tatsugiri/Nigirigon dans discovered_cards</h1>
+  <div id="results"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAwMDIsImV4cCI6MjA3NTUxNjAwMn0.7d0303MNw__AVC9wkS7BodK2WG8Rvb2IY2V-0wv0l7Q'
+
+    const { createClient } = supabase
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    async function searchTatsugiri() {
+      const resultsDiv = document.getElementById('results')
+
+      try {
+        // Recherche 1: Par nom "Tatsugiri"
+        console.log('🔍 Recherche 1: name ILIKE %tatsugiri%')
+        const { data: byName, error: error1 } = await supabaseClient
+          .from('discovered_cards')
+          .select('id, name, number, set_id, set, rarity')
+          .ilike('name', '%tatsugiri%')
+
+        if (error1) throw error1
+
+        resultsDiv.innerHTML += `<div class="result">
+          <h3>📋 Recherche par nom "Tatsugiri": ${byName.length} résultats</h3>
+          <pre>${JSON.stringify(byName, null, 2)}</pre>
+        </div>`
+
+        // Recherche 2: Par numéro 226
+        console.log('🔍 Recherche 2: number = 226')
+        const { data: byNumber, error: error2 } = await supabaseClient
+          .from('discovered_cards')
+          .select('id, name, number, set_id, set, rarity')
+          .eq('number', '226')
+
+        if (error2) throw error2
+
+        resultsDiv.innerHTML += `<div class="result">
+          <h3>🔢 Recherche par numéro "226": ${byNumber.length} résultats</h3>
+          <pre>${JSON.stringify(byNumber, null, 2)}</pre>
+        </div>`
+
+        // Recherche 3: Extension Surging Sparks
+        console.log('🔍 Recherche 3: set->id = sv8')
+        const { data: bySet, error: error3 } = await supabaseClient
+          .from('discovered_cards')
+          .select('id, name, number, set_id, set, rarity')
+          .eq('set->>id', 'sv8')
+          .order('number', { ascending: true })
+          .limit(250)
+
+        if (error3) throw error3
+
+        // Chercher Tatsugiri 226 dans les résultats
+        const tatsugiri226 = bySet.find(c => c.name.toLowerCase().includes('tatsugiri') && c.number === '226')
+
+        resultsDiv.innerHTML += `<div class="result">
+          <h3>📦 Extension Surging Sparks: ${bySet.length} cartes</h3>
+          ${tatsugiri226 ? `<p style="color: #4CAF50;">✅ Tatsugiri 226 TROUVÉE !</p>` : `<p style="color: #f44336;">❌ Tatsugiri 226 ABSENTE</p>`}
+          <details>
+            <summary>Voir toutes les cartes (cliquer pour déplier)</summary>
+            <pre>${JSON.stringify(bySet, null, 2)}</pre>
+          </details>
+        </div>`
+
+        // Recherche 4: ID exact sv8-226
+        console.log('🔍 Recherche 4: id = sv8-226')
+        const { data: byId, error: error4 } = await supabaseClient
+          .from('discovered_cards')
+          .select('*')
+          .eq('id', 'sv8-226')
+
+        if (error4) throw error4
+
+        resultsDiv.innerHTML += `<div class="result">
+          <h3>🆔 Recherche par ID "sv8-226": ${byId.length} résultats</h3>
+          <pre>${JSON.stringify(byId, null, 2)}</pre>
+        </div>`
+
+      } catch (error) {
+        resultsDiv.innerHTML += `<div class="result error">
+          <h3>❌ Erreur</h3>
+          <pre>${error.message}</pre>
+        </div>`
+      }
+    }
+
+    // Lancer la recherche au chargement
+    searchTatsugiri()
+  </script>
+</body>
+</html>

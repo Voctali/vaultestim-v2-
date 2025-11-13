@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.111' // Dernière mise à jour: 2025-01-12 - Ajout Community Center
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.120' // Dernière mise à jour: 2025-11-13 - Ajout "jet energy"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -480,6 +480,18 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'énergie propulsion': 'jet energy', // Objet Dresseur
+  'energie propulsion': 'jet energy', // Variante sans accent
+  'énergie enrichissante': 'enriching energy', // Objet Dresseur
+  'energie enrichissante': 'enriching energy', // Variante sans accent
+  'capsule technique : fluorine': 'technical machine: fluorite', // Objet Dresseur
+  'baie pocpoc': 'passho berry', // Objet Dresseur
+  'stade en liesse': 'lively stadium', // Objet Dresseur
+  'montagne gravité': 'gravity mountain', // Objet Dresseur
+  'montagne gravite': 'gravity mountain', // Variante sans accent
+  'rattrape-riposte': 'counter gain', // Objet Dresseur
+  'baie lampou': 'colbur berry', // Objet Dresseur
+  'baie babiri': 'babiri berry', // Objet Dresseur
   'énergie boomerang': 'boomerang energy', // Énergie spéciale
   'energie boomerang': 'boomerang energy', // Variante sans accent
   'énergie cadeau': 'gift energy', // Objet Dresseur - Énergie spéciale

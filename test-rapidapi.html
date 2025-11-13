@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test RapidAPI Integration</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #d4af37; }
+    h2 { color: #4CAF50; margin-top: 30px; }
+    .section {
+      background: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #4CAF50;
+    }
+    .error {
+      border-left-color: #f44336;
+      background: #3a2a2a;
+    }
+    .warning {
+      border-left-color: #ff9800;
+      background: #3a3020;
+    }
+    .success {
+      border-left-color: #4CAF50;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 5px;
+    }
+    button:hover { background: #45a049; }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    pre {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    .stat {
+      display: inline-block;
+      margin: 10px 20px 10px 0;
+      padding: 10px 20px;
+      background: #333;
+      border-radius: 4px;
+    }
+    .stat strong { color: #d4af37; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test RapidAPI Integration</h1>
+
+  <!-- Configuration -->
+  <div class="section">
+    <h2>⚙️ Configuration</h2>
+    <div id="config"></div>
+  </div>
+
+  <!-- Quota Stats -->
+  <div class="section">
+    <h2>📊 Quota RapidAPI</h2>
+    <div id="quota"></div>
+    <button onclick="refreshQuota()">🔄 Rafraîchir</button>
+    <button onclick="resetQuota()">♻️ Reset Quota (Debug)</button>
+  </div>
+
+  <!-- Tests -->
+  <div class="section">
+    <h2>🧪 Tests Disponibles</h2>
+    <button onclick="testCardPrices()">1. Test Prix Carte (sv8-142)</button>
+    <button onclick="testPriceHistory()">2. Test Historique Prix</button>
+    <button onclick="testSearchCards()">3. Test Recherche Cartes</button>
+    <button onclick="testSealedProducts()">4. Test Produits Scellés</button>
+    <button onclick="testHybridFallback()">5. Test Fallback Hybride</button>
+  </div>
+
+  <!-- Results -->
+  <div id="results"></div>
+
+  <script type="module">
+    import { RapidAPIService } from './src/services/RapidAPIService.js'
+    import { QuotaTracker } from './src/services/QuotaTracker.js'
+    import { HybridPriceService } from './src/services/HybridPriceService.js'
+
+    // Exposer les fonctions globalement pour les boutons
+    window.RapidAPIService = RapidAPIService
+    window.QuotaTracker = QuotaTracker
+    window.HybridPriceService = HybridPriceService
+
+    // Afficher la configuration
+    function displayConfig() {
+      const isAvailable = RapidAPIService.isAvailable()
+      const html = `
+        <div class="stat">
+          <strong>API Key:</strong> ${RapidAPIService.API_KEY ? '✅ Configurée' : '❌ Manquante'}
+        </div>
+        <div class="stat">
+          <strong>Host:</strong> ${RapidAPIService.API_HOST || '❌ Non défini'}
+        </div>
+        <div class="stat">
+          <strong>Quota Quotidien:</strong> ${RapidAPIService.DAILY_QUOTA} requêtes
+        </div>
+        <div class="stat">
+          <strong>Activé:</strong> ${RapidAPIService.ENABLED ? '✅ Oui' : '❌ Non'}
+        </div>
+        <div class="stat">
+          <strong>Disponible:</strong> ${isAvailable ? '✅ Oui' : '❌ Non'}
+        </div>
+      `
+      document.getElementById('config').innerHTML = html
+    }
+
+    // Afficher les stats du quota
+    window.refreshQuota = function() {
+      const stats = QuotaTracker.getStats()
+      const percentClass = stats.isExhausted ? 'error' : stats.isNearLimit ? 'warning' : 'success'
+
+      const html = `
+        <div class="${percentClass}">
+          <div class="stat">
+            <strong>Utilisé:</strong> ${stats.used} / ${stats.limit} (${stats.percentUsed}%)
+          </div>
+          <div class="stat">
+            <strong>Restant:</strong> ${stats.remaining} requêtes
+          </div>
+          <div class="stat">
+            <strong>Reset:</strong> ${stats.resetAt.toLocaleString('fr-FR')}
+          </div>
+          <div class="stat">
+            <strong>Dans:</strong> ${stats.hoursUntilReset}h
+          </div>
+        </div>
+      `
+      document.getElementById('quota').innerHTML = html
+    }
+
+    // Reset quota (debug)
+    window.resetQuota = function() {
+      if (confirm('Reset le quota à 0 ?')) {
+        QuotaTracker.forceReset()
+        refreshQuota()
+        addResult('Reset quota', { message: 'Quota réinitialisé à 0' }, 'success')
+      }
+    }
+
+    // Ajouter un résultat de test
+    function addResult(title, data, type = 'success') {
+      const div = document.createElement('div')
+      div.className = `section ${type}`
+      div.innerHTML = `
+        <h2>${title}</h2>
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+      `
+      document.getElementById('results').prepend(div)
+    }
+
+    // Test 1: Prix d'une carte
+    window.testCardPrices = async function() {
+      const cardId = 'sv8-142' // Tatsugiri ex de Surging Sparks
+      addResult(`Test en cours: Prix carte ${cardId}`, { status: 'loading...' }, 'warning')
+
+      try {
+        const data = await RapidAPIService.getCardWithPrices(cardId)
+        addResult(`✅ Prix carte ${cardId}`, data, 'success')
+        refreshQuota()
+      } catch (error) {
+        addResult(`❌ Erreur prix carte ${cardId}`, { error: error.message }, 'error')
+      }
+    }
+
+    // Test 2: Historique des prix
+    window.testPriceHistory = async function() {
+      const cardId = 'sv8-142'
+      addResult(`Test en cours: Historique ${cardId}`, { status: 'loading...' }, 'warning')
+
+      try {
+        const data = await RapidAPIService.getCardPriceHistory(cardId)
+        addResult(`✅ Historique prix ${cardId}`, data, 'success')
+        refreshQuota()
+      } catch (error) {
+        addResult(`❌ Erreur historique ${cardId}`, { error: error.message }, 'error')
+      }
+    }
+
+    // Test 3: Recherche de cartes
+    window.testSearchCards = async function() {
+      const query = 'tatsugiri ex'
+      addResult(`Test en cours: Recherche "${query}"`, { status: 'loading...' }, 'warning')
+
+      try {
+        const data = await RapidAPIService.searchCards(query, { limit: 10 })
+        addResult(`✅ Recherche "${query}"`, data, 'success')
+        refreshQuota()
+      } catch (error) {
+        addResult(`❌ Erreur recherche "${query}"`, { error: error.message }, 'error')
+      }
+    }
+
+    // Test 4: Produits scellés
+    window.testSealedProducts = async function() {
+      const expansionId = 'sv8'
+      addResult(`Test en cours: Produits scellés ${expansionId}`, { status: 'loading...' }, 'warning')
+
+      try {
+        const data = await RapidAPIService.getProductsByExpansion(expansionId)
+        addResult(`✅ Produits scellés ${expansionId}`, data, 'success')
+        refreshQuota()
+      } catch (error) {
+        addResult(`❌ Erreur produits scellés ${expansionId}`, { error: error.message }, 'error')
+      }
+    }
+
+    // Test 5: Fallback hybride
+    window.testHybridFallback = async function() {
+      const testCard = {
+        id: 'sv8-142',
+        name: 'Tatsugiri ex'
+      }
+      addResult(`Test en cours: Fallback hybride`, { status: 'loading...' }, 'warning')
+
+      try {
+        const data = await HybridPriceService.getCardPrices(testCard)
+        addResult(`✅ Fallback hybride`, data, 'success')
+        refreshQuota()
+      } catch (error) {
+        addResult(`❌ Erreur fallback hybride`, { error: error.message }, 'error')
+      }
+    }
+
+    // Initialisation
+    displayConfig()
+    refreshQuota()
+    QuotaTracker.logStats()
+  </script>
+</body>
+</html>
