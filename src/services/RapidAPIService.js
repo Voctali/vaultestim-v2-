@@ -1,38 +1,35 @@
 /**
- * RapidAPIService - Service pour l'API Pokemon TCG via RapidAPI
+ * RapidAPIService - Service pour l'API CardMarket API TCG via RapidAPI
  *
  * Fonctionnalités :
- * - Récupération des prix détaillés par version (Holo, Reverse, etc.)
- * - Récupération des prix des produits scellés (boosters, coffrets, etc.)
- * - Support des prix CardMarket (EUR) avec versions
- * - Gestion automatique du quota quotidien (100/2500/15000/50000 selon plan)
+ * - Récupération des prix des cartes individuelles avec détails par version
+ * - Récupération des prix des produits scellés (boosters, coffrets, ETB, etc.)
+ * - Support des prix CardMarket (EUR) avec localisation (DE, FR)
+ * - Prix des cartes gradées (PSA, CGC)
+ * - Moyennes 7j et 30j
+ * - Gestion automatique du quota quotidien (100 requêtes/jour sur plan Basic)
  *
- * @see https://rapidapi.com/serverjason1/api/pokemon-tcg-api
+ * @see https://rapidapi.com/tcggopro/api/cardmarket-api-tcg
  */
 
 export class RapidAPIService {
-  static BASE_URL = 'https://pokemon-tcg-api.p.rapidapi.com'
-  static API_KEY = import.meta.env.VITE_RAPIDAPI_KEY
-  static API_HOST = import.meta.env.VITE_RAPIDAPI_HOST
+  static BASE_URL = 'https://cardmarket-api-tcg.p.rapidapi.com'
+  static API_KEY = import.meta.env.VITE_RAPIDAPI_KEY || '523ca9be5emsh10d5931a9d95b87p18cd5cjsn641503bb34b6'
+  static API_HOST = 'cardmarket-api-tcg.p.rapidapi.com'
   static DAILY_QUOTA = parseInt(import.meta.env.VITE_RAPIDAPI_DAILY_QUOTA || '100')
-  static ENABLED = import.meta.env.VITE_USE_RAPIDAPI_PRICES === 'true'
+  static ENABLED = import.meta.env.VITE_USE_RAPIDAPI === 'true'
 
   /**
    * Vérifier si le service est configuré et activé
    */
   static isAvailable() {
     if (!this.ENABLED) {
-      console.log('⏭️ RapidAPI désactivé (VITE_USE_RAPIDAPI_PRICES=false)')
+      console.log('⏭️ RapidAPI désactivé (VITE_USE_RAPIDAPI=false)')
       return false
     }
 
     if (!this.API_KEY || this.API_KEY === 'YOUR_RAPIDAPI_KEY_HERE') {
       console.warn('⚠️ RapidAPI: Clé API manquante ou invalide')
-      return false
-    }
-
-    if (!this.API_HOST || this.API_HOST === 'YOUR_API_HOST.p.rapidapi.com') {
-      console.warn('⚠️ RapidAPI: Host API manquant ou invalide')
       return false
     }
 
@@ -51,30 +48,117 @@ export class RapidAPIService {
   }
 
   /**
-   * Rechercher une carte et récupérer ses prix par version
+   * Rechercher des cartes par nom
    *
-   * @param {string} cardId - ID de la carte (ex: "sv8-226")
-   * @returns {Promise<Object>} Détails de la carte avec prix par version
+   * @param {string} searchTerm - Terme de recherche (nom de la carte)
+   * @param {Object} options - Options de recherche
+   * @param {number} options.limit - Nombre de résultats (défaut: 50)
+   * @param {string} options.sort - Tri (episode_newest, episode_oldest, price_lowest, price_highest)
+   * @returns {Promise<Object>} { data: Array, paging: Object }
+   *
+   * Format de réponse :
+   * {
+   *   data: [
+   *     {
+   *       id: number,
+   *       name: string,
+   *       card_number: number,
+   *       hp: number,
+   *       rarity: string,
+   *       supertype: string,
+   *       tcgid: string,
+   *       prices: {
+   *         cardmarket: {
+   *           currency: "EUR",
+   *           lowest_near_mint: number,
+   *           lowest_near_mint_DE: number,
+   *           lowest_near_mint_FR: number,
+   *           "30d_average": number,
+   *           "7d_average": number,
+   *           graded: {
+   *             psa: { psa10: number, psa9: number },
+   *             cgc: { cgc9: number }
+   *           }
+   *         },
+   *         tcg_player: {
+   *           currency: "EUR",
+   *           market_price: number,
+   *           mid_price: number
+   *         }
+   *       },
+   *       episode: { id, name, slug, code, logo, ... },
+   *       artist: { id, name, slug },
+   *       image: string,
+   *       tcggo_url: string,
+   *       links: { cardmarket: string }
+   *     }
+   *   ],
+   *   paging: { current: 1, total: 10, per_page: 50 }
+   * }
    */
-  static async getCardWithPrices(cardId) {
+  static async searchCards(searchTerm, options = {}) {
     if (!this.isAvailable()) {
       throw new Error('RapidAPI non disponible')
     }
 
     try {
-      console.log(`🔍 RapidAPI: Récupération de la carte ${cardId}...`)
+      const limit = options.limit || 50
+      const sort = options.sort || 'episode_newest'
 
-      const response = await fetch(`${this.BASE_URL}/cards/${cardId}`, {
+      console.log(`🔍 RapidAPI: Recherche cartes "${searchTerm}"...`)
+
+      const params = new URLSearchParams({
+        search: searchTerm,
+        limit: limit.toString(),
+        sort
+      })
+
+      const response = await fetch(`${this.BASE_URL}/pokemon/cards/search?${params}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
       }
 
       const data = await response.json()
-      console.log(`✅ RapidAPI: Carte ${cardId} récupérée`)
+      console.log(`✅ RapidAPI: ${data.data?.length || 0} cartes trouvées`)
+
+      return data
+    } catch (error) {
+      console.error(`❌ RapidAPI: Erreur recherche cartes "${searchTerm}":`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Obtenir une carte par son ID
+   *
+   * @param {number} cardId - ID de la carte
+   * @returns {Promise<Object>} Détails complets de la carte
+   */
+  static async getCard(cardId) {
+    if (!this.isAvailable()) {
+      throw new Error('RapidAPI non disponible')
+    }
+
+    try {
+      console.log(`🔍 RapidAPI: Récupération carte ID ${cardId}...`)
+
+      const response = await fetch(`${this.BASE_URL}/pokemon/cards/${cardId}`, {
+        method: 'GET',
+        headers: this.getHeaders()
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log(`✅ RapidAPI: Carte ${data.name} récupérée`)
 
       return data
     } catch (error) {
@@ -84,172 +168,272 @@ export class RapidAPIService {
   }
 
   /**
-   * Récupérer l'historique des prix d'une carte (avec versions)
+   * Lister les cartes d'une extension
    *
-   * @param {string} cardId - ID de la carte
-   * @returns {Promise<Object>} Historique des prix par version
+   * @param {string} expansionSlug - Slug de l'extension (ex: "paldean-fates")
+   * @param {Object} options - Options de pagination
+   * @returns {Promise<Object>} { data: Array, paging: Object }
    */
-  static async getCardPriceHistory(cardId) {
+  static async getCardsByExpansion(expansionSlug, options = {}) {
     if (!this.isAvailable()) {
       throw new Error('RapidAPI non disponible')
     }
 
     try {
-      console.log(`📊 RapidAPI: Récupération historique prix ${cardId}...`)
+      const page = options.page || 1
+      const limit = options.limit || 100
 
-      const response = await fetch(`${this.BASE_URL}/cards/history-prices?cardId=${cardId}`, {
-        method: 'GET',
-        headers: this.getHeaders()
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      const data = await response.json()
-      console.log(`✅ RapidAPI: Historique prix ${cardId} récupéré`)
-
-      return data
-    } catch (error) {
-      console.error(`❌ RapidAPI: Erreur historique prix ${cardId}:`, error)
-      throw error
-    }
-  }
-
-  /**
-   * Rechercher des cartes par nom/critères
-   *
-   * @param {string} query - Terme de recherche
-   * @param {Object} options - Options de recherche (limit, page, etc.)
-   * @returns {Promise<Array>} Liste des cartes trouvées
-   */
-  static async searchCards(query, options = {}) {
-    if (!this.isAvailable()) {
-      throw new Error('RapidAPI non disponible')
-    }
-
-    try {
-      console.log(`🔍 RapidAPI: Recherche cartes "${query}"...`)
+      console.log(`📦 RapidAPI: Récupération cartes de "${expansionSlug}"...`)
 
       const params = new URLSearchParams({
-        q: query,
-        limit: options.limit || 50,
-        page: options.page || 1
+        page: page.toString(),
+        limit: limit.toString()
       })
 
-      const response = await fetch(`${this.BASE_URL}/cards?${params}`, {
+      const response = await fetch(`${this.BASE_URL}/pokemon/cards/expansion/${expansionSlug}?${params}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
       }
 
       const data = await response.json()
-      console.log(`✅ RapidAPI: ${data.length || 0} cartes trouvées`)
+      console.log(`✅ RapidAPI: ${data.data?.length || 0} cartes de "${expansionSlug}" récupérées`)
 
       return data
     } catch (error) {
-      console.error(`❌ RapidAPI: Erreur recherche cartes:`, error)
+      console.error(`❌ RapidAPI: Erreur cartes extension "${expansionSlug}":`, error)
       throw error
     }
   }
 
   /**
-   * Récupérer les produits scellés d'une extension
+   * Rechercher des produits scellés
    *
-   * @param {string} expansionId - ID de l'extension (ex: "sv8")
-   * @returns {Promise<Array>} Liste des produits scellés
+   * @param {string} searchTerm - Terme de recherche
+   * @param {Object} options - Options de recherche
+   * @returns {Promise<Object>} { data: Array, paging: Object }
+   *
+   * Format de réponse :
+   * {
+   *   data: [
+   *     {
+   *       id: number,
+   *       name: string,
+   *       slug: string,
+   *       prices: {
+   *         cardmarket: {
+   *           currency: "EUR",
+   *           lowest: number,
+   *           lowest_DE: number,
+   *           lowest_FR: number
+   *         }
+   *       },
+   *       episode: { id, name, slug, logo, code, ... },
+   *       image: string,
+   *       tcggo_url: string,
+   *       links: { cardmarket: string }
+   *     }
+   *   ]
+   * }
    */
-  static async getProductsByExpansion(expansionId) {
+  static async searchProducts(searchTerm, options = {}) {
     if (!this.isAvailable()) {
       throw new Error('RapidAPI non disponible')
     }
 
     try {
-      console.log(`📦 RapidAPI: Récupération produits scellés ${expansionId}...`)
+      const limit = options.limit || 50
+      const sort = options.sort || 'episode_newest'
 
-      const response = await fetch(`${this.BASE_URL}/products?expansion=${expansionId}`, {
+      console.log(`📦 RapidAPI: Recherche produits "${searchTerm}"...`)
+
+      const params = new URLSearchParams({
+        search: searchTerm,
+        limit: limit.toString(),
+        sort
+      })
+
+      const response = await fetch(`${this.BASE_URL}/pokemon/products/search?${params}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
       }
 
       const data = await response.json()
-      console.log(`✅ RapidAPI: ${data.length || 0} produits scellés trouvés`)
+      console.log(`✅ RapidAPI: ${data.data?.length || 0} produits trouvés`)
 
       return data
     } catch (error) {
-      console.error(`❌ RapidAPI: Erreur produits scellés:`, error)
+      console.error(`❌ RapidAPI: Erreur recherche produits "${searchTerm}":`, error)
       throw error
     }
   }
 
   /**
-   * Récupérer l'historique des prix d'un produit scellé
+   * Obtenir un produit par son ID
    *
-   * @param {string} productId - ID du produit
-   * @returns {Promise<Object>} Historique des prix
+   * @param {number} productId - ID du produit
+   * @returns {Promise<Object>} Détails complets du produit
    */
-  static async getProductPriceHistory(productId) {
+  static async getProduct(productId) {
     if (!this.isAvailable()) {
       throw new Error('RapidAPI non disponible')
     }
 
     try {
-      console.log(`📊 RapidAPI: Récupération historique prix produit ${productId}...`)
+      console.log(`📦 RapidAPI: Récupération produit ID ${productId}...`)
 
-      const response = await fetch(`${this.BASE_URL}/products/history-prices?productId=${productId}`, {
+      const response = await fetch(`${this.BASE_URL}/pokemon/products/${productId}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
       }
 
       const data = await response.json()
-      console.log(`✅ RapidAPI: Historique prix produit ${productId} récupéré`)
+      console.log(`✅ RapidAPI: Produit ${data.name} récupéré`)
 
       return data
     } catch (error) {
-      console.error(`❌ RapidAPI: Erreur historique prix produit:`, error)
+      console.error(`❌ RapidAPI: Erreur récupération produit ${productId}:`, error)
       throw error
     }
   }
 
   /**
-   * Récupérer toutes les extensions disponibles
+   * Lister les produits scellés d'une extension
    *
-   * @returns {Promise<Array>} Liste des extensions
+   * @param {string} expansionSlug - Slug de l'extension
+   * @param {Object} options - Options de pagination
+   * @returns {Promise<Object>} { data: Array, paging: Object }
    */
-  static async getExpansions() {
+  static async getProductsByExpansion(expansionSlug, options = {}) {
     if (!this.isAvailable()) {
       throw new Error('RapidAPI non disponible')
     }
 
     try {
+      const page = options.page || 1
+      const limit = options.limit || 50
+
+      console.log(`📦 RapidAPI: Récupération produits de "${expansionSlug}"...`)
+
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      })
+
+      const response = await fetch(`${this.BASE_URL}/pokemon/products/expansion/${expansionSlug}?${params}`, {
+        method: 'GET',
+        headers: this.getHeaders()
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log(`✅ RapidAPI: ${data.data?.length || 0} produits de "${expansionSlug}" récupérés`)
+
+      return data
+    } catch (error) {
+      console.error(`❌ RapidAPI: Erreur produits extension "${expansionSlug}":`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Lister toutes les extensions disponibles
+   *
+   * @param {Object} options - Options de pagination
+   * @returns {Promise<Object>} { data: Array, paging: Object }
+   */
+  static async getExpansions(options = {}) {
+    if (!this.isAvailable()) {
+      throw new Error('RapidAPI non disponible')
+    }
+
+    try {
+      const page = options.page || 1
+      const limit = options.limit || 100
+
       console.log(`📚 RapidAPI: Récupération liste des extensions...`)
 
-      const response = await fetch(`${this.BASE_URL}/expansions`, {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
+      })
+
+      const response = await fetch(`${this.BASE_URL}/pokemon/expansions?${params}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
       }
 
       const data = await response.json()
-      console.log(`✅ RapidAPI: ${data.length || 0} extensions trouvées`)
+      console.log(`✅ RapidAPI: ${data.data?.length || 0} extensions récupérées`)
 
       return data
     } catch (error) {
       console.error(`❌ RapidAPI: Erreur récupération extensions:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Rechercher des extensions
+   *
+   * @param {string} searchTerm - Terme de recherche
+   * @param {Object} options - Options
+   * @returns {Promise<Object>} { data: Array }
+   */
+  static async searchExpansions(searchTerm, options = {}) {
+    if (!this.isAvailable()) {
+      throw new Error('RapidAPI non disponible')
+    }
+
+    try {
+      const limit = options.limit || 50
+
+      console.log(`📚 RapidAPI: Recherche extensions "${searchTerm}"...`)
+
+      const params = new URLSearchParams({
+        search: searchTerm,
+        limit: limit.toString()
+      })
+
+      const response = await fetch(`${this.BASE_URL}/pokemon/expansions/search?${params}`, {
+        method: 'GET',
+        headers: this.getHeaders()
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log(`✅ RapidAPI: ${data.data?.length || 0} extensions trouvées`)
+
+      return data
+    } catch (error) {
+      console.error(`❌ RapidAPI: Erreur recherche extensions:`, error)
       throw error
     }
   }

@@ -2,195 +2,216 @@
  * HybridPriceService - Orchestrateur intelligent pour les prix
  *
  * Stratégie :
- * 1. Essaie RapidAPI (prix précis par version) si quota disponible
- * 2. Fallback sur PriceRefreshService (prix moyens) si quota épuisé ou erreur
+ * 1. Essaie RapidAPI (CardMarket API TCG) si quota disponible
+ *    - Prix précis en EUR par version (Near Mint, DE, FR)
+ *    - Prix des cartes gradées (PSA, CGC)
+ *    - Moyennes 7j et 30j
+ * 2. Fallback sur Pokemon TCG API si quota épuisé ou erreur
+ *    - Prix TCGPlayer USD
+ *    - Moins précis mais gratuit et illimité
  * 3. Gestion automatique du quota avec compteur localStorage
  * 4. Feature flag pour activer/désactiver RapidAPI
  *
  * Avantages :
- * - Meilleur des deux mondes : précision RapidAPI + couverture PriceRefreshService
+ * - Meilleur des deux mondes : précision RapidAPI + couverture Pokemon TCG
  * - Zéro frais supplémentaires : fallback automatique quand quota atteint
  * - Migration progressive : peut être activé/désactivé via .env
  */
 
-import { RapidAPIService } from './RapidAPIService'
-import { PriceRefreshService } from './PriceRefreshService'
-import { QuotaTracker } from './QuotaTracker'
+import { RapidAPIService } from './RapidAPIService.js'
+import { QuotaTracker } from './QuotaTracker.js'
 
 export class HybridPriceService {
   /**
-   * Récupérer les prix d'une carte avec fallback intelligent
+   * Rechercher des cartes avec fallback intelligent
    *
-   * @param {Object} card - La carte dont on veut les prix
-   * @returns {Promise<Object>} Carte avec prix mis à jour
+   * @param {string} searchTerm - Terme de recherche
+   * @param {number} limit - Nombre de résultats
+   * @returns {Promise<Array>} Cartes avec prix
    */
-  static async getCardPrices(card) {
-    console.log(`💰 HybridPrice: Récupération prix pour ${card.name}...`)
+  static async searchCards(searchTerm, limit = 50) {
+    console.log(`💰 HybridPrice: Recherche "${searchTerm}"...`)
 
     // 1. Vérifier si RapidAPI est disponible et activé
     if (!RapidAPIService.isAvailable()) {
-      console.log('⏭️ RapidAPI désactivé → Fallback PriceRefreshService')
-      return this.fallbackToPriceRefreshService(card)
+      console.log('⏭️ RapidAPI désactivé → Fallback Pokemon TCG API')
+      return this.fallbackToPokemonTCGAPI(searchTerm, limit)
     }
 
     // 2. Vérifier le quota
     const quotaCheck = QuotaTracker.canMakeRequest()
     if (!quotaCheck.allowed) {
-      console.log(`⏭️ ${quotaCheck.message} → Fallback PriceRefreshService`)
-      return this.fallbackToPriceRefreshService(card)
+      console.log(`⏭️ ${quotaCheck.message} → Fallback Pokemon TCG API`)
+      return this.fallbackToPokemonTCGAPI(searchTerm, limit)
     }
 
     // 3. Essayer RapidAPI
     try {
       console.log(`🚀 Tentative RapidAPI (${quotaCheck.remaining} requêtes restantes)...`)
 
-      const rapidApiData = await RapidAPIService.getCardWithPrices(card.id)
+      const result = await RapidAPIService.searchCards(searchTerm, { limit })
 
       // Incrémenter le quota
       QuotaTracker.incrementUsage()
 
-      // Formatter les données RapidAPI au format VaultEstim
-      const formattedCard = this.formatRapidAPIData(card, rapidApiData)
+      // Convertir au format VaultEstim
+      const cards = this.formatRapidAPICards(result.data || [])
 
-      console.log(`✅ Prix RapidAPI récupérés pour ${card.name}`)
-      return formattedCard
+      console.log(`✅ ${cards.length} cartes récupérées via RapidAPI`)
+      return cards
 
     } catch (error) {
       console.warn(`⚠️ Erreur RapidAPI: ${error.message}`)
-      console.log('⏭️ Fallback sur PriceRefreshService')
-      return this.fallbackToPriceRefreshService(card)
+      console.log('⏭️ Fallback sur Pokemon TCG API')
+      return this.fallbackToPokemonTCGAPI(searchTerm, limit)
     }
   }
 
   /**
-   * Fallback sur l'ancien système de prix
+   * Fallback sur l'API Pokemon TCG officielle
    */
-  static async fallbackToPriceRefreshService(card) {
-    console.log(`📊 Utilisation PriceRefreshService pour ${card.name}...`)
+  static async fallbackToPokemonTCGAPI(searchTerm, limit = 50) {
+    console.log(`📊 Utilisation Pokemon TCG API pour "${searchTerm}"...`)
 
-    // Le PriceRefreshService utilise TCGdxService qui interroge l'API Pokemon TCG
-    // et récupère les prix moyens (pas de distinction par version)
     const { TCGdxService } = await import('./TCGdxService')
 
     try {
-      const searchResults = await TCGdxService.searchCards(card.name, 100)
-      const updatedCard = searchResults.find(c => c.id === card.id)
+      const cards = await TCGdxService.searchCards(searchTerm, limit)
 
-      if (updatedCard && (updatedCard.cardmarket || updatedCard.tcgplayer)) {
-        return {
-          ...card,
-          marketPrice: updatedCard.marketPrice,
-          marketPriceDetails: updatedCard.marketPriceDetails,
-          cardmarket: updatedCard.cardmarket,
-          tcgplayer: updatedCard.tcgplayer,
-          _price_updated_at: new Date().toISOString(),
-          _price_source: 'pokemon-tcg-api'
-        }
-      }
-
-      console.warn(`⚠️ Aucun prix trouvé pour ${card.name}`)
-      return card
+      // Ajouter un marqueur de source
+      return cards.map(card => ({
+        ...card,
+        _price_source: 'pokemon-tcg-api'
+      }))
 
     } catch (error) {
-      console.error(`❌ Erreur PriceRefreshService:`, error)
-      return card
+      console.error(`❌ Erreur Pokemon TCG API:`, error)
+      return []
     }
   }
 
   /**
    * Formatter les données RapidAPI au format VaultEstim
    *
-   * @param {Object} originalCard - Carte originale
-   * @param {Object} rapidApiData - Données RapidAPI
-   * @returns {Object} Carte formatée
+   * @param {Array} rapidApiCards - Cartes depuis RapidAPI
+   * @returns {Array} Cartes formatées pour VaultEstim
    */
-  static formatRapidAPIData(originalCard, rapidApiData) {
-    // TODO: Adapter selon le format réel de l'API RapidAPI
-    // Pour l'instant, on suppose que l'API retourne des prix par version
+  static formatRapidAPICards(rapidApiCards) {
+    return rapidApiCards.map(card => {
+      // Extraire les prix CardMarket
+      const cm = card.prices?.cardmarket || {}
+      const tcp = card.prices?.tcg_player || {}
 
-    const formatted = {
-      ...originalCard,
-      _price_updated_at: new Date().toISOString(),
-      _price_source: 'rapidapi'
-    }
+      // Déterminer le prix principal (Near Mint ou moyenne 30j)
+      const marketPrice = cm.lowest_near_mint || cm['30d_average'] || cm['7d_average'] || 0
 
-    // Si l'API retourne des prix CardMarket
-    if (rapidApiData.cardmarket) {
-      formatted.cardmarket = rapidApiData.cardmarket
-      formatted.marketPrice = rapidApiData.cardmarket.averagePrice || rapidApiData.cardmarket.trendPrice
-    }
+      return {
+        // Identifiants
+        id: card.tcgid || `rapid-${card.id}`,
+        name: card.name,
 
-    // Si l'API retourne des prix TCGPlayer
-    if (rapidApiData.tcgplayer) {
-      formatted.tcgplayer = rapidApiData.tcgplayer
-    }
+        // Détails carte
+        number: card.card_number?.toString() || '',
+        hp: card.hp,
+        rarity: card.rarity,
+        supertype: card.supertype,
 
-    // Prix par version (si disponible)
-    if (rapidApiData.pricesByVersion) {
-      formatted.pricesByVersion = rapidApiData.pricesByVersion
-    }
+        // Extension
+        set: {
+          id: card.episode?.slug || '',
+          name: card.episode?.name || '',
+          series: card.episode?.series?.name || '',
+          printedTotal: card.episode?.cards_printed_total || 0,
+          total: card.episode?.cards_total || 0,
+          releaseDate: card.episode?.released_at || '',
+          images: {
+            logo: card.episode?.logo || '',
+            symbol: card.episode?.logo || ''
+          },
+          ptcgoCode: card.episode?.code || null
+        },
 
-    return formatted
-  }
+        // Artiste
+        artist: card.artist?.name || '',
 
-  /**
-   * Actualiser les prix d'un batch de cartes (version hybride)
-   *
-   * @param {Array} cards - Cartes à actualiser
-   * @param {Function} onProgress - Callback de progression
-   * @returns {Promise<Object>} Résultats
-   */
-  static async refreshBatch(cards, onProgress) {
-    const results = {
-      rapidapi: 0,
-      fallback: 0,
-      errors: 0,
-      total: cards.length
-    }
+        // Images
+        images: {
+          small: card.image || '',
+          large: card.image || ''
+        },
 
-    console.log(`\n🔄 HybridPrice: Actualisation de ${cards.length} cartes...`)
-    QuotaTracker.logStats()
+        // Prix CardMarket (EUR)
+        cardmarket: {
+          url: card.links?.cardmarket || '',
+          updatedAt: new Date().toISOString(),
+          prices: {
+            averageSellPrice: cm['30d_average'] || null,
+            lowPrice: cm.lowest_near_mint || null,
+            trendPrice: cm['7d_average'] || null,
+            germanProLow: cm.lowest_near_mint_DE || null,
+            suggestedPrice: cm.lowest_near_mint_FR || null,
+            reverseHoloSell: null,
+            reverseHoloLow: null,
+            reverseHoloTrend: null,
+            lowPriceExPlus: null,
+            avg1: cm['7d_average'] || null,
+            avg7: cm['7d_average'] || null,
+            avg30: cm['30d_average'] || null,
+            reverseHoloAvg1: null,
+            reverseHoloAvg7: null,
+            reverseHoloAvg30: null
+          }
+        },
 
-    for (let i = 0; i < cards.length; i++) {
-      const card = cards[i]
+        // Prix TCGPlayer (USD converti en EUR)
+        tcgplayer: tcp.market_price ? {
+          url: '',
+          updatedAt: new Date().toISOString(),
+          prices: {
+            normal: {
+              low: null,
+              mid: tcp.mid_price || null,
+              high: null,
+              market: tcp.market_price || null,
+              directLow: null
+            },
+            holofoil: null,
+            reverseHolofoil: null,
+            '1stEditionHolofoil': null,
+            '1stEditionNormal': null
+          }
+        } : undefined,
 
-      try {
-        const updatedCard = await this.getCardPrices(card)
+        // Prix gradées (uniquement disponible avec RapidAPI)
+        gradedPrices: cm.graded ? {
+          psa: {
+            psa10: cm.graded.psa?.psa10 || null,
+            psa9: cm.graded.psa?.psa9 || null
+          },
+          cgc: {
+            cgc10: null,
+            cgc9: cm.graded.cgc?.cgc9 || null
+          }
+        } : null,
 
-        if (updatedCard._price_source === 'rapidapi') {
-          results.rapidapi++
-        } else {
-          results.fallback++
-        }
+        // Prix principal pour affichage
+        marketPrice: marketPrice,
+        marketPriceDetails: {
+          currency: 'EUR',
+          source: 'cardmarket',
+          nearMint: cm.lowest_near_mint || null,
+          nearMint_DE: cm.lowest_near_mint_DE || null,
+          nearMint_FR: cm.lowest_near_mint_FR || null,
+          avg7d: cm['7d_average'] || null,
+          avg30d: cm['30d_average'] || null
+        },
 
-        // Callback de progression
-        if (onProgress) {
-          onProgress({
-            current: i + 1,
-            total: cards.length,
-            percentage: Math.round(((i + 1) / cards.length) * 100),
-            currentCard: card.name,
-            results
-          })
-        }
-
-        // Pause entre requêtes (respect rate limiting)
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-      } catch (error) {
-        results.errors++
-        console.error(`❌ Erreur actualisation ${card.name}:`, error)
+        // Métadonnées
+        _price_updated_at: new Date().toISOString(),
+        _price_source: 'rapidapi',
+        _rapidapi_id: card.id
       }
-    }
-
-    console.log(`\n📊 Résultats actualisation hybride:`)
-    console.log(`  🚀 ${results.rapidapi} via RapidAPI`)
-    console.log(`  📊 ${results.fallback} via PriceRefreshService (fallback)`)
-    console.log(`  ❌ ${results.errors} erreurs`)
-
-    QuotaTracker.logStats()
-
-    return results
+    })
   }
 
   /**
@@ -203,26 +224,47 @@ export class HybridPriceService {
     return {
       rapidApiEnabled: rapidApiAvailable,
       quota: quotaStats,
-      recommendation: this.getRecommendation(quotaStats)
+      recommendation: this.getRecommendation(quotaStats, rapidApiAvailable)
     }
   }
 
   /**
    * Obtenir une recommandation d'utilisation
    */
-  static getRecommendation(quotaStats) {
-    if (!RapidAPIService.isAvailable()) {
-      return 'RapidAPI désactivé. Activez-le dans .env pour des prix plus précis.'
+  static getRecommendation(quotaStats, rapidApiAvailable) {
+    if (!rapidApiAvailable) {
+      return 'RapidAPI désactivé. Activez VITE_USE_RAPIDAPI=true dans .env pour des prix plus précis en EUR.'
     }
 
     if (quotaStats.isExhausted) {
-      return `Quota épuisé. Utilisation du fallback jusqu'à ${quotaStats.resetAt.toLocaleTimeString('fr-FR')}.`
+      return `Quota épuisé (${quotaStats.used}/${quotaStats.limit}). Utilisation du fallback Pokemon TCG API jusqu'à ${quotaStats.resetAt.toLocaleTimeString('fr-FR')}.`
     }
 
     if (quotaStats.isNearLimit) {
-      return `Proche de la limite (${quotaStats.percentUsed}%). Utilisation recommandée pour cartes à forte valeur uniquement.`
+      return `Proche de la limite (${quotaStats.percentUsed}%). ${quotaStats.remaining} requêtes restantes. Utilisez pour les recherches importantes.`
     }
 
-    return `${quotaStats.remaining} requêtes disponibles. Utilisation optimale.`
+    return `${quotaStats.remaining} requêtes RapidAPI disponibles sur ${quotaStats.limit}. Utilisation optimale.`
+  }
+
+  /**
+   * Forcer l'utilisation de RapidAPI (pour tests)
+   */
+  static async forceRapidAPI(searchTerm, limit = 10) {
+    if (!RapidAPIService.isAvailable()) {
+      throw new Error('RapidAPI non disponible (vérifiez .env)')
+    }
+
+    const result = await RapidAPIService.searchCards(searchTerm, { limit })
+    QuotaTracker.incrementUsage()
+
+    return this.formatRapidAPICards(result.data || [])
+  }
+
+  /**
+   * Forcer l'utilisation de Pokemon TCG API (pour tests)
+   */
+  static async forcePokemonTCGAPI(searchTerm, limit = 10) {
+    return this.fallbackToPokemonTCGAPI(searchTerm, limit)
   }
 }

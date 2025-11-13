@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Système Hybride RapidAPI</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #d4af37; }
+    h2 { color: #4CAF50; margin-top: 30px; }
+    .section {
+      background: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #4CAF50;
+    }
+    .error {
+      border-left-color: #f44336;
+      background: #3a2a2a;
+    }
+    .warning {
+      border-left-color: #ff9800;
+      background: #3a3020;
+    }
+    .success {
+      border-left-color: #4CAF50;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 5px;
+    }
+    button:hover { background: #45a049; }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    pre {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      font-size: 12px;
+    }
+    .stat {
+      display: inline-block;
+      margin: 10px 20px 10px 0;
+      padding: 10px 20px;
+      background: #333;
+      border-radius: 4px;
+    }
+    .stat strong { color: #d4af37; }
+    .card {
+      background: #333;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+      border-left: 3px solid #4CAF50;
+    }
+    .price-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #d4af37;
+      color: #000;
+      border-radius: 3px;
+      font-weight: bold;
+      margin: 0 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test Système Hybride RapidAPI</h1>
+
+  <!-- Stats -->
+  <div class="section">
+    <h2>📊 Statistiques</h2>
+    <div id="stats"></div>
+    <button onclick="refreshStats()">🔄 Rafraîchir</button>
+    <button onclick="resetQuota()">♻️ Reset Quota</button>
+  </div>
+
+  <!-- Tests -->
+  <div class="section">
+    <h2>🧪 Tests</h2>
+    <button onclick="testHybridSearch()">1. Recherche Hybride (Charizard)</button>
+    <button onclick="testForceRapidAPI()">2. Forcer RapidAPI</button>
+    <button onclick="testForcePokemonTCG()">3. Forcer Pokemon TCG API</button>
+    <button onclick="testProducts()">4. Produits Scellés</button>
+  </div>
+
+  <!-- Results -->
+  <div id="results"></div>
+
+  <script type="module">
+    import { HybridPriceService } from './src/services/HybridPriceService.js'
+    import { RapidAPIService } from './src/services/RapidAPIService.js'
+    import { QuotaTracker } from './src/services/QuotaTracker.js'
+
+    window.HybridPriceService = HybridPriceService
+    window.RapidAPIService = RapidAPIService
+    window.QuotaTracker = QuotaTracker
+
+    // Afficher les stats
+    window.refreshStats = function() {
+      const stats = HybridPriceService.getStats()
+      const percentClass = stats.quota.isExhausted ? 'error' : stats.quota.isNearLimit ? 'warning' : 'success'
+
+      const html = `
+        <div class="${percentClass}">
+          <div class="stat">
+            <strong>RapidAPI:</strong> ${stats.rapidApiEnabled ? '✅ Activé' : '❌ Désactivé'}
+          </div>
+          <div class="stat">
+            <strong>Quota:</strong> ${stats.quota.used} / ${stats.quota.limit} (${stats.quota.percentUsed}%)
+          </div>
+          <div class="stat">
+            <strong>Restant:</strong> ${stats.quota.remaining} requêtes
+          </div>
+          <div class="stat">
+            <strong>Reset:</strong> ${stats.quota.resetAt.toLocaleTimeString('fr-FR')}
+          </div>
+        </div>
+        <p><strong>Recommandation:</strong> ${stats.recommendation}</p>
+      `
+      document.getElementById('stats').innerHTML = html
+    }
+
+    // Reset quota
+    window.resetQuota = function() {
+      if (confirm('Reset le quota à 0 ?')) {
+        QuotaTracker.forceReset()
+        refreshStats()
+        addResult('Reset quota', { message: 'Quota réinitialisé' }, 'success')
+      }
+    }
+
+    // Ajouter un résultat
+    function addResult(title, data, type = 'success') {
+      const div = document.createElement('div')
+      div.className = `section ${type}`
+
+      let content = ''
+      if (Array.isArray(data)) {
+        content = data.map((card, i) => `
+          <div class="card">
+            <h3>${i + 1}. ${card.name}</h3>
+            <p><strong>Extension:</strong> ${card.set?.name || 'N/A'}</p>
+            <p><strong>Rareté:</strong> ${card.rarity || 'N/A'}</p>
+            <p><strong>Source:</strong> <span class="price-badge">${card._price_source || 'N/A'}</span></p>
+            <p><strong>Prix:</strong> ${card.marketPrice ? card.marketPrice + ' ' + (card.marketPriceDetails?.currency || '€') : 'N/A'}</p>
+            ${card.marketPriceDetails ? `
+              <details>
+                <summary><strong>Détails prix CardMarket</strong></summary>
+                <pre>${JSON.stringify(card.marketPriceDetails, null, 2)}</pre>
+              </details>
+            ` : ''}
+            ${card.gradedPrices ? `
+              <details>
+                <summary><strong>Prix Gradées</strong></summary>
+                <pre>${JSON.stringify(card.gradedPrices, null, 2)}</pre>
+              </details>
+            ` : ''}
+          </div>
+        `).join('')
+      } else {
+        content = `<pre>${JSON.stringify(data, null, 2)}</pre>`
+      }
+
+      div.innerHTML = `<h2>${title}</h2>${content}`
+      document.getElementById('results').prepend(div)
+    }
+
+    // Test 1: Recherche hybride
+    window.testHybridSearch = async function() {
+      addResult('Test en cours...', { status: 'Recherche Charizard via système hybride' }, 'warning')
+
+      try {
+        const cards = await HybridPriceService.searchCards('charizard', 5)
+        addResult(`✅ Recherche Hybride (${cards.length} résultats)`, cards, 'success')
+        refreshStats()
+      } catch (error) {
+        addResult('❌ Erreur', { error: error.message }, 'error')
+      }
+    }
+
+    // Test 2: Forcer RapidAPI
+    window.testForceRapidAPI = async function() {
+      addResult('Test en cours...', { status: 'Force RapidAPI pour Pikachu' }, 'warning')
+
+      try {
+        const cards = await HybridPriceService.forceRapidAPI('pikachu', 3)
+        addResult(`✅ RapidAPI Forcé (${cards.length} résultats)`, cards, 'success')
+        refreshStats()
+      } catch (error) {
+        addResult('❌ Erreur RapidAPI', { error: error.message }, 'error')
+      }
+    }
+
+    // Test 3: Forcer Pokemon TCG
+    window.testForcePokemonTCG = async function() {
+      addResult('Test en cours...', { status: 'Force Pokemon TCG API pour Mewtwo' }, 'warning')
+
+      try {
+        const cards = await HybridPriceService.forcePokemonTCGAPI('mewtwo', 3)
+        addResult(`✅ Pokemon TCG API Forcé (${cards.length} résultats)`, cards, 'success')
+        refreshStats()
+      } catch (error) {
+        addResult('❌ Erreur Pokemon TCG', { error: error.message }, 'error')
+      }
+    }
+
+    // Test 4: Produits scellés
+    window.testProducts = async function() {
+      addResult('Test en cours...', { status: 'Recherche produits scellés (booster)' }, 'warning')
+
+      try {
+        const result = await RapidAPIService.searchProducts('booster', { limit: 5 })
+        QuotaTracker.incrementUsage()
+        addResult(`✅ Produits Scellés (${result.data?.length || 0} résultats)`, result.data || [], 'success')
+        refreshStats()
+      } catch (error) {
+        addResult('❌ Erreur Produits', { error: error.message }, 'error')
+      }
+    }
+
+    // Initialisation
+    refreshStats()
+    QuotaTracker.logStats()
+  </script>
+</body>
+</html>
