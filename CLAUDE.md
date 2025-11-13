@@ -211,6 +211,50 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ## ✅ Fonctionnalités Récentes (Janvier 2025)
 
+### Interface Explorer les Séries & Doublons (12/01/2025)
+- **Recherche dans extensions** (v1.9.119, v1.9.122) : Champ de recherche dédié par nom/numéro
+  - Filtre local : recherche par nom (FR/EN) ou numéro de carte dans l'extension courante
+  - Recherche API globale : toujours disponible en dessous du filtre local
+  - Réinitialisation automatique du filtre lors des changements de vue
+- **Modale détails doublons** (v1.9.113-114) : Détails complets des cartes en double
+  - Clic sur carte → modale avec image grande + infos complètes
+  - Section "📦 Vos doublons" par version (Normale, Holo, EX, etc.)
+  - Groupement instances par condition + langue
+  - Calcul valeur totale des doublons
+- **Badges versions intelligents** (v1.9.112) : Affichage conditionnel dans Doublons
+  - Initiales uniquement pour versions réellement en double (quantité > 1)
+  - Nouvelles initiales : RPB (Reverse Pokéball), RMB (Reverse Masterball), M (Métal)
+- **Clic carte unifié** (v1.9.120-121) : Cohérence interface
+  - Clic carte dans résultats API → modale d'ajout
+  - Suppression bouton bleu redondant (Settings)
+  - Interface épurée avec bouton vert (ajout rapide) uniquement
+
+### Auto-détection Versions & Versions Spéciales (12/01/2025)
+- **Auto-détection bouton "+"** (v1.9.111) : Version automatique selon rareté
+  - Cartes EX → version "EX" automatiquement
+  - Cartes AR, Full Art, Alternate Art → détection automatique
+  - Utilise `getDefaultVersion()` depuis `cardVersions.js`
+- **Version Métal** (v1.9.111) : Amphinobi EX 106/167 (Twilight Mascarade)
+  - Versions disponibles : EX, Métal
+  - Détection par nom + numéro + extension
+- **Reverse Pokéball/Masterball** (v1.9.111) : Extensions SV8, SV8a, SV9
+  - Pour cartes Common/Uncommon uniquement
+  - Extensions : Black Bolt, White Flare, Prismatic Evolution
+  - Versions ajoutées : Reverse (Pokéball), Reverse (Masterball)
+
+### Traductions Pokémon & Dresseur (12/01/2025)
+- **Pokémon Team Rocket** (v1.9.115-116):
+  - Astronelle de la Team Rocket → Team Rocket's Orbeetle
+  - Nosferalto de la Team Rocket → Team Rocket's Golbat
+  - Tadmorv de la Team Rocket → Team Rocket's Grimer
+- **Dresseur/Objets/Stades/Énergies** (v1.9.117-118, v1.9.123):
+  - Poids Pouvoir de Cynthia → Cynthia's Power Weight
+  - Usine de la Team Rocket → Team Rocket's Factory
+  - Énergie de la Team Rocket → Team Rocket's Energy
+  - Lieu de la Fête → Festival Grounds
+  - Énergie Boomerang → Boomerang Energy
+  - Centre Culturel → Community Center
+
 ### Versions de Cartes & Holo Cosmos (11/01/2025)
 - **Système de versions par rareté** (v1.9.90-105) : Versions conditionnelles selon le type de carte
   - Cartes normales : Normale, Reverse Holo, Holo, Holo Cosmos, Tampon
@@ -280,4 +324,4 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ---
 
-**Dernière mise à jour** : 2025-01-11 (v1.9.108)
+**Dernière mise à jour** : 2025-01-12 (v1.9.123)
