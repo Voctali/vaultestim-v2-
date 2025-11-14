@@ -91,8 +91,13 @@ export function SealedProductSaleModal({ isOpen, onClose, onSubmit, product }) {
                   }
                   alt={product.name}
                   className="w-full h-full object-contain bg-white"
+                  referrerPolicy="no-referrer"
                   onError={(e) => {
-                    e.target.style.display = 'none'
+                    if (e.target.src.endsWith('.png')) {
+                      e.target.src = e.target.src.replace('.png', '.jpg')
+                    } else {
+                      e.target.style.display = 'none'
+                    }
                   }}
                 />
               ) : (

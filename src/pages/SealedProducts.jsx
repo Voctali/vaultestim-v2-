@@ -381,16 +381,24 @@ export function SealedProducts() {
                             <img
                               src={
                                 product.image_file ||
-                                // Prioriser CardMarket si on a les IDs (corrige les anciennes URLs incorrectes)
+                                // 2. URL stockée (RapidAPI, Supabase, etc.)
+                                product.image_url ||
+                                // 3. Fallback: générer URL CardMarket si on a les IDs (corrige les anciennes URLs incorrectes)
                                 (product.cardmarket_id_product && product.cardmarket_id_category
                                   ? CardMarketSupabaseService.getCardMarketImageUrl(product.cardmarket_id_product, product.cardmarket_id_category)
-                                  : product.image_url)
+                                  : null)
                               }
                               alt={product.name}
                               className="w-full h-40 object-contain bg-slate-100 dark:bg-slate-800 rounded"
+                              referrerPolicy="no-referrer"
                               onError={(e) => {
-                                // Si l'image échoue, cacher l'élément
-                                e.target.style.display = 'none'
+                                // Fallback: essayer .jpg si .png échoue
+                                if (e.target.src.endsWith('.png')) {
+                                  e.target.src = e.target.src.replace('.png', '.jpg')
+                                } else {
+                                  // Si .jpg échoue aussi, masquer l'image
+                                  e.target.style.display = 'none'
+                                }
                               }}
                             />
                           </div>

@@ -91,7 +91,14 @@ export function AddSealedProductModal({ product, isOpen, onClose, onSave }) {
                 src={product.image_url || CardMarketSupabaseService.getCardMarketImageUrl(product.id_product, product.id_category)}
                 alt={product.name}
                 className="w-24 h-24 object-contain bg-white rounded"
-                onError={(e) => { e.target.style.display = 'none' }}
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  if (e.target.src.endsWith('.png')) {
+                    e.target.src = e.target.src.replace('.png', '.jpg')
+                  } else {
+                    e.target.style.display = 'none'
+                  }
+                }}
               />
             )}
             <div className="flex-1">

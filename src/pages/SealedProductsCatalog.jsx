@@ -67,8 +67,11 @@ export function SealedProductsCatalog() {
       // Associer les prix aux produits
       const productsWithPrices = allProducts.map(product => {
         const price = priceMap.get(product.id_product)
+        // Générer URL image si non présente (utilise S3 CardMarket)
+        const imageUrl = product.image_url || CardMarketSupabaseService.getCardMarketImageUrl(product.id_product, product.id_category)
         return {
           ...product,
+          image_url: imageUrl,
           price: price?.avg || price?.trend || null,
           priceLow: price?.low || null,
           priceDetails: price,
@@ -322,7 +325,16 @@ export function SealedProductsCatalog() {
                               src={product.image_url}
                               alt={product.name}
                               className="w-full h-40 object-contain bg-slate-100 dark:bg-slate-800 rounded"
-                              onError={(e) => { e.target.style.display = 'none' }}
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                // Fallback: essayer .jpg si .png échoue
+                                if (e.target.src.endsWith('.png')) {
+                                  e.target.src = e.target.src.replace('.png', '.jpg')
+                                } else {
+                                  // Si .jpg échoue aussi, masquer l'image
+                                  e.target.style.display = 'none'
+                                }
+                              }}
                             />
                           </div>
                         )}
