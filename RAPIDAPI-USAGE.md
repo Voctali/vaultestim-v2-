@@ -1,4 +1,4 @@
-# 📊 Guide d'Utilisation RapidAPI (100 req/jour)
+# 📊 Guide d'Utilisation RapidAPI (3000 req/jour)
 
 ## ✅ Configuration Activée
 
@@ -6,7 +6,7 @@
 VITE_USE_RAPIDAPI=true
 VITE_RAPIDAPI_KEY=523ca9be5emsh10d5931a9d95b87p18cd5cjsn641503bb34b6
 VITE_RAPIDAPI_HOST=cardmarket-api-tcg.p.rapidapi.com
-VITE_RAPIDAPI_DAILY_QUOTA=100
+VITE_RAPIDAPI_DAILY_QUOTA=3000
 ```
 
 ## 🎯 Utilisation du Quota

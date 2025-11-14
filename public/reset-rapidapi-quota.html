@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reset RapidAPI Quota</title>
+  <style>
+    body {
+      font-family: system-ui;
+      background: #0f172a;
+      color: white;
+      padding: 50px;
+      text-align: center;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    button:hover { background: #2563eb; }
+    .success { color: #10b981; font-size: 24px; margin: 20px; }
+  </style>
+</head>
+<body>
+  <h1>🔄 Réinitialiser Quota RapidAPI</h1>
+  <p>Nouveau quota: 3000 requêtes/jour</p>
+  
+  <button onclick="resetQuota()">Réinitialiser le compteur</button>
+  
+  <div id="result"></div>
+
+  <script>
+    function resetQuota() {
+      localStorage.removeItem('rapidapi_quota_v1')
+      
+      // Créer nouveau quota avec limite 3000
+      localStorage.setItem('rapidapi_quota_v1', JSON.stringify({
+        used: 0,
+        resetAt: new Date(new Date().setHours(24,0,0,0)).toISOString()
+      }))
+      
+      document.getElementById('result').innerHTML = 
+        '<div class="success">✅ Quota réinitialisé : 0/3000 requêtes</div>' +
+        '<p>Rechargez la page du catalogue pour voir les changements</p>'
+    }
+  </script>
+</body>
+</html>

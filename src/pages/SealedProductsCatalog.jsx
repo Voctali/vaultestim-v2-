@@ -87,8 +87,9 @@ export function SealedProductsCatalog() {
     }
   }
 
-  const handleApiSearch = async () => {
-    if (!apiSearchTerm.trim()) {
+  const handleApiSearch = async (searchQuery = null) => {
+    const query = searchQuery || apiSearchTerm.trim();
+    if (!query) {
       // Si vide, revenir au catalogue complet
       loadSealedProducts()
       return
@@ -100,7 +101,7 @@ export function SealedProductsCatalog() {
       console.log(`🔍 Recherche API produits: "${apiSearchTerm}"`)
 
       // Utiliser le système hybride
-      const results = await HybridPriceService.searchProducts(apiSearchTerm, 100)
+      const results = await HybridPriceService.searchProducts(query, 100)
 
       console.log(`✅ ${results.length} produits trouvés via API`)
       setProducts(results)
@@ -244,7 +245,7 @@ export function SealedProductsCatalog() {
                   <Button
                     variant={selectedCategory === null ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSelectedCategory(null)}
+                    onClick={async () => { setSelectedCategory(null); setIsApiSearch(false); loadSealedProducts(); }}
                     className="flex-shrink-0"
                     disabled={isApiSearch}
                   >
@@ -256,7 +257,7 @@ export function SealedProductsCatalog() {
                       key={category}
                       variant={selectedCategory === category ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setSelectedCategory(category)}
+                      onClick={async () => { setSelectedCategory(category); await handleApiSearch(category.toLowerCase()); }}
                       className="flex-shrink-0"
                       disabled={isApiSearch}
                     >
