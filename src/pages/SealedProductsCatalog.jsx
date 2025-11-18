@@ -5,11 +5,17 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Package, Search, ExternalLink, Euro, Filter, Plus, Zap } from 'lucide-react'
 import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
+import { CardMarketDynamicLinkService } from '@/services/CardMarketDynamicLinkService'
 import { UserSealedProductsService } from '@/services/UserSealedProductsService'
+import { AdminPreferencesService } from '@/services/AdminPreferencesService'
 import { HybridPriceService } from '@/services/HybridPriceService'
 import { AddSealedProductModal } from '@/components/features/collection/AddSealedProductModal'
 import { PriceSourceBadge } from '@/components/ui/PriceSourceBadge'
+import { getCategorySearchTerm } from '@/utils/sealedProductCategories'
+import { translateSealedProductSearch } from '@/utils/sealedProductTranslations'
+import { detectSealedProductCategory, sortProductsByCategory, normalizeCategoryName } from '@/utils/detectSealedProductCategory'
 import { useAuth } from '@/hooks/useAuth'
+import { QuotaAlert } from '@/components/ui/QuotaAlert'
 
 export function SealedProductsCatalog() {
   const { user } = useAuth()
@@ -64,22 +70,39 @@ export function SealedProductsCatalog() {
       const priceMap = await CardMarketSupabaseService.getPricesForProducts(productIds)
       console.log(`✅ ${priceMap.size} prix chargés`)
 
-      // Associer les prix aux produits
+      // Associer les prix aux produits et détecter les catégories
       const productsWithPrices = allProducts.map(product => {
         const price = priceMap.get(product.id_product)
         // Générer URL image si non présente (utilise S3 CardMarket)
         const imageUrl = product.image_url || CardMarketSupabaseService.getCardMarketImageUrl(product.id_product, product.id_category)
+
+        // Détecter automatiquement la catégorie si manquante ou "Non spécifié"
+        let categoryName = (!product.category_name || product.category_name === 'Non spécifié')
+          ? detectSealedProductCategory(product.name)
+          : product.category_name
+
+        // Enlever le préfixe "Pokémon " si présent (SAUF pour "Pokémon Booster")
+        if (categoryName !== 'Pokémon Booster') {
+          categoryName = categoryName.replace(/^Pokémon\s+/i, '')
+        }
+
+        // Normaliser pour éviter les doublons (Elite Trainer Boxes → Elite Trainer Box)
+        const category = normalizeCategoryName(categoryName)
+
         return {
           ...product,
           image_url: imageUrl,
           price: price?.avg || price?.trend || null,
           priceLow: price?.low || null,
           priceDetails: price,
-          _price_source: 'supabase-cardmarket'
+          _price_source: 'supabase-cardmarket',
+          category_name: category
         }
       })
 
-      setProducts(productsWithPrices)
+      // Trier par catégorie avant d'afficher
+      const sortedProducts = sortProductsByCategory(productsWithPrices)
+      setProducts(sortedProducts)
     } catch (error) {
       console.error('❌ Erreur chargement catalogue:', error)
     } finally {
@@ -98,13 +121,56 @@ export function SealedProductsCatalog() {
     try {
       setLoading(true)
       setIsApiSearch(true)
-      console.log(`🔍 Recherche API produits: "${apiSearchTerm}"`)
+      setSelectedCategory(null) // Réinitialiser le filtre de catégorie pour la recherche
 
-      // Utiliser le système hybride
-      const results = await HybridPriceService.searchProducts(query, 100)
+      // Traduire la requête en anglais (ex: "coffret dresseur" → "elite trainer box")
+      const translatedQuery = translateSealedProductSearch(query)
+      console.log(`🔍 Recherche API produits: "${query}" → "${translatedQuery}"`)
+
+      // Utiliser le système hybride avec la requête traduite
+      const results = await HybridPriceService.searchProducts(translatedQuery, 1000)
 
       console.log(`✅ ${results.length} produits trouvés via API`)
-      setProducts(results)
+
+      // Détecter et normaliser les catégories automatiquement
+      const productsWithCategories = results.map(product => {
+        // Utiliser la détection automatique si pas de catégorie ou si "Non spécifié"
+        let categoryName = (!product.category_name || product.category_name === 'Non spécifié')
+          ? detectSealedProductCategory(product.name)
+          : product.category_name
+
+        // Enlever le préfixe "Pokémon " si présent (SAUF pour "Pokémon Booster")
+        if (categoryName !== 'Pokémon Booster') {
+          categoryName = categoryName.replace(/^Pokémon\s+/i, '')
+        }
+
+        return {
+          ...product,
+          category_name: normalizeCategoryName(categoryName)
+        }
+      })
+
+      // Sauvegarder les nouveaux produits dans Supabase avec les bonnes catégories (en arrière-plan)
+      if (productsWithCategories.length > 0) {
+        console.log(`💾 Sauvegarde de ${productsWithCategories.length} produits dans le catalogue...`)
+        // Formater pour la sauvegarde avec category_name corrigée
+        const productsToSave = productsWithCategories.map(p => ({
+          ...p,
+          category_name: p.category_name // Catégorie détectée automatiquement
+        }))
+        CardMarketSupabaseService.upsertSealedProductsFromRapidAPI(productsToSave)
+          .then(count => {
+            console.log(`✅ ${count} produits ajoutés/mis à jour dans le catalogue Supabase`)
+          })
+          .catch(err => {
+            console.warn('⚠️ Erreur sauvegarde catalogue:', err)
+          })
+      }
+
+      // Trier par catégorie
+      const sortedProducts = sortProductsByCategory(productsWithCategories)
+
+      setProducts(sortedProducts)
     } catch (error) {
       console.error('❌ Erreur recherche API:', error)
     } finally {
@@ -138,17 +204,102 @@ export function SealedProductsCatalog() {
     }
   }
 
-  // Extraire les catégories uniques
+  // State pour les catégories masquées (chargées depuis Supabase)
+  const [hiddenCategories, setHiddenCategories] = useState([])
+  // State pour le filtre "images uniquement" (chargé depuis Supabase)
+  const [showOnlyWithImages, setShowOnlyWithImages] = useState(false)
+
+  // Charger les préférences admin depuis Supabase
+  useEffect(() => {
+    const loadAdminPreferences = async () => {
+      try {
+        const [hidden, imagesOnly] = await Promise.all([
+          AdminPreferencesService.getHiddenSealedCategories(),
+          AdminPreferencesService.getShowOnlyWithImages()
+        ])
+        setHiddenCategories(hidden)
+        setShowOnlyWithImages(imagesOnly)
+        console.log('👁️ Catégories masquées chargées depuis Supabase:', hidden)
+        console.log('🖼️ Filtre images uniquement:', imagesOnly)
+      } catch (error) {
+        console.error('❌ Erreur chargement préférences admin:', error)
+      }
+    }
+
+    loadAdminPreferences()
+  }, [])
+
+  // Écouter les changements (synchronisation entre Admin et Catalogue)
+  useEffect(() => {
+    // Écouter les événements custom (changements dans le même onglet depuis Admin)
+    const handleCategoriesEvent = (e) => {
+      if (e.detail) {
+        setHiddenCategories(e.detail)
+        console.log('🔄 Catégories masquées mises à jour depuis Admin:', e.detail)
+      }
+    }
+    const handleImagesFilterEvent = (e) => {
+      if (e.detail !== undefined) {
+        setShowOnlyWithImages(e.detail)
+        console.log('🔄 Filtre images uniquement mis à jour depuis Admin:', e.detail)
+      }
+    }
+    window.addEventListener('vaultestim_categories_changed', handleCategoriesEvent)
+    window.addEventListener('vaultestim_images_filter_changed', handleImagesFilterEvent)
+
+    return () => {
+      window.removeEventListener('vaultestim_categories_changed', handleCategoriesEvent)
+      window.removeEventListener('vaultestim_images_filter_changed', handleImagesFilterEvent)
+    }
+  }, [])
+
+  // Extraire les catégories uniques (en excluant les masquées sauf en mode recherche API)
   const categories = useMemo(() => {
     const cats = [...new Set(products.map(p => p.category_name).filter(Boolean))]
-    return cats.sort()
-  }, [products])
+    const sorted = cats.sort()
 
-  // Filtrer les produits
+    // En mode recherche API, montrer TOUTES les catégories des résultats
+    if (isApiSearch) {
+      console.log(`📂 Catégories trouvées (recherche API): ${sorted.length}`)
+      return sorted
+    }
+
+    // Filtrer les catégories masquées (avec normalisation)
+    const visible = sorted.filter(cat => {
+      const normalizedCat = normalizeCategoryName(cat)
+      return !hiddenCategories.some(hiddenCat => normalizeCategoryName(hiddenCat) === normalizedCat)
+    })
+
+    console.log(`📂 Catégories visibles dans le catalogue: ${visible.length}/${sorted.length}`)
+    if (hiddenCategories.length > 0) {
+      console.log(`👁️ Catégories masquées: ${hiddenCategories.join(', ')}`)
+    }
+
+    return visible
+  }, [products, hiddenCategories, isApiSearch])
+
+  // Filtrer et trier les produits
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
-      // Filtre par recherche
-      if (searchTerm) {
+    const filtered = products.filter(product => {
+      // Filtre "images uniquement" (sauf en mode recherche API)
+      if (showOnlyWithImages && !isApiSearch) {
+        if (!product.image_url) {
+          return false
+        }
+      }
+
+      // En mode recherche API, NE PAS filtrer par catégories masquées
+      // Car l'utilisateur cherche explicitement quelque chose
+      if (!isApiSearch) {
+        // Exclure les produits des catégories masquées (avec normalisation)
+        const normalizedCategory = normalizeCategoryName(product.category_name)
+        if (hiddenCategories.some(hiddenCat => normalizeCategoryName(hiddenCat) === normalizedCategory)) {
+          return false
+        }
+      }
+
+      // Filtre par recherche locale (seulement si pas en mode API)
+      if (searchTerm && !isApiSearch) {
         const lowerSearch = searchTerm.toLowerCase()
         const matchesName = product.name?.toLowerCase().includes(lowerSearch)
         if (!matchesName) return false
@@ -161,18 +312,42 @@ export function SealedProductsCatalog() {
 
       return true
     })
-  }, [products, searchTerm, selectedCategory])
+
+    console.log(`🔍 Produits filtrés: ${filtered.length}/${products.length} (isApiSearch: ${isApiSearch}, imagesOnly: ${showOnlyWithImages})`)
+
+    // Trier par catégorie
+    return sortProductsByCategory(filtered)
+  }, [products, searchTerm, selectedCategory, hiddenCategories, isApiSearch, showOnlyWithImages])
+
+  // Grouper les produits par catégorie pour affichage
+  const productsByCategory = useMemo(() => {
+    const grouped = {}
+    filteredProducts.forEach(product => {
+      const category = product.category_name || 'Autre'
+      if (!grouped[category]) {
+        grouped[category] = []
+      }
+      grouped[category].push(product)
+    })
+    return grouped
+  }, [filteredProducts])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 text-white font-cinzel">
-            Catalogue Produits Scellés
-          </h1>
-          <p className="text-gray-300">
-            Parcourez le catalogue complet des produits scellés disponibles sur CardMarket
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2 text-white font-cinzel">
+                Catalogue Produits Scellés
+              </h1>
+              <p className="text-gray-300">
+                Parcourez le catalogue complet des produits scellés disponibles sur CardMarket
+              </p>
+            </div>
+            {/* Badge quota compact */}
+            <QuotaAlert compact />
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -199,7 +374,7 @@ export function SealedProductsCatalog() {
                     />
                   </div>
                   <Button
-                    onClick={handleApiSearch}
+                    onClick={() => handleApiSearch()}
                     disabled={loading}
                     className="bg-amber-500 hover:bg-amber-600"
                   >
@@ -257,7 +432,7 @@ export function SealedProductsCatalog() {
                       key={category}
                       variant={selectedCategory === category ? 'default' : 'outline'}
                       size="sm"
-                      onClick={async () => { setSelectedCategory(category); await handleApiSearch(category.toLowerCase()); }}
+                      onClick={() => setSelectedCategory(category)}
                       className="flex-shrink-0"
                       disabled={isApiSearch}
                     >
@@ -315,9 +490,21 @@ export function SealedProductsCatalog() {
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {filteredProducts.map((product) => (
-                    <Card key={product.id_product} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="space-y-8">
+                  {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
+                    <div key={category}>
+                      {/* En-tête de catégorie */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <h3 className="text-xl font-bold text-amber-400">{category}</h3>
+                        <Badge variant="secondary" className="text-sm">
+                          {categoryProducts.length} produit{categoryProducts.length > 1 ? 's' : ''}
+                        </Badge>
+                      </div>
+
+                      {/* Grille de produits de cette catégorie */}
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {categoryProducts.map((product) => (
+                          <Card key={product.id_product} className="overflow-hidden hover:shadow-lg transition-shadow">
                       <CardContent className="p-4">
                         {/* Image (si disponible) */}
                         {product.image_url && (
@@ -392,21 +579,38 @@ export function SealedProductsCatalog() {
                             Ajouter à ma collection
                           </Button>
 
-                          {/* Lien CardMarket */}
-                          <a
-                            href={CardMarketSupabaseService.buildSealedProductUrl(product.id_product, product.name, product.id_category, 'fr')}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block"
+                          {/* Lien CardMarket dynamique */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={async () => {
+                              try {
+                                // Récupérer le lien dynamique depuis RapidAPI ou cache
+                                const dynamicUrl = await CardMarketDynamicLinkService.getSealedProductLink(
+                                  product.id_product,
+                                  'cardmarket_nonsingles',
+                                  { name: product.name }
+                                )
+                                window.open(dynamicUrl, '_blank', 'noopener,noreferrer')
+                              } catch (error) {
+                                console.error('❌ Erreur récupération lien CardMarket:', error)
+                                // Fallback: utiliser l'URL construite manuellement
+                                const fallbackUrl = product.cardmarket_url ||
+                                  CardMarketSupabaseService.buildSealedProductUrl(product.id_product, product.name, product.id_category, 'fr')
+                                window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
+                              }
+                            }}
                           >
-                            <Button variant="outline" size="sm" className="w-full">
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              Voir sur CardMarket
-                            </Button>
-                          </a>
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Voir sur CardMarket
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

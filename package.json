@@ -21,7 +21,10 @@
     "version:both:minor": "node scripts/increment-translation-version.cjs both minor",
     "check-cache-version": "node scripts/check-cache-version.cjs",
     "increment-cache-version": "node scripts/increment-cache-version.cjs",
-    "precommit": "node scripts/check-cache-version.cjs"
+    "precommit": "node scripts/check-cache-version.cjs",
+    "version:patch": "node scripts/increment-version.cjs patch",
+    "version:minor": "node scripts/increment-version.cjs minor",
+    "version:major": "node scripts/increment-version.cjs major"
   },
   "dependencies": {
     "@base44/sdk": "^0.7.8",

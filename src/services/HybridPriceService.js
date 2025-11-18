@@ -21,6 +21,24 @@
 import { RapidAPIService } from './RapidAPIService.js'
 import { QuotaTracker } from './QuotaTracker.js'
 
+/**
+ * Ajouter le paramètre language=2 (français) à une URL CardMarket
+ * @param {string} url - URL CardMarket
+ * @returns {string} URL avec paramètre language=2
+ */
+export function addCardMarketLanguageParam(url) {
+  if (!url) return url
+
+  try {
+    const urlObj = new URL(url)
+    urlObj.searchParams.set('language', '2')
+    return urlObj.toString()
+  } catch (error) {
+    console.warn('URL CardMarket invalide:', url)
+    return url
+  }
+}
+
 export class HybridPriceService {
   /**
    * Rechercher des cartes avec fallback intelligent
@@ -147,7 +165,7 @@ export class HybridPriceService {
 
         // Prix CardMarket (EUR)
         cardmarket: {
-          url: card.links?.cardmarket || '',
+          url: addCardMarketLanguageParam(card.links?.cardmarket) || '',
           updatedAt: new Date().toISOString(),
           prices: {
             averageSellPrice: cm['30d_average'] || null,
@@ -309,6 +327,8 @@ export class HybridPriceService {
       const products = this.formatRapidAPIProducts(result.data || [])
 
       console.log(`✅ ${products.length} produits récupérés via RapidAPI`)
+      // NOTE: La sauvegarde dans Supabase est faite par SealedProductsCatalog
+      // avec la catégorie détectée automatiquement (pas ici avec "Non spécifié")
       return products
 
     } catch (error) {
@@ -318,6 +338,101 @@ export class HybridPriceService {
       console.warn(`⚠️ Erreur RapidAPI: ${error.message}`)
       console.log('⏭️ Fallback sur Supabase CardMarket')
       return this.fallbackToSupabaseProducts(searchTerm, limit)
+    }
+  }
+
+  /**
+   * Récupérer un produit scellé par son ID avec fallback intelligent
+   *
+   * @param {number} productId - ID du produit CardMarket
+   * @returns {Promise<Object|null>} Produit avec prix ou null
+   */
+  static async getProductById(productId) {
+    console.log(`📦 HybridPrice: Récupération produit ID ${productId}...`)
+
+    // 1. Vérifier si RapidAPI est disponible et activé
+    if (!RapidAPIService.isAvailable()) {
+      console.log('⏭️ RapidAPI désactivé → Fallback Supabase CardMarket')
+      return this.fallbackToSupabaseProductById(productId)
+    }
+
+    // 2. Réserver une requête dans le quota AVANT l'appel HTTP
+    const reserved = QuotaTracker.reserveRequest()
+    if (!reserved) {
+      console.log(`⏭️ Quota épuisé → Fallback Supabase CardMarket`)
+      return this.fallbackToSupabaseProductById(productId)
+    }
+
+    // 3. Essayer RapidAPI
+    try {
+      console.log(`🚀 Tentative RapidAPI pour produit ${productId}...`)
+
+      const result = await RapidAPIService.getProductById(productId)
+
+      // Confirmer l'utilisation du quota
+      QuotaTracker.confirmRequest()
+
+      // Formater le produit
+      const products = this.formatRapidAPIProducts([result])
+      const product = products[0] || null
+
+      if (product) {
+        console.log(`✅ Produit ${productId} récupéré via RapidAPI`)
+      }
+
+      return product
+
+    } catch (error) {
+      // Libérer la réservation en cas d'erreur
+      QuotaTracker.releaseRequest()
+
+      // Si 404, le produit n'existe pas dans RapidAPI - ne pas logger comme erreur
+      if (error.message?.includes('404')) {
+        console.log(`⏭️ Produit ${productId} non trouvé dans RapidAPI, fallback Supabase`)
+      } else {
+        console.warn(`⚠️ Erreur RapidAPI: ${error.message}`)
+      }
+
+      return this.fallbackToSupabaseProductById(productId)
+    }
+  }
+
+  /**
+   * Fallback Supabase pour un produit par ID
+   */
+  static async fallbackToSupabaseProductById(productId) {
+    console.log(`📊 Utilisation Supabase CardMarket pour produit ${productId}...`)
+
+    const { CardMarketSupabaseService } = await import('./CardMarketSupabaseService')
+
+    try {
+      // Récupérer le produit depuis Supabase
+      const product = await CardMarketSupabaseService.getProductById(productId)
+      if (!product) {
+        console.log(`⚠️ Produit ${productId} non trouvé dans Supabase`)
+        return null
+      }
+
+      // Récupérer le prix
+      const priceData = await CardMarketSupabaseService.getPriceForProduct(productId)
+
+      const imageUrl = product.image_url || CardMarketSupabaseService.getCardMarketImageUrl(productId, product.id_category)
+
+      const result = {
+        ...product,
+        image_url: imageUrl,
+        price: priceData?.avg || priceData?.trend || null,
+        priceLow: priceData?.low || null,
+        priceDetails: priceData,
+        _price_source: 'supabase-cardmarket'
+      }
+
+      console.log(`✅ Produit ${productId} récupéré via Supabase`)
+      return result
+
+    } catch (error) {
+      console.error(`❌ Erreur Supabase CardMarket:`, error)
+      return null
     }
   }
 
@@ -338,11 +453,14 @@ export class HybridPriceService {
         const productIds = products.map(p => p.id_product)
         const priceMap = await CardMarketSupabaseService.getPricesForProducts(productIds)
 
-        // Associer les prix
+        // Associer les prix + URLs d'images (ne pas écraser URL existante)
         const productsWithPrices = products.map(product => {
           const price = priceMap.get(product.id_product)
+          // Ne pas écraser image_url si elle existe déjà (RapidAPI)
+          const imageUrl = product.image_url || CardMarketSupabaseService.getCardMarketImageUrl(product.id_product, product.id_category)
           return {
             ...product,
+            image_url: imageUrl,
             price: price?.avg || price?.trend || null,
             priceLow: price?.low || null,
             priceDetails: price,
@@ -383,6 +501,9 @@ export class HybridPriceService {
 
         // Image
         image_url: product.image || null,
+
+        // URL CardMarket avec paramètre langue français
+        cardmarket_url: addCardMarketLanguageParam(product.links?.cardmarket) || null,
 
         // Catégorie
         category_id: product.category?.id || null,

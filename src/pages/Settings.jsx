@@ -3,12 +3,13 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Settings as SettingsIcon, Users, BarChart, Heart, Star, Package, RefreshCw, Database, Zap } from 'lucide-react'
+import { Settings as SettingsIcon, Users, BarChart, Heart, Star, Package, RefreshCw, Database, Zap, Info } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { CardCacheService } from '@/services/CardCacheService'
 import { SupabaseService } from '@/services/SupabaseService'
 import { HybridPriceService } from '@/services/HybridPriceService'
 import { QuotaTracker } from '@/services/QuotaTracker'
+import { APP_VERSION, BUILD_DATE } from '@/version'
 import { useState, useEffect } from 'react'
 
 export function Settings() {
@@ -319,11 +320,40 @@ export function Settings() {
       {/* Informations */}
       <Card className="golden-border">
         <CardHeader>
-          <CardTitle className="golden-glow">À propos</CardTitle>
+          <CardTitle className="golden-glow flex items-center">
+            <Info className="w-5 h-5 mr-2" />
+            À propos
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>VaultEstim v2 - Application de gestion de collection Pokémon</p>
-          <p>Version 2.0.0</p>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-lg">VaultEstim</h3>
+              <p className="text-sm text-muted-foreground">
+                Application de gestion de collection Pokémon
+              </p>
+            </div>
+            <Badge variant="outline" className="text-amber-400 border-amber-400/50">
+              v{APP_VERSION}
+            </Badge>
+          </div>
+
+          <div className="pt-2 border-t border-border/50">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Version</p>
+                <p className="font-medium">{APP_VERSION}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Date de build</p>
+                <p className="font-medium">{BUILD_DATE}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-border/50 text-xs text-muted-foreground">
+            <p>© 2025 VaultEstim Team</p>
+          </div>
         </CardContent>
       </Card>
     </div>
