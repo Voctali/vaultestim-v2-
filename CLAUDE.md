@@ -495,26 +495,6 @@ await SealedProductPriceRefreshService.refreshBatch((progress) => {
 await SealedProductPriceRefreshService.autoRefreshIfNeeded()
 ```
 
-## ⚠️ Bugs Connus
-
-1. **Admin Database Editor - Cartes non affichées** (Critique - 17/01/2025)
-   - **Problème** : Les cartes ne s'affichent PAS dans l'onglet Admin → Édition Base de Données
-   - **Symptômes** :
-     - Les blocs s'affichent correctement
-     - Les extensions s'affichent correctement
-     - Mais la vue "cartes" est vide après clic sur une extension
-   - **Tentatives de correction** :
-     - ✅ Optimisation chargement (allCards + discoveredCards séparés)
-     - ✅ Système de batch loading (100 cartes par batch)
-     - ✅ React.memo pour performance
-     - ✅ Suppression double filtrage (getFilteredData applique maintenant juste la recherche)
-     - ❌ **TOUJOURS PAS RÉSOLU**
-   - **Code concerné** :
-     - `src/pages/AdminDatabaseEditor.jsx` lignes 179-190 (useEffect filtrage)
-     - `src/pages/AdminDatabaseEditor.jsx` lignes 366-370 (getFilteredData)
-     - `src/pages/AdminDatabaseEditor.jsx` lignes 1477+ (rendu cartes)
-   - **Prochaine étape** : Ajouter logs console pour débugger le flux de données (allCards → discoveredCards → getFilteredData → paginatedData → displayItems)
-
 ## Liens Utiles
 
 - **Production** : https://vaultestim-v2.vercel.app
