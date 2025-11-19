@@ -4,6 +4,7 @@
  * Règles :
  * - Cartes normales : Normale, Reverse Holo, Holo, Holo Cosmos, Tampon
  * - Cartes Promo : Uniquement "Promo"
+ * - Cartes ACE SPEC RARE : Uniquement "Normale"
  * - Cartes EX (★★ noires) : Uniquement "EX"
  * - Full Art (★★ grises) : Uniquement "Full Art"
  * - AR (★ dorée) : Uniquement "AR"
@@ -11,13 +12,14 @@
  * - Gold (★★★ dorées) : Uniquement "Gold"
  * - Méga Hyper Rare (★ noire/dorée) : Uniquement "Méga Hyper Rare"
  * - Cas spéciaux :
+ *   - Miascarade 15/198, Flamigator 38/198, Plamaval 54/198 Scarlet & Violet (versions normales + Holo étoile)
  *   - Amphinobi EX 106/167 Twilight Mascarade (versions EX + Métal)
  *   - Kyurem EX 048/191 Surging Sparks (versions EX + Tampon)
  * - Extensions spéciales SV8.5, SV10.5 :
  *   - Prismatic Evolution / Évolutions Prismatiques (SV8.5 = sv8pt5)
  *   - Black Bolt / Foudre Noire (SV10.5 = zsv10pt5)
  *   - White Flare / Flamme Blanche (SV10.5 = zsv10pt5)
- *   → Cartes Common/Uncommon ont Reverse (Pokéball) + Reverse (Masterball)
+ *   → Cartes Common/Uncommon/Rare ont Reverse (Pokéball) + Reverse (Masterball)
  *
  * @param {Object} card - La carte
  * @returns {Array} Liste des versions disponibles { value, label }
@@ -35,7 +37,7 @@ export function getAvailableVersions(card) {
   // ORDRE IMPORTANT: Du plus spécifique au plus général
 
   // 0. PRIORITÉ MAX : Extensions spéciales avec Reverse Pokéball/Masterball
-  // DOIT être vérifié EN PREMIER pour cartes Common/Uncommon de Prismatic Evolution, Black Bolt, White Flare
+  // DOIT être vérifié EN PREMIER pour cartes Common/Uncommon/Rare de Prismatic Evolution, Black Bolt, White Flare
   const specialSets = [
     'sv8pt5', // Prismatic Evolution (ID réel trouvé)
     'zsv10pt5', // Black Bolt + White Flare (ID réel trouvé)
@@ -47,10 +49,13 @@ export function getAvailableVersions(card) {
     setId.includes(set) || setName.includes(set)
   )
 
-  if (
-    isSpecialSet &&
-    (rarity.includes('common') || rarity.includes('uncommon') || rarity.includes('commune') || rarity.includes('peu commune'))
-  ) {
+  // Cartes Common/Uncommon/Rare des extensions spéciales avec Reverse Pokéball/Masterball
+  const isBasicRarity = rarity.includes('common') || rarity.includes('uncommon') ||
+    rarity.includes('commune') || rarity.includes('peu commune') ||
+    (rarity.includes('rare') && !rarity.includes('ultra') && !rarity.includes('secret') &&
+     !rarity.includes('illustration') && !rarity.includes('hyper') && !rarity.includes('ace spec'))
+
+  if (isSpecialSet && isBasicRarity) {
     return [
       { value: 'Normale', label: 'Normale' },
       { value: 'Reverse Holo', label: 'Reverse Holo' },
@@ -67,7 +72,53 @@ export function getAvailableVersions(card) {
     return [{ value: 'Promo', label: 'Promo' }]
   }
 
-  // 2. Cas spécial : Amphinobi EX 106/167 (Twilight Mascarade) - Version Métal
+  // 1b. Cartes ACE SPEC RARE - Uniquement version Normale
+  if (rarity.includes('ace spec') || rarity.includes('ace-spec')) {
+    return [{ value: 'Normale', label: 'Normale' }]
+  }
+
+  // 2. Cas spécial : Starters Scarlet & Violet avec Holo étoile
+  // Miascarade 15/198, Flamigator 38/198, Plamaval 54/198
+  const isScarletVioletBase = setId.includes('sv1') || setId.includes('sv01') ||
+    setName.includes('scarlet & violet') || setName.includes('écarlate et violet')
+
+  if (isScarletVioletBase) {
+    // Miascarade / Meowscarada 15/198
+    if ((name.includes('meowscarada') || name.includes('miascarade')) && number === '15') {
+      return [
+        { value: 'Normale', label: 'Normale' },
+        { value: 'Reverse Holo', label: 'Reverse Holo' },
+        { value: 'Holo', label: 'Holo' },
+        { value: 'Holo étoile', label: 'Holo étoile ⭐' },
+        { value: 'Holo Cosmos', label: '✨ Holo Cosmos' },
+        { value: 'Tampon (logo extension)', label: 'Tampon (logo extension)' }
+      ]
+    }
+    // Flamigator / Skeledirge 38/198
+    if ((name.includes('skeledirge') || name.includes('flamigator')) && number === '38') {
+      return [
+        { value: 'Normale', label: 'Normale' },
+        { value: 'Reverse Holo', label: 'Reverse Holo' },
+        { value: 'Holo', label: 'Holo' },
+        { value: 'Holo étoile', label: 'Holo étoile ⭐' },
+        { value: 'Holo Cosmos', label: '✨ Holo Cosmos' },
+        { value: 'Tampon (logo extension)', label: 'Tampon (logo extension)' }
+      ]
+    }
+    // Plamaval / Quaquaval 54/198
+    if ((name.includes('quaquaval') || name.includes('plamaval')) && number === '54') {
+      return [
+        { value: 'Normale', label: 'Normale' },
+        { value: 'Reverse Holo', label: 'Reverse Holo' },
+        { value: 'Holo', label: 'Holo' },
+        { value: 'Holo étoile', label: 'Holo étoile ⭐' },
+        { value: 'Holo Cosmos', label: '✨ Holo Cosmos' },
+        { value: 'Tampon (logo extension)', label: 'Tampon (logo extension)' }
+      ]
+    }
+  }
+
+  // 3. Cas spécial : Amphinobi EX 106/167 (Twilight Mascarade) - Version Métal
   if (
     (name.includes('greninja') || name.includes('amphinobi')) &&
     name.includes('ex') &&
