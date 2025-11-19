@@ -45,7 +45,10 @@ export function SealedProductsProvider({ children }) {
 
   // Charger les données SEULEMENT quand authentifié
   useEffect(() => {
+    console.log('🔍 [useSealedProducts] useEffect déclenché, authInitialized:', authInitialized)
+
     if (!authInitialized) {
+      console.log('⏭️ [useSealedProducts] Auth non initialisé, skip')
       setIsLoading(false)
       return
     }
@@ -53,12 +56,16 @@ export function SealedProductsProvider({ children }) {
     const loadData = async () => {
       try {
         setIsLoading(true)
+        console.log('📦 [useSealedProducts] Chargement des produits scellés...')
 
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
+          console.log('⚠️ [useSealedProducts] Pas d\'utilisateur connecté')
           setIsLoading(false)
           return
         }
+
+        console.log('👤 [useSealedProducts] Utilisateur:', user.id)
 
         const [productsData, salesData] = await Promise.all([
           UserSealedProductsService.loadUserSealedProducts(user.id),
@@ -68,7 +75,49 @@ export function SealedProductsProvider({ children }) {
         setSealedProducts(productsData)
         setSealedProductSales(salesData)
 
-        console.log('✅ Produits scellés et ventes chargés depuis Supabase')
+        console.log('✅ Produits scellés et ventes chargés depuis Supabase:', productsData.length, 'produits')
+
+        // Actualisation automatique des prix des produits scellés (si nécessaire)
+        // Note: On actualise uniquement si > 24h et si l'utilisateur a des produits avec ID CardMarket
+        setTimeout(async () => {
+          try {
+            // Vérifier si actualisation nécessaire (> 24h)
+            const lastRefreshKey = 'vaultestim_user_sealed_price_last_refresh'
+            const lastRefresh = parseInt(localStorage.getItem(lastRefreshKey) || '0', 10)
+            const timeSinceLastRefresh = Date.now() - lastRefresh
+            const REFRESH_INTERVAL = 24 * 60 * 60 * 1000 // 24h
+
+            if (timeSinceLastRefresh < REFRESH_INTERVAL) {
+              const hours = Math.floor(timeSinceLastRefresh / (60 * 60 * 1000))
+              console.log(`ℹ️ Actualisation prix produits scellés non nécessaire (dernière: il y a ${hours}h)`)
+              return
+            }
+
+            // Compter les produits avec ID CardMarket
+            const productsWithCardMarketId = productsData.filter(p => p.cardmarket_id_product)
+            if (productsWithCardMarketId.length === 0) {
+              console.log('ℹ️ Aucun produit avec ID CardMarket à actualiser')
+              return
+            }
+
+            console.log(`💰 Actualisation automatique des prix pour ${productsWithCardMarketId.length} produits...`)
+
+            await UserSealedProductsService.refreshAllPrices(user.id, (progress) => {
+              console.log(`💰 Actualisation prix: ${progress.current}/${progress.total} (${Math.round((progress.current / progress.total) * 100)}%)`)
+            })
+
+            // Sauvegarder la date d'actualisation
+            localStorage.setItem(lastRefreshKey, Date.now().toString())
+
+            // Recharger les données après actualisation
+            const updatedProducts = await UserSealedProductsService.loadUserSealedProducts(user.id)
+            setSealedProducts(updatedProducts)
+
+          } catch (refreshError) {
+            console.warn('⚠️ Erreur actualisation prix produits scellés:', refreshError)
+            // Non bloquant
+          }
+        }, 2000) // Démarrer 2 secondes après le chargement
       } catch (error) {
         console.error('❌ Erreur chargement produits scellés:', error)
       } finally {

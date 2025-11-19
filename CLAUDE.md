@@ -54,9 +54,12 @@ src/
 - **CardCacheService** : Cache IndexedDB avec reconnexion automatique + retry
 - **CardMarketMatchingService** : Matching automatique (attaques 50% + numéro 25% + nom 15% + suffixes 10%)
 - **PriceRefreshService** : Actualisation automatique quotidienne (1500 cartes/jour, cycle complet ~12 jours)
+- **SealedProductPriceRefreshService** : Actualisation automatique des prix produits scellés (500 produits/jour)
 - **HybridPriceService** : Système hybride intelligent RapidAPI + Pokemon TCG (100 req/jour → fallback automatique)
-- **RapidAPIService** : Connexion CardMarket API TCG via RapidAPI (prix EUR précis, cartes gradées)
+- **RapidAPIService** : Connexion CardMarket API TCG via RapidAPI (prix EUR précis, cartes gradées, produits scellés)
 - **QuotaTracker** : Gestion quota quotidien avec localStorage et reset automatique
+- **CardMarketUrlFixService** : Correction automatique des liens CardMarket via RapidAPI
+- **CardMarketDynamicLinkService** : Récupération dynamique des liens CardMarket au clic (cache → RapidAPI → sauvegarde Supabase)
 
 ## Fonctionnalités Clés
 
@@ -106,7 +109,44 @@ VITE_USE_RAPIDAPI=true           # Activer/désactiver RapidAPI
 VITE_RAPIDAPI_KEY=xxx            # Clé API RapidAPI (obtenir sur rapidapi.com)
 VITE_RAPIDAPI_HOST=cardmarket-api-tcg.p.rapidapi.com
 VITE_RAPIDAPI_DAILY_QUOTA=100   # Quota quotidien (plan Basic gratuit)
+
+# Alternative Pokemon TCG API (désactivé par défaut)
+VITE_USE_POKEMON_TCG_API=false   # Activer pour utiliser Pokemon TCG API au lieu de RapidAPI
 ```
+
+### Pokemon TCG API (Alternative gratuite)
+
+Service de backup si RapidAPI n'est plus disponible. **Fichier** : `src/services/PokemonTCGAPIService.js`
+
+**Endpoints disponibles** :
+```bash
+# Liste des extensions
+GET https://api.pokemontcg.io/v2/sets
+GET https://api.pokemontcg.io/v2/sets?page=2&pageSize=10
+GET https://api.pokemontcg.io/v2/sets?q=legalities.standard:legal
+GET https://api.pokemontcg.io/v2/sets?q=series:"Scarlet & Violet"
+
+# Extension spécifique
+GET https://api.pokemontcg.io/v2/sets/{setId}
+
+# Cartes d'une extension
+GET https://api.pokemontcg.io/v2/cards?q=set.id:{setId}&pageSize=250
+
+# Recherche de cartes
+GET https://api.pokemontcg.io/v2/cards?q=name:charizard&pageSize=50
+```
+
+**Activation** : Mettre `VITE_USE_POKEMON_TCG_API=true` dans `.env`
+
+**Méthodes disponibles** :
+- `PokemonTCGAPIService.getAllSets()` - Liste toutes les extensions
+- `PokemonTCGAPIService.getSet(setId)` - Détails d'une extension
+- `PokemonTCGAPIService.getCardsBySet(setId, onProgress)` - Cartes d'une extension
+- `PokemonTCGAPIService.searchCards(query)` - Recherche de cartes
+- `PokemonTCGAPIService.getStandardLegalSets()` - Extensions légales Standard
+- `PokemonTCGAPIService.getExpandedLegalSets()` - Extensions légales Expanded
+
+**Note** : Sans clé API, le rate limit est de 1000 requêtes/jour. Avec clé API gratuite : 20000 req/jour.
 
 ### Alias de Chemins
 `@/` → `./src/` pour imports absolus
@@ -229,6 +269,34 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 - **Clean storage** : `/clean-storage.html` ou lien sur page login
 
 ## ✅ Fonctionnalités Récentes (Novembre 2024 - Janvier 2025)
+
+### 🔗 Liens CardMarket Dynamiques (Nouveau - 16/11/2025)
+Système intelligent de récupération des liens CardMarket au clic utilisateur.
+
+**Service** : `CardMarketDynamicLinkService.js`
+
+**Fonctionnement** :
+1. **Au clic** sur bouton "CardMarket (EUR)" ou "Voir sur CardMarket"
+2. **Vérification cache** : Cherche `cardmarket_url` dans Supabase
+3. **Si absent** : Appelle RapidAPI pour obtenir le lien officiel (`links.cardmarket`)
+4. **Redirection immédiate** : Ouvre CardMarket dans un nouvel onglet
+5. **Sauvegarde arrière-plan** : Enregistre le lien dans Supabase (fire-and-forget)
+
+**Composants impactés** :
+- `CardMarketLinks.jsx` : Bouton "CardMarket (EUR)" pour les cartes
+- `SealedProducts.jsx` : Bouton "Voir sur CardMarket" (collection personnelle)
+- `SealedProductsCatalog.jsx` : Bouton "Voir sur CardMarket" (catalogue)
+
+**Tables Supabase** :
+- `discovered_cards.cardmarket_url` - Cartes
+- `user_sealed_products.cardmarket_url` - Collection personnelle produits scellés
+- `cardmarket_nonsingles.cardmarket_url` - Catalogue complet produits scellés
+
+**Avantages** :
+- ✅ Liens officiels CardMarket (100% fiables)
+- ✅ Cache automatique (pas de quota gaspillé)
+- ✅ Fallback intelligent si erreur
+- ✅ Aucun délai ressenti par l'utilisateur
 
 ### 🚀 Système Hybride de Prix RapidAPI (13/11/2025)
 - **Implémentation complète** (v2.0.0) : Système intelligent de récupération des prix
@@ -354,9 +422,102 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 - Divers : Smarceus, Stade de Greenbury, Bannière Team Yell, Turbo Patience, etc.
 - **Gestion ligatures** : œ/oe (ex: "Œuf Chance" → variantes avec/sans ligature)
 
+## 🔧 Outils de Maintenance
+
+### Correction des Liens CardMarket (Nouveau - 16/11/2025)
+Service automatisé pour corriger les URLs CardMarket de toutes les cartes et produits scellés.
+
+**Fichiers** :
+- `sql/add-cardmarket-urls.sql` - Script SQL pour ajouter les colonnes `cardmarket_url`
+- `src/services/CardMarketUrlFixService.js` - Service de correction automatique
+- `fix-cardmarket-urls.html` - Interface web de correction
+
+**Fonctionnalités** :
+- ✅ Récupération des URLs officielles via RapidAPI (`links.cardmarket`)
+- ✅ Traitement par batches de 100 éléments (évite surcharge mémoire)
+- ✅ Continuation automatique jusqu'à épuisement ou quota atteint
+- ✅ Gestion quota RapidAPI avec pause automatique
+- ✅ Progression sauvegardée (reprend où ça s'est arrêté)
+- ✅ 3 cibles de correction :
+  - **Cartes** : Table `discovered_cards` (~17,400 cartes)
+  - **Produits utilisateurs** : Table `user_sealed_products` (collection personnelle)
+  - **Catalogue produits** : Table `cardmarket_nonsingles` (catalogue complet)
+
+**Utilisation** :
+```bash
+# 1. Exécuter le script SQL dans Supabase
+sql/add-cardmarket-urls.sql
+
+# 2. Ouvrir l'interface de correction
+http://localhost:5174/fix-cardmarket-urls.html
+
+# 3. Cliquer sur un bouton :
+#    - 🎴 Corriger les cartes
+#    - 📦 Corriger les produits (collection personnelle)
+#    - 🔄 Tout corriger (cartes + produits perso + catalogue)
+```
+
+**Statistiques affichées** :
+- Total d'éléments à corriger
+- Nombre mis à jour / ignorés / erreurs
+- Progression en temps réel (%)
+- Logs détaillés
+
+**Tables Supabase concernées** :
+```sql
+-- Nouvelles colonnes ajoutées
+ALTER TABLE discovered_cards ADD COLUMN cardmarket_url TEXT;
+ALTER TABLE cardmarket_nonsingles ADD COLUMN cardmarket_url TEXT;
+ALTER TABLE user_sealed_products ADD COLUMN cardmarket_url TEXT;
+```
+
+### Actualisation des Prix Produits Scellés (Nouveau - 16/11/2025)
+Service d'actualisation automatique des prix des produits scellés.
+
+**Fichier** : `src/services/SealedProductPriceRefreshService.js`
+
+**Configuration** :
+- Batch de 500 produits/jour
+- Refresh automatique quotidien (si > 24h)
+- Pause de 1s entre requêtes
+- Progression sauvegardée en localStorage
+
+**Utilisation** :
+```javascript
+import { SealedProductPriceRefreshService } from '@/services/SealedProductPriceRefreshService'
+
+// Actualisation manuelle avec callback de progression
+await SealedProductPriceRefreshService.refreshBatch((progress) => {
+  console.log(`${progress.current}/${progress.total}`)
+})
+
+// Actualisation automatique au démarrage (si nécessaire)
+await SealedProductPriceRefreshService.autoRefreshIfNeeded()
+```
+
 ## 🚧 Tâches en Cours
 
 1. **Migration des Attaques** (92.3% complétée - 16,105/17,456 cartes) - Relancer Admin → Migration des attaques pour terminer
+
+## ⚠️ Bugs Connus
+
+1. **Admin Database Editor - Cartes non affichées** (Critique - 17/01/2025)
+   - **Problème** : Les cartes ne s'affichent PAS dans l'onglet Admin → Édition Base de Données
+   - **Symptômes** :
+     - Les blocs s'affichent correctement
+     - Les extensions s'affichent correctement
+     - Mais la vue "cartes" est vide après clic sur une extension
+   - **Tentatives de correction** :
+     - ✅ Optimisation chargement (allCards + discoveredCards séparés)
+     - ✅ Système de batch loading (100 cartes par batch)
+     - ✅ React.memo pour performance
+     - ✅ Suppression double filtrage (getFilteredData applique maintenant juste la recherche)
+     - ❌ **TOUJOURS PAS RÉSOLU**
+   - **Code concerné** :
+     - `src/pages/AdminDatabaseEditor.jsx` lignes 179-190 (useEffect filtrage)
+     - `src/pages/AdminDatabaseEditor.jsx` lignes 366-370 (getFilteredData)
+     - `src/pages/AdminDatabaseEditor.jsx` lignes 1477+ (rendu cartes)
+   - **Prochaine étape** : Ajouter logs console pour débugger le flux de données (allCards → discoveredCards → getFilteredData → paginatedData → displayItems)
 
 ## Liens Utiles
 
@@ -367,4 +528,4 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ---
 
-**Dernière mise à jour** : 2025-01-12 (v1.9.123)
+**Dernière mise à jour** : 2025-01-16 (v2.0.0)

@@ -464,17 +464,26 @@ export function CardDatabaseProvider({ children }) {
         // 1.3 Actualisation automatique des prix (une fois par jour, 150 cartes/jour)
         setTimeout(async () => {
           try {
-            console.log('💰 Vérification actualisation automatique des prix...')
+            console.log('💰 Vérification actualisation automatique des prix cartes...')
             const allCards = await CardCacheService.getAllCards()
 
             await PriceRefreshService.autoRefresh(allCards, (progress) => {
-              console.log(`💰 Actualisation prix: ${progress.current}/${progress.total} (${progress.percentage}%) - ${progress.currentCard}`)
+              console.log(`💰 Actualisation prix cartes: ${progress.current}/${progress.total} (${progress.percentage}%) - ${progress.currentCard}`)
             })
+
+            // Actualisation automatique des prix du catalogue produits scellés (après les cartes)
+            console.log('💰 Vérification actualisation automatique des prix produits catalogue...')
+            const { SealedProductPriceRefreshService } = await import('@/services/SealedProductPriceRefreshService')
+
+            await SealedProductPriceRefreshService.autoRefreshIfNeeded((progress) => {
+              console.log(`💰 Actualisation prix catalogue produits: ${progress.current}/${progress.total} (${Math.round((progress.current / progress.total) * 100)}%)`)
+            })
+
           } catch (refreshError) {
             console.warn('⚠️ Erreur actualisation prix:', refreshError)
             // Non bloquant
           }
-        }, 5000) // Attendre 5s après le chargement initial // Attendre 2s pour ne pas gêner l'affichage initial
+        }, 5000) // Attendre 5s après le chargement initial
 
       } else {
         // 2. Pas de cache : téléchargement complet depuis Supabase (première fois)
@@ -2186,6 +2195,8 @@ export function CardDatabaseProvider({ children }) {
     searchInLocalDatabase,
     getCardsBySet,
     getSeriesStats,
+    addDiscoveredCards,
+    updateSeriesDatabase,
 
     // Fonctions d'administration
     deleteSeriesBlock,

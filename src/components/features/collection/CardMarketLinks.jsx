@@ -3,6 +3,7 @@ import { ExternalLink, Zap, AlertCircle, Sparkles } from 'lucide-react'
 import { buildCardMarketUrl } from '@/utils/cardMarketUrlBuilder'
 import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
 import { CardMarketMatchingService } from '@/services/CardMarketMatchingService'
+import { CardMarketDynamicLinkService } from '@/services/CardMarketDynamicLinkService'
 import { useAuth } from '@/hooks/useAuth'
 
 /**
@@ -299,7 +300,24 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
     }
   }
 
-  const handleCardMarketClick = (e) => {
+  const handleCardMarketClick = async (e) => {
+    e.preventDefault()
+
+    try {
+      // Récupérer le lien dynamique depuis RapidAPI ou cache
+      const dynamicUrl = await CardMarketDynamicLinkService.getCardLink(card)
+
+      // Rediriger immédiatement
+      window.open(dynamicUrl, '_blank', 'noopener,noreferrer')
+
+      console.log(`🔗 Redirection vers: ${dynamicUrl}`)
+    } catch (error) {
+      console.error('❌ Erreur récupération lien CardMarket:', error)
+
+      // Fallback: ouvrir l'URL construite manuellement
+      window.open(cardMarketUrl, '_blank', 'noopener,noreferrer')
+    }
+
     // Afficher un avertissement si pas de lien direct
     if (!isDirect && !localStorage.getItem('cardmarket-search-warning-seen')) {
       setShowWarning(true)
@@ -313,17 +331,15 @@ export function CardMarketLink({ card, showTCGPlayer = true }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        {/* CardMarket - Prix EUR */}
-        <a
-          href={cardMarketUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:underline transition-colors text-sm"
-          title={`CardMarket EUR - Recherche "${card.name}${card.number ? ' ' + card.number : ''}"`}
+        {/* CardMarket - Prix EUR (dynamique via RapidAPI) */}
+        <button
+          onClick={handleCardMarketClick}
+          className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 hover:underline transition-colors text-sm cursor-pointer bg-transparent border-none p-0"
+          title={`CardMarket EUR - Lien dynamique via RapidAPI`}
         >
           <ExternalLink className="w-4 h-4" />
           CardMarket (EUR)
-        </a>
+        </button>
 
         {/* TCGPlayer - Alternative rapide en USD */}
         {showTCGPlayer && (

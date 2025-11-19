@@ -23,6 +23,7 @@ import { Friends } from '@/pages/Friends'
 import { Settings } from '@/pages/Settings'
 import { MigrateToSupabase } from '@/pages/MigrateToSupabase'
 import { ImportBackup } from '@/pages/ImportBackup'
+import { TestRapidAPIProducts } from '@/pages/TestRapidAPIProducts'
 import { AuthProvider } from '@/hooks/useAuth'
 import { CollectionProvider } from '@/hooks/useCollection.jsx'
 import { SealedProductsProvider } from '@/hooks/useSealedProducts.jsx'
@@ -50,6 +51,7 @@ function AppContent() {
                 <FriendsProvider>
                   <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
                 <Routes>
+				  <Route path="/test-rapidapi-products" element={<TestRapidAPIProducts />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/reset-password" element={<ResetPassword />} />

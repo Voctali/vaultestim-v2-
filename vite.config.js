@@ -39,7 +39,11 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/pokemontcg/, ''),
         timeout: 60000, // Timeout de 60 secondes (API parfois lente)
         proxyTimeout: 60000, // Timeout du proxy à 60 secondes
+        secure: true,
         configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('Proxy error:', err);
+          });
           proxy.on('proxyReq', (proxyReq, req, res) => {
             proxyReq.setHeader('Origin', 'https://api.pokemontcg.io');
           });
