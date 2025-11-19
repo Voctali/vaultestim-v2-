@@ -6,8 +6,8 @@
  * sans avoir à rechercher manuellement chaque carte.
  */
 
-// Appel direct à l'API Pokemon TCG (pas de proxy Vercel) pour éviter timeout 10s
-const BASE_URL = 'https://api.pokemontcg.io/v2'
+// Utiliser le proxy Vite pour éviter les erreurs CORS
+const BASE_URL = '/api/pokemontcg/v2'
 const API_KEY = import.meta.env.VITE_POKEMON_TCG_API_KEY || ''
 
 // Cache simple pour éviter de recharger les extensions à chaque fois
@@ -133,7 +133,16 @@ class SetImportService {
         const result = await response.json()
         const cards = result.data || []
 
+        // Log détaillé pour debug
+        console.log(`🔍 API Response - Page ${page}:`, {
+          totalCount: result.totalCount,
+          pageSize: result.pageSize,
+          page: result.page,
+          dataLength: cards.length
+        })
+
         if (cards.length === 0) {
+          console.log(`⚠️ Page ${page} vide - fin de la pagination`)
           break // Plus de cartes à récupérer
         }
 

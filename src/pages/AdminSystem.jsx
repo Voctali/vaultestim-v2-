@@ -1,6 +1,10 @@
 import { Settings } from 'lucide-react'
 import { BackendDataViewer } from '@/components/features/settings/BackendDataViewer'
 import { DataMigration } from '@/components/features/settings/DataMigration'
+import { QuotaAlert } from '@/components/ui/QuotaAlert'
+import { PriceRefreshToggle } from '@/components/features/admin/PriceRefreshToggle'
+import { SealedPriceRefreshToggle } from '@/components/features/admin/SealedPriceRefreshToggle'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export function AdminSystem() {
   return (
@@ -15,6 +19,24 @@ export function AdminSystem() {
             Gestion des données et migration du système
           </p>
         </div>
+      </div>
+
+      {/* Quota RapidAPI */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            📊 Quota RapidAPI
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <QuotaAlert />
+        </CardContent>
+      </Card>
+
+      {/* Actualisation automatique des prix */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <PriceRefreshToggle />
+        <SealedPriceRefreshToggle />
       </div>
 
       {/* Données serveur */}

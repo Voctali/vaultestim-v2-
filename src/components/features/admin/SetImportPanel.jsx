@@ -13,11 +13,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useCardDatabase } from '@/hooks/useCardDatabase.jsx'
-import { Download, Package, Calendar, TrendingUp, CheckCircle, AlertCircle, X } from 'lucide-react'
+import { Download, Package, Calendar, TrendingUp, CheckCircle, AlertCircle, X, Zap } from 'lucide-react'
 import SetImportService from '@/services/SetImportService'
+import { RapidAPIService } from '@/services/RapidAPIService'
 
 export function SetImportPanel() {
-  const { addDiscoveredCards, updateSeriesDatabase } = useCardDatabase()
+  const { addDiscoveredCards, updateSeriesDatabase, discoveredCards, seriesDatabase } = useCardDatabase()
   const [sets, setSets] = useState([])
   const [selectedSet, setSelectedSet] = useState(null)
   const [isLoadingSets, setIsLoadingSets] = useState(false)
@@ -29,6 +30,8 @@ export function SetImportPanel() {
   const [series, setSeries] = useState([])
   const [setIdInput, setSetIdInput] = useState('')
   const [setNameSearch, setSetNameSearch] = useState('')
+  const [useRapidAPI, setUseRapidAPI] = useState(RapidAPIService.isAvailable())
+  const [rapidAPISlug, setRapidAPISlug] = useState('')
 
   // NE PAS charger automatiquement pour éviter les timeouts
   // Les extensions seront chargées à la demande (clic sur dropdown ou bouton)
@@ -72,7 +75,11 @@ export function SetImportPanel() {
   }
 
   const handleImport = async () => {
-    if (!selectedSet) return
+    // Vérifier qu'on a soit une extension sélectionnée, soit un slug RapidAPI
+    if (!selectedSet && !(useRapidAPI && rapidAPISlug)) {
+      console.log('⚠️ Aucune extension sélectionnée et pas de slug RapidAPI')
+      return
+    }
 
     setIsImporting(true)
     setProgress(null)
@@ -83,18 +90,76 @@ export function SetImportPanel() {
     setAbortController(controller)
 
     try {
-      console.log(`📦 Import de ${selectedSet.name} (${selectedSet.id})...`)
+      // Déterminer la source d'import
+      const importSource = useRapidAPI ? 'RapidAPI' : 'Pokemon TCG API'
+      const setName = selectedSet?.name || rapidAPISlug
+      const setId = selectedSet?.id || rapidAPISlug
 
-      // Importer toutes les cartes de l'extension
-      const cards = await SetImportService.importSetCards(
-        selectedSet.id,
-        (progressData) => {
-          setProgress(progressData)
-        },
-        controller.signal
+      console.log(`📦 Import de ${setName} via ${importSource}...`)
+
+      // VÉRIFICATION DES DOUBLONS : Vérifier si l'extension existe déjà
+      const existingExtension = seriesDatabase.find(series =>
+        series.id === setId ||
+        series.name.toLowerCase() === setName.toLowerCase()
       )
 
-      console.log(`✅ ${cards.length} cartes importées`)
+      // Compter les cartes existantes de cette extension
+      const existingCardsCount = discoveredCards.filter(card =>
+        card.set?.id === setId ||
+        card.setId === setId ||
+        card.set?.name?.toLowerCase() === setName.toLowerCase()
+      ).length
+
+      if (existingExtension || existingCardsCount > 0) {
+        const message = existingExtension
+          ? `L'extension "${setName}" existe déjà avec ${existingExtension.totalCards || existingCardsCount} cartes. Voulez-vous quand même réimporter ? (les nouvelles cartes seront fusionnées)`
+          : `${existingCardsCount} cartes de cette extension existent déjà. Voulez-vous continuer ?`
+
+        if (!window.confirm(message)) {
+          setIsImporting(false)
+          setAbortController(null)
+          setResult({ cancelled: true, message: 'Import annulé - extension déjà existante' })
+          return
+        }
+        console.log(`⚠️ Réimport de l'extension existante autorisé par l'utilisateur`)
+      }
+
+      let cards = []
+
+      // Import via RapidAPI ou Pokemon TCG API
+      if (useRapidAPI && rapidAPISlug) {
+        // Import via RapidAPI (CardMarket)
+        console.log(`⚡ Import via RapidAPI avec slug: "${rapidAPISlug}"`)
+        cards = await RapidAPIService.importAllCardsByExpansion(
+          rapidAPISlug,
+          (progressData) => {
+            setProgress({
+              ...progressData,
+              setName: rapidAPISlug
+            })
+          }
+        )
+      } else if (selectedSet) {
+        // Import via Pokemon TCG API
+        cards = await SetImportService.importSetCards(
+          selectedSet.id,
+          (progressData) => {
+            setProgress(progressData)
+          },
+          controller.signal
+        )
+      } else {
+        throw new Error('Aucune extension sélectionnée')
+      }
+
+      console.log(`✅ ${cards.length} cartes importées depuis ${importSource}`)
+
+      // Filtrer les cartes déjà présentes pour éviter les doublons
+      const existingCardIds = new Set(discoveredCards.map(c => c.id))
+      const newCards = cards.filter(card => !existingCardIds.has(card.id))
+      const updatedCards = cards.filter(card => existingCardIds.has(card.id))
+
+      console.log(`📊 ${newCards.length} nouvelles cartes, ${updatedCards.length} cartes à mettre à jour`)
 
       // Ajouter les cartes à la base de données locale
       await addDiscoveredCards(cards)
@@ -105,10 +170,13 @@ export function SetImportPanel() {
       setResult({
         success: true,
         count: cards.length,
-        setName: selectedSet.name
+        newCount: newCards.length,
+        updatedCount: updatedCards.length,
+        setName: setName,
+        source: importSource
       })
 
-      console.log(`🎉 Import terminé: ${cards.length} cartes ajoutées à la base de données`)
+      console.log(`🎉 Import terminé: ${newCards.length} nouvelles cartes, ${updatedCards.length} mises à jour (via ${importSource})`)
     } catch (error) {
       if (error.message === 'Import annulé') {
         console.log('🛑 Import annulé par l\'utilisateur')
@@ -253,6 +321,47 @@ export function SetImportPanel() {
           </div>
         </div>
 
+        {/* Toggle RapidAPI */}
+        {RapidAPIService.isAvailable() && (
+          <div className="bg-purple-500/10 border border-purple-500/20 p-4 rounded-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-purple-500" />
+                <span className="font-medium text-sm">Import via RapidAPI (CardMarket)</span>
+              </div>
+              <Button
+                variant={useRapidAPI ? "default" : "outline"}
+                size="sm"
+                onClick={() => setUseRapidAPI(!useRapidAPI)}
+                className={useRapidAPI ? "bg-purple-600 hover:bg-purple-700" : ""}
+              >
+                {useRapidAPI ? "✓ Activé" : "Désactivé"}
+              </Button>
+            </div>
+
+            {useRapidAPI && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Slug CardMarket de l'extension</label>
+                <input
+                  type="text"
+                  value={rapidAPISlug}
+                  onChange={(e) => setRapidAPISlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                  placeholder="phantasmal-flames"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  💡 Pour trouver le slug, allez sur CardMarket et copiez le nom de l'extension dans l'URL
+                  (ex: cardmarket.com/fr/Pokemon/Products/Singles/<strong>phantasmal-flames</strong>)
+                </p>
+              </div>
+            )}
+
+            <p className="text-xs text-purple-600 dark:text-purple-400">
+              ⚡ RapidAPI est plus rapide pour les nouvelles extensions et inclut les prix CardMarket
+            </p>
+          </div>
+        )}
+
         {/* Infos de l'extension sélectionnée */}
         {selectedSet && !isImporting && (
           <div className="bg-muted/50 p-4 rounded-lg space-y-3">
@@ -333,9 +442,11 @@ export function SetImportPanel() {
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {result.success
-                    ? `${result.count} cartes de "${result.setName}" ont été ajoutées à la base de données commune.`
+                    ? result.newCount > 0
+                      ? `${result.newCount} nouvelles cartes de "${result.setName}" ajoutées${result.updatedCount > 0 ? `, ${result.updatedCount} mises à jour` : ''} (via ${result.source || 'Pokemon TCG API'}).`
+                      : `Toutes les ${result.count} cartes de "${result.setName}" existaient déjà (mises à jour effectuées).`
                     : result.cancelled
-                    ? 'L\'import a été annulé par l\'utilisateur.'
+                    ? result.message || 'L\'import a été annulé par l\'utilisateur.'
                     : result.error || 'Une erreur est survenue.'}
                 </p>
               </div>
@@ -347,11 +458,19 @@ export function SetImportPanel() {
         <div className="flex gap-2">
           <Button
             onClick={handleImport}
-            disabled={!selectedSet || isImporting}
-            className="flex-1"
+            disabled={(!selectedSet && !(useRapidAPI && rapidAPISlug)) || isImporting}
+            className={`flex-1 ${useRapidAPI && rapidAPISlug ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
           >
-            <Download className="w-4 h-4 mr-2" />
-            {isImporting ? 'Import en cours...' : 'Importer l\'extension'}
+            {useRapidAPI && rapidAPISlug ? (
+              <Zap className="w-4 h-4 mr-2" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            {isImporting
+              ? 'Import en cours...'
+              : useRapidAPI && rapidAPISlug
+                ? `Importer via RapidAPI`
+                : 'Importer l\'extension'}
           </Button>
 
           {isImporting && (

@@ -25,6 +25,11 @@ export class TCGdxService {
 
   // Mapping des séries Pokemon TCG vers les blocs corrects
   static SERIES_TO_BLOCK_MAPPING = {
+    // Mega Evolution (nouveau bloc 2025)
+    'Mega Evolution': 'Mega Evolution',
+    'Mega': 'Mega Evolution',
+    'ME': 'Mega Evolution',
+
     // Scarlet & Violet
     'Scarlet & Violet': 'Scarlet & Violet',
 

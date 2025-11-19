@@ -1,6 +1,6 @@
 /**
  * Service de cache intelligent pour les données Pokémon
- * Gère le cache local avec TTL et compression
+ * Gère le cache local avec TTL, compression et nettoyage automatique
  */
 
 export class CacheService {
@@ -27,7 +27,55 @@ export class CacheService {
   }
 
   /**
+   * Nettoyer les plus anciennes recherches du cache (stratégie LRU)
+   */
+  static cleanOldestSearchCache(limit = 50) {
+    const searchEntries = []
+
+    // Collecter toutes les entrées de recherche avec leur timestamp
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+
+      if (key && (
+        key.startsWith(this.CACHE_KEYS.SEARCH_RESULTS) ||
+        key.startsWith('tcg_search_v2_') ||
+        key.startsWith('vaultestim_search_cache_')
+      )) {
+        try {
+          const cached = localStorage.getItem(key)
+          if (cached) {
+            const cacheEntry = JSON.parse(cached)
+            searchEntries.push({
+              key: key,
+              timestamp: cacheEntry.timestamp || 0
+            })
+          }
+        } catch (error) {
+          // Supprimer les entrées corrompues directement
+          searchEntries.push({ key: key, timestamp: 0 })
+        }
+      }
+    }
+
+    // Trier par timestamp (les plus anciennes en premier)
+    searchEntries.sort((a, b) => a.timestamp - b.timestamp)
+
+    // Supprimer les N plus anciennes
+    const toRemove = searchEntries.slice(0, limit)
+    toRemove.forEach(entry => {
+      localStorage.removeItem(entry.key)
+    })
+
+    if (toRemove.length > 0) {
+      console.log(`🧹 ${toRemove.length} anciennes recherches supprimées (LRU)`)
+    }
+
+    return toRemove.length
+  }
+
+  /**
    * Stocker des données dans le cache avec TTL
+   * Gère automatiquement le dépassement de quota avec nettoyage
    */
   static setCache(key, data, ttl = this.TTL.CARD_DATA) {
     try {
@@ -44,6 +92,38 @@ export class CacheService {
       console.log(`💾 Cache mis à jour: ${key} (TTL: ${ttl / 1000 / 60}min)`)
       return true
     } catch (error) {
+      // Si QuotaExceededError, nettoyer automatiquement et réessayer
+      if (error.name === 'QuotaExceededError') {
+        console.warn(`⚠️ Quota localStorage dépassé, nettoyage automatique...`)
+
+        // 1. Nettoyer le cache expiré
+        const expiredCleaned = this.cleanExpiredCache()
+
+        // 2. Si toujours pas assez de place, supprimer les plus anciennes recherches
+        if (expiredCleaned === 0) {
+          const searchCleaned = this.cleanOldestSearchCache(50) // Supprimer 50 recherches les plus anciennes
+          console.log(`🧹 ${searchCleaned} anciennes recherches supprimées`)
+        }
+
+        // 3. Réessayer l'écriture
+        try {
+          const cacheEntry = {
+            data: data,
+            timestamp: Date.now(),
+            expires: Date.now() + ttl,
+            size: JSON.stringify(data).length
+          }
+
+          localStorage.setItem(key, JSON.stringify(cacheEntry))
+          this.updateMetadata(key, cacheEntry.size)
+          console.log(`✅ Cache sauvegardé après nettoyage: ${key}`)
+          return true
+        } catch (retryError) {
+          console.error(`❌ Impossible de sauvegarder même après nettoyage:`, retryError)
+          return false
+        }
+      }
+
       console.error('❌ Erreur cache:', error)
       return false
     }
@@ -178,7 +258,9 @@ export class CacheService {
       if (key && (
         key.startsWith(this.CACHE_KEYS.CARDS) ||
         key.startsWith(this.CACHE_KEYS.PRICES) ||
-        key.startsWith(this.CACHE_KEYS.SEARCH_RESULTS)
+        key.startsWith(this.CACHE_KEYS.SEARCH_RESULTS) ||
+        key.startsWith('tcg_search_v2_') ||
+        key.startsWith('vaultestim_search_cache_')
       )) {
         try {
           const cached = localStorage.getItem(key)
@@ -198,7 +280,7 @@ export class CacheService {
     }
 
     if (cleaned > 0) {
-      console.log(`🧹 Nettoyage cache: ${cleaned} entrées supprimées`)
+      console.log(`🧹 Nettoyage cache expiré: ${cleaned} entrées supprimées`)
     }
 
     return cleaned
@@ -225,7 +307,9 @@ export class CacheService {
       if (key && (
         key.startsWith(this.CACHE_KEYS.CARDS) ||
         key.startsWith(this.CACHE_KEYS.PRICES) ||
-        key.startsWith(this.CACHE_KEYS.SEARCH_RESULTS)
+        key.startsWith(this.CACHE_KEYS.SEARCH_RESULTS) ||
+        key.startsWith('tcg_search_v2_') ||
+        key.startsWith('vaultestim_search_cache_')
       )) {
         try {
           const cached = localStorage.getItem(key)
@@ -238,7 +322,7 @@ export class CacheService {
               stats.expired++
             } else if (key.startsWith(this.CACHE_KEYS.CARDS)) {
               stats.cards++
-            } else if (key.startsWith(this.CACHE_KEYS.SEARCH_RESULTS)) {
+            } else if (key.startsWith(this.CACHE_KEYS.SEARCH_RESULTS) || key.startsWith('tcg_search_v2_')) {
               stats.searches++
             } else if (key.startsWith(this.CACHE_KEYS.PRICES)) {
               stats.prices++
@@ -290,7 +374,8 @@ export class CacheService {
 
       localStorage.setItem(this.CACHE_KEYS.METADATA, JSON.stringify(metadata))
     } catch (error) {
-      console.error('❌ Erreur métadonnées cache:', error)
+      // Ignorer les erreurs de métadonnées pour ne pas bloquer le cache principal
+      console.warn('⚠️ Erreur métadonnées cache (non bloquant):', error)
     }
   }
 
@@ -428,9 +513,6 @@ export class CacheService {
   }
 
   /**
-   * Vider tout le cache
-   */
-  /**
    * Vider tous les caches de recherche
    */
   static clearSearchCache() {
@@ -453,6 +535,9 @@ export class CacheService {
     return keys.length
   }
 
+  /**
+   * Vider tout le cache
+   */
   static clearAllCache() {
     const keys = []
 

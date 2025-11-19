@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,11 +8,14 @@ import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { Package, Search, Plus, Edit3, Trash2, Euro, RefreshCw, TrendingUp, TrendingDown, AlertCircle, BarChart3, ExternalLink, ShoppingCart } from 'lucide-react'
 import { UserSealedProductsService } from '@/services/UserSealedProductsService'
 import { CardMarketSupabaseService } from '@/services/CardMarketSupabaseService'
+import { CardMarketDynamicLinkService } from '@/services/CardMarketDynamicLinkService'
+import { AdminPreferencesService } from '@/services/AdminPreferencesService'
 import { SealedProductModal } from '@/components/features/admin/SealedProductModal'
 import { PriceHistoryModal } from '@/components/features/admin/PriceHistoryModal'
 import { SealedProductSaleModal } from '@/components/features/collection/SealedProductSaleModal'
 import { useAuth } from '@/hooks/useAuth'
 import { useSealedProducts } from '@/hooks/useSealedProducts'
+import { detectSealedProductCategory, sortProductsByCategory, normalizeCategoryName } from '@/utils/detectSealedProductCategory'
 
 export function SealedProducts() {
   const { user } = useAuth()
@@ -30,6 +33,40 @@ export function SealedProducts() {
   const [historyProduct, setHistoryProduct] = useState(null)
   const [showSaleModal, setShowSaleModal] = useState(false)
   const [sellingProduct, setSellingProduct] = useState(null)
+
+  // State pour les catégories masquées (chargées depuis Supabase)
+  const [hiddenCategories, setHiddenCategories] = useState([])
+
+  // Charger les catégories masquées depuis Supabase (préférences admin globales)
+  useEffect(() => {
+    const loadHiddenCategories = async () => {
+      try {
+        const hidden = await AdminPreferencesService.getHiddenSealedCategories()
+        setHiddenCategories(hidden)
+        console.log('👁️ Catégories masquées chargées depuis Supabase:', hidden)
+      } catch (error) {
+        console.error('❌ Erreur chargement catégories masquées:', error)
+      }
+    }
+
+    loadHiddenCategories()
+  }, [])
+
+  // Écouter les changements (synchronisation avec Admin)
+  useEffect(() => {
+    // Écouter les événements custom (changements dans le même onglet depuis Admin)
+    const handleCustomEvent = (e) => {
+      if (e.detail) {
+        setHiddenCategories(e.detail)
+        console.log('🔄 Catégories masquées mises à jour depuis Admin:', e.detail)
+      }
+    }
+    window.addEventListener('vaultestim_categories_changed', handleCustomEvent)
+
+    return () => {
+      window.removeEventListener('vaultestim_categories_changed', handleCustomEvent)
+    }
+  }, [])
 
   // Charger les produits
   useEffect(() => {
@@ -144,6 +181,43 @@ export function SealedProducts() {
     setShowSaleModal(true)
   }
 
+  // DEBUG: Analyser les catégories
+  const debugCategories = () => {
+    console.log('🔍 === DEBUG CATÉGORIES ===')
+    console.log('📋 Catégories masquées:', hiddenCategories)
+    console.log('📦 Total produits:', products.length)
+    console.log('✅ Produits visibles:', filteredProducts.length)
+    console.log('❌ Produits masqués:', products.length - filteredProducts.length)
+
+    const categoryCounts = {}
+    products.forEach(p => {
+      const rawCategory = p.category || detectSealedProductCategory(p.name)
+      const cat = normalizeCategoryName(rawCategory) || 'NULL'
+      if (!categoryCounts[cat]) {
+        categoryCounts[cat] = { total: 0, hidden: false }
+      }
+      categoryCounts[cat].total++
+      categoryCounts[cat].hidden = hiddenCategories.some(hiddenCat => normalizeCategoryName(hiddenCat) === cat)
+    })
+
+    console.log('📊 Répartition par catégorie:')
+    console.table(categoryCounts)
+
+    console.log('⚠️ Catégories masquées mais absentes de vos produits:')
+    hiddenCategories.forEach(cat => {
+      const normalizedCat = normalizeCategoryName(cat)
+      if (!categoryCounts[normalizedCat]) {
+        console.log(`  - "${cat}" (0 produits)`)
+      }
+    })
+
+    alert(`Debug affiché dans la console (F12)\n\n` +
+      `Total produits: ${products.length}\n` +
+      `Produits visibles: ${filteredProducts.length}\n` +
+      `Produits masqués: ${products.length - filteredProducts.length}\n` +
+      `Catégories masquées: ${hiddenCategories.length}`)
+  }
+
   const handleSaleSubmit = async (saleData) => {
     try {
       await createSealedProductSale(saleData)
@@ -162,16 +236,56 @@ export function SealedProducts() {
     }
   }
 
-  // Filtrer les produits selon la recherche
-  const filteredProducts = products.filter(product => {
-    if (!searchQuery) return true
-    const lowerQuery = searchQuery.toLowerCase()
-    return (
-      product.name.toLowerCase().includes(lowerQuery) ||
-      product.category?.toLowerCase().includes(lowerQuery) ||
-      product.notes?.toLowerCase().includes(lowerQuery)
-    )
-  })
+  // Filtrer et trier les produits selon la recherche et les catégories masquées
+  const filteredProducts = useMemo(() => {
+    const filtered = products.filter(product => {
+      // Détecter et normaliser la catégorie d'abord
+      const rawCategory = product.category || detectSealedProductCategory(product.name)
+      const normalizedCategory = normalizeCategoryName(rawCategory)
+
+      // Exclure les produits des catégories masquées
+      if (hiddenCategories.some(hiddenCat => normalizeCategoryName(hiddenCat) === normalizedCategory)) {
+        return false
+      }
+
+      // Filtre par recherche
+      if (!searchQuery) return true
+      const lowerQuery = searchQuery.toLowerCase()
+      return (
+        product.name.toLowerCase().includes(lowerQuery) ||
+        product.category?.toLowerCase().includes(lowerQuery) ||
+        product.notes?.toLowerCase().includes(lowerQuery)
+      )
+    })
+
+    // Détecter et normaliser les catégories
+    const productsWithCategories = filtered.map(product => {
+      // Récupérer la catégorie (de la BDD ou détection auto)
+      const rawCategory = product.category || detectSealedProductCategory(product.name)
+      // Normaliser pour éviter les doublons (Elite Trainer Boxes → Elite Trainer Box)
+      const normalizedCategory = normalizeCategoryName(rawCategory)
+
+      return {
+        ...product,
+        category_name: normalizedCategory
+      }
+    })
+
+    return sortProductsByCategory(productsWithCategories)
+  }, [products, searchQuery, hiddenCategories])
+
+  // Grouper les produits par catégorie pour affichage
+  const productsByCategory = useMemo(() => {
+    const grouped = {}
+    filteredProducts.forEach(product => {
+      const category = product.category_name || 'Autre'
+      if (!grouped[category]) {
+        grouped[category] = []
+      }
+      grouped[category].push(product)
+    })
+    return grouped
+  }, [filteredProducts])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -314,18 +428,18 @@ export function SealedProducts() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <div className="text-sm text-muted-foreground">Total produits</div>
-                  <div className="text-2xl font-bold">{products.length}</div>
+                  <div className="text-2xl font-bold">{filteredProducts.length}</div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Valeur totale</div>
                   <div className="text-2xl font-bold text-yellow-500">
-                    {products.reduce((sum, p) => sum + (parseFloat(p.market_price) || 0), 0).toFixed(2)} €
+                    {filteredProducts.reduce((sum, p) => sum + (parseFloat(p.market_price) || 0), 0).toFixed(2)} €
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Catégories</div>
                   <div className="text-2xl font-bold">
-                    {new Set(products.map(p => p.category).filter(Boolean)).size}
+                    {new Set(filteredProducts.map(p => p.category_name).filter(Boolean)).size}
                   </div>
                 </div>
               </div>
@@ -371,166 +485,191 @@ export function SealedProducts() {
                   )}
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredProducts.map((product) => (
-                    <Card key={product.id} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        {/* Image */}
-                        {(product.image_file || product.cardmarket_id_product || product.image_url) && (
-                          <div className="mb-3">
-                            <img
-                              src={
-                                product.image_file ||
-                                // 2. URL stockée (RapidAPI, Supabase, etc.)
-                                product.image_url ||
-                                // 3. Fallback: générer URL CardMarket si on a les IDs (corrige les anciennes URLs incorrectes)
-                                (product.cardmarket_id_product && product.cardmarket_id_category
-                                  ? CardMarketSupabaseService.getCardMarketImageUrl(product.cardmarket_id_product, product.cardmarket_id_category)
-                                  : null)
-                              }
-                              alt={product.name}
-                              className="w-full h-40 object-contain bg-slate-100 dark:bg-slate-800 rounded"
-                              referrerPolicy="no-referrer"
-                              onError={(e) => {
-                                // Fallback: essayer .jpg si .png échoue
-                                if (e.target.src.endsWith('.png')) {
-                                  e.target.src = e.target.src.replace('.png', '.jpg')
-                                } else {
-                                  // Si .jpg échoue aussi, masquer l'image
-                                  e.target.style.display = 'none'
-                                }
-                              }}
-                            />
-                          </div>
-                        )}
+                <div className="space-y-8">
+                  {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
+                    <div key={category}>
+                      {/* En-tête de catégorie */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <h3 className="text-xl font-bold text-amber-400">{category}</h3>
+                        <Badge variant="secondary" className="text-sm">
+                          {categoryProducts.length} produit{categoryProducts.length > 1 ? 's' : ''}
+                        </Badge>
+                      </div>
 
-                        {/* Nom */}
-                        <h3 className="font-semibold mb-2 line-clamp-2">
-                          {product.name}
-                        </h3>
+                      {/* Grille de produits de cette catégorie */}
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {categoryProducts.map((product) => (
+                          <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                            <CardContent className="p-4">
+                              {/* Image */}
+                              {(product.image_file || product.cardmarket_id_product || product.image_url) && (
+                                <div className="mb-3">
+                                  <img
+                                    src={
+                                      product.image_file ||
+                                      product.image_url ||
+                                      (product.cardmarket_id_product && product.cardmarket_id_category
+                                        ? CardMarketSupabaseService.getCardMarketImageUrl(product.cardmarket_id_product, product.cardmarket_id_category)
+                                        : null)
+                                    }
+                                    alt={product.name}
+                                    className="w-full h-40 object-contain bg-slate-100 dark:bg-slate-800 rounded"
+                                    referrerPolicy="no-referrer"
+                                    onError={(e) => {
+                                      if (e.target.src.endsWith('.png')) {
+                                        e.target.src = e.target.src.replace('.png', '.jpg')
+                                      } else {
+                                        e.target.style.display = 'none'
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              )}
 
-                        {/* Catégorie */}
-                        {product.category && (
-                          <Badge variant="outline" className="mb-2">
-                            {product.category}
-                          </Badge>
-                        )}
+                              {/* Nom */}
+                              <h3 className="font-semibold mb-2 line-clamp-2">
+                                {product.name}
+                              </h3>
 
-                        {/* Informations clés */}
-                        <div className="space-y-2 mb-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                          {/* Nombre d'exemplaires */}
-                          {product.quantity && (
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Package className="w-4 h-4" />
-                                <span>Quantité</span>
+                              {/* Catégorie */}
+                              {(product.category_name || product.category) && (
+                                <Badge variant="outline" className="mb-2">
+                                  {product.category_name || product.category}
+                                </Badge>
+                              )}
+
+                              {/* Informations clés */}
+                              <div className="space-y-2 mb-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                {/* Nombre d'exemplaires */}
+                                {product.quantity && (
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <Package className="w-4 h-4" />
+                                      <span>Quantité</span>
+                                    </div>
+                                    <span className="font-semibold">
+                                      {product.quantity} {product.quantity > 1 ? 'exemplaires' : 'exemplaire'}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Prix du marché */}
+                                {product.market_price && (
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <Euro className="w-4 h-4 text-yellow-500" />
+                                      <span>Valeur marché</span>
+                                    </div>
+                                    <span className="font-bold text-yellow-500">
+                                      {parseFloat(product.market_price).toFixed(2)} €
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Valeur totale si plusieurs exemplaires */}
+                                {product.quantity && product.market_price && product.quantity > 1 && (
+                                  <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
+                                    <span className="text-sm font-medium">Valeur totale</span>
+                                    <span className="font-bold text-green-500">
+                                      {(parseFloat(product.market_price) * product.quantity).toFixed(2)} €
+                                    </span>
+                                  </div>
+                                )}
                               </div>
-                              <span className="font-semibold">
-                                {product.quantity} {product.quantity > 1 ? 'exemplaires' : 'exemplaire'}
-                              </span>
-                            </div>
-                          )}
 
-                          {/* Prix du marché */}
-                          {product.market_price && (
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Euro className="w-4 h-4 text-yellow-500" />
-                                <span>Valeur marché</span>
+                              {/* Notes */}
+                              {product.notes && (
+                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                  {product.notes}
+                                </p>
+                              )}
+
+                              {/* Actions */}
+                              <div className="space-y-2">
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleSell(product)}
+                                    className="flex-1 text-green-500 hover:text-green-600 border-green-500/20"
+                                  >
+                                    <ShoppingCart className="h-3 w-3 mr-1" />
+                                    Vendre
+                                  </Button>
+
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEdit(product)}
+                                    className="flex-1"
+                                  >
+                                    <Edit3 className="h-3 w-3 mr-1" />
+                                    Modifier
+                                  </Button>
+
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDelete(product.id)}
+                                    className="flex-1 text-red-500 hover:text-red-600"
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Supprimer
+                                  </Button>
+                                </div>
+
+                                {/* Bouton historique des prix */}
+                                {product.cardmarket_id_product && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleShowHistory(product)}
+                                    className="w-full"
+                                  >
+                                    <BarChart3 className="h-3 w-3 mr-1" />
+                                    Voir historique des prix
+                                  </Button>
+                                )}
                               </div>
-                              <span className="font-bold text-yellow-500">
-                                {parseFloat(product.market_price).toFixed(2)} €
-                              </span>
-                            </div>
-                          )}
 
-                          {/* Valeur totale si plusieurs exemplaires */}
-                          {product.quantity && product.market_price && product.quantity > 1 && (
-                            <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
-                              <span className="text-sm font-medium">Valeur totale</span>
-                              <span className="font-bold text-green-500">
-                                {(parseFloat(product.market_price) * product.quantity).toFixed(2)} €
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Notes */}
-                        {product.notes && (
-                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                            {product.notes}
-                          </p>
-                        )}
-
-                        {/* Actions */}
-                        <div className="space-y-2">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSell(product)}
-                              className="flex-1 text-green-500 hover:text-green-600 border-green-500/20"
-                            >
-                              <ShoppingCart className="h-3 w-3 mr-1" />
-                              Vendre
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(product)}
-                              className="flex-1"
-                            >
-                              <Edit3 className="h-3 w-3 mr-1" />
-                              Modifier
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(product.id)}
-                              className="flex-1 text-red-500 hover:text-red-600"
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              Supprimer
-                            </Button>
-                          </div>
-
-                          {/* Bouton historique des prix */}
-                          {product.cardmarket_id_product && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleShowHistory(product)}
-                              className="w-full"
-                            >
-                              <BarChart3 className="h-3 w-3 mr-1" />
-                              Voir historique des prix
-                            </Button>
-                          )}
-                        </div>
-
-                        {/* Lien CardMarket si disponible */}
-                        {product.cardmarket_id_product && (
-                          <a
-                            href={CardMarketSupabaseService.buildSealedProductUrl(
-                              product.cardmarket_id_product,
-                              product.name,
-                              product.cardmarket_id_category,
-                              product.language || 'fr'
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block mt-2"
-                          >
-                            <Button variant="ghost" size="sm" className="w-full">
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              Voir sur CardMarket
-                            </Button>
-                          </a>
-                        )}
-                      </CardContent>
-                    </Card>
+                              {/* Lien CardMarket dynamique si disponible */}
+                              {product.cardmarket_id_product && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full mt-2"
+                                  onClick={async () => {
+                                    try {
+                                      // Récupérer le lien dynamique depuis RapidAPI ou cache
+                                      const dynamicUrl = await CardMarketDynamicLinkService.getSealedProductLink(
+                                        product.cardmarket_id_product,
+                                        'user_sealed_products',
+                                        { name: product.name }
+                                      )
+                                      window.open(dynamicUrl, '_blank', 'noopener,noreferrer')
+                                    } catch (error) {
+                                      console.error('❌ Erreur récupération lien CardMarket:', error)
+                                      // Fallback: utiliser l'URL construite manuellement
+                                      const fallbackUrl = product.cardmarket_url ||
+                                        CardMarketSupabaseService.buildSealedProductUrl(
+                                          product.cardmarket_id_product,
+                                          product.name,
+                                          product.cardmarket_id_category,
+                                          product.language || 'fr'
+                                        )
+                                      window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
+                                    }
+                                  }}
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  Voir sur CardMarket
+                                </Button>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

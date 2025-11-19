@@ -303,6 +303,28 @@ export class CardMarketSupabaseService {
   }
 
   /**
+   * Récupérer un produit scellé par son ID
+   * @param {number} productId - ID du produit CardMarket
+   * @returns {Promise<Object|null>} Produit ou null si non trouvé
+   */
+  static async getProductById(productId) {
+    const { data, error } = await supabase
+      .from('cardmarket_nonsingles')
+      .select('*')
+      .eq('id_product', productId)
+      .maybeSingle()
+
+    if (error) {
+      if (error.code !== 'PGRST116') { // PGRST116 = not found
+        console.error('❌ Erreur récupération produit:', error)
+      }
+      return null
+    }
+
+    return data
+  }
+
+  /**
    * Rechercher des produits scellés
    * @param {string} query - Recherche par nom
    * @param {number|null} category - Filtrer par catégorie
@@ -585,10 +607,10 @@ export class CardMarketSupabaseService {
     if (!idCategory) return null // Requis pour construire l'URL S3
 
     // Format officiel des images de produits scellés CardMarket (S3)
-    // Note: Les images S3 sont protégées par referer (403 sans referer cardmarket.com)
-    // Solution: Utiliser notre proxy côté serveur (Vercel Function)
-    // La fonction récupère l'image avec le referer CardMarket et la renvoie
-    return `/api/cardmarket-image?category=${idCategory}&product=${idProduct}`
+    // Les images sont publiques sur static.cardmarket.com
+    // Format: https://static.cardmarket.com/img/{category}/{product}.png
+    // Fallback .jpg géré par le composant via onError
+        return `https://static.cardmarket.com/img/${idCategory}/${idProduct}.png`
   }
 
   /**
@@ -662,5 +684,306 @@ export class CardMarketSupabaseService {
     }
 
     console.log('✅ Toutes les données CardMarket supprimées')
+  }
+  /**
+     * Sauvegarder/mettre à jour des produits scellés depuis RapidAPI dans Supabase
+     * Upsert : met à jour si existe (même id_product), sinon insère
+     *
+     * @param {Array} products - Produits depuis RapidAPI formatés
+     * @returns {Promise<number>} Nombre de produits sauvegardés
+     */
+    static async upsertSealedProductsFromRapidAPI(products) {
+      if (!products || products.length === 0) return 0
+
+      console.log(`💾 Sauvegarde de ${products.length} produits RapidAPI dans Supabase...`)
+
+      try {
+        // Formater les produits pour Supabase
+        const productsToUpsert = products.map(product => ({
+          id_product: product.id_product,
+          name: product.name,
+          id_category: product.category_id || null,
+          category_name: product.category_name || null,
+          id_expansion: product.expansion_id || null,
+          image_url: product.image_url || null,
+          date_added: new Date().toISOString()
+        }))
+
+        // Upsert dans cardmarket_nonsingles (met à jour si id_product existe)
+        const { data: upsertedProducts, error: upsertError } = await supabase
+          .from('cardmarket_nonsingles')
+          .upsert(productsToUpsert, {
+            onConflict: 'id_product',
+            ignoreDuplicates: false // Mettre à jour les existants
+          })
+          .select()
+
+        if (upsertError) {
+          console.error('❌ Erreur upsert produits:', upsertError)
+          throw upsertError
+        }
+
+        console.log(`✅ ${upsertedProducts?.length || products.length} produits sauvegardés dans cardmarket_nonsingles`)
+
+        // Sauvegarder les prix dans cardmarket_prices
+        const pricesToUpsert = products
+          .filter(p => p.price || p.priceDetails) // Seulement ceux avec prix
+          .map(product => ({
+            id_product: product.id_product,
+            avg: product.priceDetails?.avg || product.price || null,
+            low: product.priceDetails?.low || product.priceLow || null,
+            trend: product.priceDetails?.trend || null,
+            updated_at: new Date().toISOString()
+          }))
+
+        if (pricesToUpsert.length > 0) {
+          const { data: upsertedPrices, error: pricesError } = await supabase
+            .from('cardmarket_prices')
+            .upsert(pricesToUpsert, {
+              onConflict: 'id_product',
+              ignoreDuplicates: false
+            })
+            .select()
+
+          if (pricesError) {
+            console.warn('⚠️ Erreur upsert prix:', pricesError)
+          } else {
+            console.log(`✅ ${upsertedPrices?.length || pricesToUpsert.length} prix sauvegardés dans cardmarket_prices`)
+          }
+        }
+
+        return upsertedProducts?.length || products.length
+
+      } catch (error) {
+        console.error('❌ Erreur sauvegarde produits RapidAPI:', error)
+        throw error
+      }
+    }
+
+  /**
+   * Mettre à jour la catégorie d'un produit scellé
+   */
+  static async updateSealedProductCategory(productId, newCategory) {
+    try {
+      const { error } = await supabase
+        .from('cardmarket_sealed_products')
+        .update({ category_name: newCategory })
+        .eq('id_product', productId)
+
+      if (error) throw error
+
+      console.log(`✅ Catégorie mise à jour pour produit ${productId}: ${newCategory}`)
+      return true
+    } catch (error) {
+      console.error('❌ Erreur mise à jour catégorie:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Récupérer tous les produits scellés utilisateurs
+   * @param {string} userId - ID de l'utilisateur (optionnel, si null retourne tous)
+   * @returns {Promise<Array>} Liste des produits
+   */
+  /**
+   * Récupérer tous les produits VISIBLES du catalogue CardMarket
+   * (exclut les catégories masquées par l'utilisateur)
+   * @returns {Promise<Array>} Liste des produits visibles
+   */
+  static async getAllCatalogProducts() {
+    try {
+      // 1. Récupérer les catégories masquées depuis localStorage
+      let hiddenCategories = []
+      try {
+        const stored = localStorage.getItem('vaultestim_hidden_sealed_categories')
+        hiddenCategories = stored ? JSON.parse(stored) : []
+        console.log(`🙈 ${hiddenCategories.length} catégories masquées:`, hiddenCategories)
+      } catch (error) {
+        console.warn('⚠️ Erreur lecture catégories masquées:', error)
+      }
+
+      // 2. Charger TOUS les produits
+      let allProducts = []
+      let offset = 0
+      const batchSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('cardmarket_nonsingles')
+          .select('*')
+          .range(offset, offset + batchSize - 1)
+          .order('id_product', { ascending: true })
+
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          allProducts = [...allProducts, ...data]
+          offset += batchSize
+
+          if (data.length < batchSize) {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
+      }
+
+      // 3. Filtrer les produits des catégories masquées
+      if (hiddenCategories.length > 0) {
+        // Importer la fonction de normalisation
+        const { normalizeCategoryName } = await import('../utils/detectSealedProductCategory.js')
+
+        const hiddenNormalized = hiddenCategories.map(cat => normalizeCategoryName(cat))
+
+        const filtered = allProducts.filter(product => {
+          const productCategory = normalizeCategoryName(product.category_name || 'Autre')
+          return !hiddenNormalized.includes(productCategory)
+        })
+
+        console.log(`📦 ${filtered.length} produits visibles (${allProducts.length - filtered.length} masqués)`)
+        return filtered
+      }
+
+      console.log(`📦 ${allProducts.length} produits catalogue chargés (aucune catégorie masquée)`)
+      return allProducts
+    } catch (error) {
+      console.error('❌ Erreur récupération catalogue produits:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Récupérer tous les produits scellés d'un utilisateur
+   * @param {string} userId - ID de l'utilisateur
+   * @returns {Promise<Array>} Liste des produits de l'utilisateur
+   */
+  static async getAllSealedProducts(userId = null) {
+    try {
+      let allProducts = []
+      let offset = 0
+      const batchSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        let query = supabase
+          .from('user_sealed_products')
+          .select('*')
+          .range(offset, offset + batchSize - 1)
+          .order('id', { ascending: true })
+
+        // Filtrer par utilisateur si spécifié
+        if (userId) {
+          query = query.eq('user_id', userId)
+        }
+
+        const { data, error } = await query
+
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          allProducts = [...allProducts, ...data]
+          offset += batchSize
+
+          if (data.length < batchSize) {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
+      }
+
+      return allProducts
+    } catch (error) {
+      console.error('❌ Erreur récupération produits scellés:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Mettre à jour le prix d'un produit du catalogue CardMarket
+   * @param {number} idProduct - ID CardMarket du produit
+   * @param {Object} priceData - Données de prix {avg, low, trend}
+   * @returns {Promise<boolean>}
+   */
+  static async updateCatalogProductPrice(idProduct, priceData) {
+    try {
+      const updatedAt = new Date().toISOString()
+
+      // Stratégie: Toujours tenter UPDATE d'abord (ignore erreurs RLS), puis INSERT si nécessaire
+      const { data: updateData, error: updateError } = await supabase
+        .from('cardmarket_prices')
+        .update({
+          avg: priceData.avg || null,
+          low: priceData.low || null,
+          trend: priceData.trend || null,
+          updated_at: updatedAt
+        })
+        .eq('id_product', idProduct)
+        .eq('id_language', 2)
+        .select()
+
+      // Si UPDATE a réussi et a retourné des données (ligne trouvée et mise à jour), terminé
+      if (!updateError && updateData && updateData.length > 0) {
+        return true
+      }
+
+      // Si UPDATE a échoué OU n'a trouvé aucune ligne, tenter INSERT
+      // (On ignore les erreurs d'UPDATE car elles peuvent être dues aux RLS)
+      const { error: insertError } = await supabase
+        .from('cardmarket_prices')
+        .insert({
+          id_product: idProduct,
+          id_language: 2,
+          avg: priceData.avg || null,
+          low: priceData.low || null,
+          trend: priceData.trend || null,
+          updated_at: updatedAt
+        })
+
+      // Si INSERT réussit, parfait
+      if (!insertError) {
+        return true
+      }
+
+      // Si INSERT échoue avec duplicate key (23505), la ligne existe mais on ne peut pas la voir/modifier
+      // On considère que c'est acceptable (les RLS bloquent l'accès mais la ligne est là)
+      if (insertError.code === '23505') {
+        console.warn(`⚠️ Prix ${idProduct} existe déjà (probablement créé par un autre utilisateur/processus)`)
+        return true
+      }
+
+      // Toute autre erreur INSERT est une vraie erreur
+      throw insertError
+
+    } catch (error) {
+      console.error(`❌ Erreur mise à jour prix catalogue ${idProduct}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Mettre à jour le prix d'un produit scellé utilisateur
+   * @param {number} productId - ID du produit
+   * @param {Object} priceData - Données de prix {avg, low, trend, _updated_at}
+   * @returns {Promise<boolean>}
+   */
+  static async updateProductPrice(productId, priceData) {
+    try {
+      const { error } = await supabase
+        .from('user_sealed_products')
+        .update({
+          market_price: priceData.avg || priceData.low || priceData.trend,
+          _price_updated_at: priceData._updated_at
+        })
+        .eq('id', productId)
+
+      if (error) throw error
+
+      return true
+    } catch (error) {
+      console.error(`❌ Erreur mise à jour prix produit ${productId}:`, error)
+      throw error
+    }
   }
 }

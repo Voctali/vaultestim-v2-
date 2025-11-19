@@ -19,14 +19,29 @@ export function PriceRefreshPanel() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [progress, setProgress] = useState(null)
   const [results, setResults] = useState(null)
+  const [dailyRequests, setDailyRequests] = useState(null)
 
   // Charger les statistiques au montage
   useEffect(() => {
     if (discoveredCards.length > 0) {
       const refreshStats = PriceRefreshService.getRefreshStats(discoveredCards)
       setStats(refreshStats)
+
+      // Charger le compteur de requêtes quotidiennes
+      const requestStats = PriceRefreshService.getDailyRequests()
+      setDailyRequests(requestStats)
     }
   }, [discoveredCards])
+
+  // Mettre à jour le compteur de requêtes pendant l'actualisation
+  useEffect(() => {
+    if (isRefreshing && progress?.dailyRequestCount) {
+      setDailyRequests(prev => ({
+        ...prev,
+        count: progress.dailyRequestCount
+      }))
+    }
+  }, [isRefreshing, progress])
 
   // Forcer l'actualisation manuelle
   const handleForceRefresh = async () => {
@@ -141,6 +156,22 @@ export function PriceRefreshPanel() {
             <div className="text-sm text-muted-foreground">Récentes (&lt; 7j)</div>
           </div>
         </div>
+
+        {/* Compteur de requêtes quotidiennes */}
+        {dailyRequests && (
+          <Alert>
+            <TrendingUp className="h-4 w-4" />
+            <AlertDescription>
+              <div className="font-medium">📡 Requêtes API aujourd'hui</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {dailyRequests.count} requêtes effectuées le {new Date(dailyRequests.date).toLocaleDateString('fr-FR', { dateStyle: 'full' })}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Limite recommandée : ~1500 requêtes/jour pour éviter le rate limiting
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Dernière actualisation */}
         {stats.lastRefresh && (

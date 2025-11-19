@@ -840,6 +840,242 @@ export class SupabaseService {
   }
 
   // ============================================================================
+  // SUPPRESSION CARTES PARTAGÉES (discovered_cards - sans user_id)
+  // ============================================================================
+
+  /**
+   * Supprimer toutes les cartes d'une extension (cartes partagées discovered_cards)
+   * Cherche par set->>'id' ou set->>'name' dans le JSONB
+   */
+  static async deleteDiscoveredCardsByExtension(extensionId, extensionName = null) {
+    try {
+      console.log(`🗑️ Suppression des cartes discovered de l'extension ${extensionId} (${extensionName || 'N/A'})...`)
+
+      // Récupérer toutes les cartes pour filtrer côté client
+      // (Supabase ne supporte pas bien les requêtes JSONB complexes avec delete)
+      // IMPORTANT: Supabase limite à 1000 par défaut, on doit paginer
+      let allCards = []
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data: pageData, error: fetchError } = await supabase
+          .from('discovered_cards')
+          .select('id, set')
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+
+        if (fetchError) throw fetchError
+
+        if (pageData && pageData.length > 0) {
+          allCards = allCards.concat(pageData)
+          page++
+          hasMore = pageData.length === pageSize
+        } else {
+          hasMore = false
+        }
+      }
+
+      console.log(`📊 Total cartes récupérées: ${allCards.length} (${page} pages)`)
+
+      // Debug: chercher les cartes qui commencent par l'extensionId
+      const cardsByPrefix = allCards.filter(card => card.id?.startsWith(extensionId + '-'))
+      console.log(`📊 Cartes par préfixe "${extensionId}-": ${cardsByPrefix.length}`)
+      if (cardsByPrefix.length > 0) {
+        console.log(`   Exemples:`, cardsByPrefix.slice(0, 3).map(c => c.id))
+      }
+
+      // Filtrer les cartes de cette extension (par ID set, par nom, ou par préfixe de carte ID)
+      const cardIds = allCards
+        .filter(card => {
+          const setId = card.set?.id || ''
+          const setName = card.set?.name || ''
+          const cardId = card.id || ''
+
+          // Vérifier si la carte appartient à cette extension
+          const matchSetId = setId === extensionId || setId.toLowerCase() === extensionId.toLowerCase()
+          const matchPrefix = cardId.startsWith(extensionId + '-') || cardId.toLowerCase().startsWith(extensionId.toLowerCase() + '-')
+          const matchName = extensionName && setName.toLowerCase() === extensionName.toLowerCase()
+
+          return matchSetId || matchPrefix || matchName
+        })
+        .map(card => card.id)
+
+      console.log(`📊 Cartes trouvées pour "${extensionId}": ${cardIds.length}`)
+
+      if (cardIds.length === 0) {
+        console.log(`ℹ️ Aucune carte à supprimer pour l'extension ${extensionId}`)
+        return 0
+      }
+
+      // Supprimer par lots de 100
+      let totalDeleted = 0
+      const batchSize = 100
+
+      for (let i = 0; i < cardIds.length; i += batchSize) {
+        const batch = cardIds.slice(i, i + batchSize)
+
+        const { error: deleteError } = await supabase
+          .from('discovered_cards')
+          .delete()
+          .in('id', batch)
+
+        if (deleteError) throw deleteError
+
+        totalDeleted += batch.length
+      }
+
+      console.log(`✅ ${totalDeleted} cartes discovered supprimées de l'extension ${extensionId}`)
+      return totalDeleted
+    } catch (error) {
+      console.error('❌ Erreur deleteDiscoveredCardsByExtension:', error)
+      return 0
+    }
+  }
+
+  /**
+   * Supprimer toutes les cartes d'un bloc (par série/series)
+   * Utilise set->>'series' pour filtrer par bloc
+   */
+  static async deleteDiscoveredCardsByBlock(blockName) {
+    try {
+      console.log(`🗑️ Suppression des cartes discovered du bloc "${blockName}"...`)
+
+      // Récupérer d'abord les IDs des cartes à supprimer
+      const { data: cardsToDelete, error: fetchError } = await supabase
+        .from('discovered_cards')
+        .select('id, set')
+
+      if (fetchError) throw fetchError
+
+      console.log(`📊 Total cartes dans Supabase: ${cardsToDelete?.length || 0}`)
+
+      // Debug: afficher les différentes séries présentes
+      const seriesNames = [...new Set(cardsToDelete.map(c => c.set?.series || 'undefined'))]
+      console.log(`📊 Séries trouvées:`, seriesNames)
+
+      // Filtrer les cartes du bloc (case-insensitive pour être sûr)
+      const cardIds = cardsToDelete
+        .filter(card => {
+          const series = card.set?.series || ''
+          return series === blockName ||
+                 series.toLowerCase() === blockName.toLowerCase() ||
+                 series.toLowerCase().includes('unknown')
+        })
+        .map(card => card.id)
+
+      console.log(`📊 Cartes à supprimer pour "${blockName}": ${cardIds.length}`)
+
+      if (cardIds.length === 0) {
+        console.log(`ℹ️ Aucune carte à supprimer dans le bloc "${blockName}"`)
+        return 0
+      }
+
+      // Supprimer par lots de 100
+      let totalDeleted = 0
+      const batchSize = 100
+
+      for (let i = 0; i < cardIds.length; i += batchSize) {
+        const batch = cardIds.slice(i, i + batchSize)
+
+        const { error: deleteError } = await supabase
+          .from('discovered_cards')
+          .delete()
+          .in('id', batch)
+
+        if (deleteError) throw deleteError
+
+        totalDeleted += batch.length
+        console.log(`  Supprimé: ${totalDeleted}/${cardIds.length}`)
+      }
+
+      console.log(`✅ ${totalDeleted} cartes discovered supprimées du bloc "${blockName}"`)
+      return totalDeleted
+    } catch (error) {
+      console.error('❌ Erreur deleteDiscoveredCardsByBlock:', error)
+      return 0
+    }
+  }
+
+  /**
+   * Supprimer complètement une extension (discovered_cards + series_database)
+   * Pour les cartes partagées (pas de user_id)
+   */
+  static async deleteDiscoveredExtension(extensionId, extensionName = null) {
+    try {
+      const deletedCardsCount = await this.deleteDiscoveredCardsByExtension(extensionId, extensionName)
+
+      // Supprimer de series_database - essayer avec et sans user_id
+      const userId = await this.getCurrentUserId()
+
+      // D'abord essayer avec user_id
+      let { error, data } = await supabase
+        .from('series_database')
+        .delete()
+        .eq('id', extensionId)
+        .eq('user_id', userId)
+        .select()
+
+      if (error) {
+        console.warn('⚠️ Erreur suppression series_database avec user_id:', error.message)
+      } else {
+        console.log(`🗑️ series_database: ${data?.length || 0} entrée(s) supprimée(s) pour ${extensionId}`)
+      }
+
+      // Si pas supprimé, essayer aussi par nom
+      if (extensionName) {
+        const { error: error2, data: data2 } = await supabase
+          .from('series_database')
+          .delete()
+          .eq('name', extensionName)
+          .eq('user_id', userId)
+          .select()
+
+        if (!error2 && data2?.length > 0) {
+          console.log(`🗑️ series_database: ${data2.length} entrée(s) supprimée(s) par nom "${extensionName}"`)
+        }
+      }
+
+      console.log(`🗑️ Extension discovered complète supprimée: ${extensionId} (${deletedCardsCount} cartes)`)
+      return { extensionDeleted: true, deletedCardsCount }
+    } catch (error) {
+      console.error('❌ Erreur deleteDiscoveredExtension:', error)
+      return { extensionDeleted: false, deletedCardsCount: 0 }
+    }
+  }
+
+  /**
+   * Supprimer complètement un bloc (toutes les extensions et cartes discovered)
+   */
+  static async deleteDiscoveredBlock(blockName, extensions = []) {
+    try {
+      let totalDeletedCards = 0
+      let deletedExtensions = 0
+
+      // Si on a les extensions, les supprimer une par une
+      if (extensions.length > 0) {
+        for (const extension of extensions) {
+          const result = await this.deleteDiscoveredExtension(extension.id)
+          if (result.extensionDeleted) {
+            deletedExtensions++
+            totalDeletedCards += result.deletedCardsCount
+          }
+        }
+      } else {
+        // Sinon, supprimer par le nom du bloc (série)
+        totalDeletedCards = await this.deleteDiscoveredCardsByBlock(blockName)
+        deletedExtensions = 1 // On ne sait pas combien exactement
+      }
+
+      console.log(`🗑️ Bloc discovered complet supprimé: ${blockName} (${deletedExtensions} extensions, ${totalDeletedCards} cartes)`)
+      return { deletedExtensions, totalDeletedCards }
+    } catch (error) {
+      console.error('❌ Erreur deleteDiscoveredBlock:', error)
+      return { deletedExtensions: 0, totalDeletedCards: 0 }
+    }
+  }
+
+  // ============================================================================
   // STATISTIQUES
   // ============================================================================
 

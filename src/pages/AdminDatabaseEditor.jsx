@@ -3,7 +3,7 @@
  * Utilise le service centralisé BlockHierarchyService (même logique qu'Explorer)
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Database, Edit3, Trash2, Plus, Search, Package, ChevronRight } from 'lucide-react'
+import { Database, Edit3, Trash2, Plus, Search, Package, ChevronRight, Archive, ChevronDown, ChevronUp, Download, Upload, DollarSign, RefreshCw, Swords, FileDown, Link, Bug, ArrowLeft, GitMerge } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useCardDatabase } from '@/hooks/useCardDatabase'
 import { IndexedDBService } from '@/services/IndexedDBService'
+import { SupabaseService } from '@/services/SupabaseService'
 import { ImageUploadService } from '@/services/ImageUploadService'
 import { ImageUpload } from '@/components/features/ImageUpload'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -27,10 +28,150 @@ import { AttacksMigrationPanel } from '@/components/features/admin/AttacksMigrat
 import { CardMarketDebugPanel } from '@/components/features/admin/CardMarketDebugPanel'
 import { CardMarketBulkHelper } from '@/components/features/admin/CardMarketBulkHelper'
 import { SealedProductsManager } from '@/components/features/admin/SealedProductsManager'
-import { SetImportPanel } from '@/components/features/admin/SetImportPanel'
+// SetImportPanel supprimé - fonctionnalité déplacée dans ExtensionDiscoveryPanel
+import ExtensionDiscoveryPanel from '@/components/features/admin/ExtensionDiscoveryPanel'
+
+
+// Composant carte mémorisé pour éviter les re-renders
+const MemoizedCardItem = React.memo(({ card, onEdit, onDelete }) => (
+  <div
+    className="group relative p-4 border border-border rounded-lg hover:border-primary/50 transition-colors cursor-pointer bg-card"
+  >
+    <div className="flex items-start gap-4">
+      {card.images?.small && (
+        <img
+          src={card.images.small}
+          alt={card.name}
+          className="w-20 h-28 object-cover rounded"
+          loading="lazy"
+        />
+      )}
+      <div className="flex-1 min-w-0">
+        <h4 className="font-semibold truncate">{card.name}</h4>
+        <div className="text-sm text-muted-foreground space-y-1">
+          <p>#{card.number}</p>
+          {card.rarity && <p>{card.rarity}</p>}
+          {card.set?.name && <p className="truncate">{card.set.name}</p>}
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation()
+            onEdit(card)
+          }}
+        >
+          <Edit3 className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(card)
+          }}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  </div>
+), (prevProps, nextProps) => {
+  // Ne re-render que si la carte change vraiment
+  return prevProps.card.id === nextProps.card.id &&
+         prevProps.card.name === nextProps.card.name
+})
+
+// Composant wrapper pour sections collapsibles
+function CollapsibleSection({ title, isExpanded, onToggle, children, icon: Icon }) {
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-4 bg-muted/50 hover:bg-muted transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          {Icon && <Icon className="h-5 w-5 text-primary" />}
+          <h3 className="font-semibold">{title}</h3>
+        </div>
+        {isExpanded ? (
+          <ChevronUp className="h-5 w-5 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+        )}
+      </button>
+      {isExpanded && (
+        <div className="p-4">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function AdminDatabaseEditor() {
-  const { discoveredCards, seriesDatabase, isLoading } = useCardDatabase()
+  const { seriesDatabase, isLoading, discoveredCards: contextCards, deleteSeriesBlock } = useCardDatabase()
+
+  // État pour les cartes avec chargement optimisé
+  const [allCards, setAllCards] = useState([])
+  const [discoveredCards, setDiscoveredCards] = useState([])
+  const [cardsInitialLoading, setCardsInitialLoading] = useState(true)
+
+  // Système de chargement par batch
+  const BATCH_SIZE = 100 // Charger 100 cartes à la fois
+  const [loadedBatches, setLoadedBatches] = useState(1) // Nombre de batchs chargés
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Utiliser les cartes du contexte en priorité, sinon charger depuis IndexedDB
+  useEffect(() => {
+    let mounted = true
+
+    const loadCardsBatch = async () => {
+      try {
+        // Utiliser les cartes du contexte si disponibles
+        if (contextCards && contextCards.length > 0) {
+          console.log(`📥 Utilisation des cartes du contexte: ${contextCards.length}`)
+          if (mounted) {
+            setAllCards(contextCards)
+            setCardsInitialLoading(false)
+          }
+          return
+        }
+
+        // Sinon charger depuis IndexedDB
+        console.log('📥 Chargement des cartes depuis IndexedDB...')
+        const cards = await IndexedDBService.getAllDiscoveredCards()
+        if (mounted) {
+          setAllCards(cards)
+          console.log(`✅ ${cards.length} cartes chargées en mémoire`)
+        }
+      } catch (error) {
+        console.error('❌ Erreur chargement cartes:', error)
+      } finally {
+        if (mounted) {
+          setCardsInitialLoading(false)
+        }
+      }
+    }
+
+    loadCardsBatch()
+
+    return () => {
+      mounted = false
+    }
+  }, [contextCards])
+
+  // Charger plus de cartes
+  const loadMoreCards = useCallback(() => {
+    setIsLoadingMore(true)
+    // Simuler un délai pour éviter de bloquer l'UI
+    setTimeout(() => {
+      setLoadedBatches(prev => prev + 1)
+      setIsLoadingMore(false)
+    }, 100)
+  }, [])
 
   // Onglet principal : 'cards' ou 'sealed-products'
   const [mainTab, setMainTab] = useState('cards')
@@ -47,6 +188,43 @@ export function AdminDatabaseEditor() {
   const [selectedExtension, setSelectedExtension] = useState(null)
   const [navigationPath, setNavigationPath] = useState([])
 
+  // Filtrer les cartes pour l'extension sélectionnée (instantané car en mémoire)
+  useEffect(() => {
+    if (!selectedExtension) {
+      setDiscoveredCards([])
+      return
+    }
+
+    const extensionCards = allCards.filter(card => card.set?.id === selectedExtension.id)
+    // Limiter au nombre de batchs chargés
+    const limitedCards = extensionCards.slice(0, loadedBatches * BATCH_SIZE)
+    setDiscoveredCards(limitedCards)
+    console.log(`🔍 Filtrage: ${limitedCards.length}/${extensionCards.length} cartes affichées pour "${selectedExtension.name}"`)
+  }, [selectedExtension, allCards, loadedBatches])
+
+  // Réinitialiser les batchs quand on change d'extension
+  useEffect(() => {
+    setLoadedBatches(1)
+  }, [selectedExtension])
+
+  // États de pagination (NOUVEAU - pour optimiser le rendu des cartes)
+  const [currentPage, setCurrentPage] = useState(1)
+  const CARDS_PER_PAGE = 50 // Afficher 50 cartes par page au lieu de toutes
+
+  // États pour collapse/expand des sections (éviter surcharge)
+  const [expandedSections, setExpandedSections] = useState({
+    // Par défaut, toutes les sections sont ouvertes
+    dataMigration: true,
+    databaseBackup: true,
+    databaseBackupPanel: true,
+    priceMigration: true,
+    priceRefresh: true,
+    attacksMigration: true,
+    extensionDiscovery: true,
+    cardMarketBulk: true,
+    cardMarketDebug: true
+  })
+
   // États pour l'édition (comme dans DatabaseAdmin)
   const [editingBlock, setEditingBlock] = useState(null)
   const [editingExtension, setEditingExtension] = useState(null)
@@ -62,7 +240,9 @@ export function AdminDatabaseEditor() {
     totalCards: 0,
     extensions: [],
     releaseDate: '',
-    targetBlockId: '' // Pour déplacer les extensions
+    targetBlockId: '', // Pour déplacer les extensions
+    targetExtensionId: '', // Pour déplacer une carte vers une autre extension
+    mergeTargetExtensionId: '' // Pour fusionner deux extensions
   })
 
   // Charger les données personnalisées
@@ -91,14 +271,16 @@ export function AdminDatabaseEditor() {
       try {
         console.log('🔄 AdminDatabaseEditor - Construction hiérarchie via BlockHierarchyService...')
         console.log(`📊 Données disponibles:`)
-        console.log(`   - ${discoveredCards.length} cartes découvertes`)
+        console.log(`   - ${allCards.length} cartes en mémoire`)
+        console.log(`   - ${discoveredCards.length} cartes affichées (filtrées)`)
         console.log(`   - ${seriesDatabase.length} extensions dans la base`)
         console.log(`   - ${customBlocks.length} blocs personnalisés`)
         console.log(`   - ${customExtensions.length} extensions déplacées`)
 
         // Utiliser le service centralisé pour construire la hiérarchie (MÊME LOGIQUE QU'EXPLORER)
+        // IMPORTANT: Utiliser allCards pour la hiérarchie complète
         const blocks = buildBlocksHierarchy(
-          discoveredCards,
+          allCards,
           seriesDatabase,
           customBlocks,
           customExtensions
@@ -195,14 +377,41 @@ export function AdminDatabaseEditor() {
           ext.name.toLowerCase().includes(searchLower)
         ) || []
       case 'cards':
+        // discoveredCards est déjà filtré par selectedExtension, on applique juste la recherche
         return discoveredCards.filter(card =>
-          card.set?.id === selectedExtension?.id &&
           card.name.toLowerCase().includes(searchLower)
         )
       default:
         return []
     }
   }, [currentView, searchQuery, blocksData, selectedBlock, discoveredCards, selectedExtension])
+
+  // Données paginées (NOUVEAU - pour optimiser le rendu)
+  const paginatedData = useMemo(() => {
+    // Seules les cartes sont paginées (les blocs et extensions sont peu nombreux)
+    if (currentView !== 'cards') {
+      return getFilteredData
+    }
+
+    const totalItems = getFilteredData.length
+    const totalPages = Math.ceil(totalItems / CARDS_PER_PAGE)
+    const startIndex = (currentPage - 1) * CARDS_PER_PAGE
+    const endIndex = startIndex + CARDS_PER_PAGE
+
+    return {
+      items: getFilteredData.slice(startIndex, endIndex),
+      totalItems,
+      totalPages,
+      currentPage,
+      hasNextPage: currentPage < totalPages,
+      hasPrevPage: currentPage > 1
+    }
+  }, [getFilteredData, currentView, currentPage, CARDS_PER_PAGE])
+
+  // Réinitialiser la pagination lors du changement de vue
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [currentView, selectedExtension, searchQuery])
 
   // Fonctions de navigation (OPTIMISÉES avec useCallback)
   const handleBlockClick = useCallback((block) => {
@@ -605,25 +814,34 @@ export function AdminDatabaseEditor() {
   const handleDeleteBlock = async (block) => {
     const confirmMessage = block.type === 'custom'
       ? `Supprimer le bloc personnalisé "${block.name}" ?\n\nCette action est irréversible.`
-      : `Supprimer le bloc généré "${block.name}" ?\n\nCela supprimera le bloc et toutes ses extensions de la base de données locale.`
+      : `Supprimer le bloc généré "${block.name}" ?\n\nCela supprimera le bloc et toutes ses extensions de la base de données (Supabase + local).\nCette action est irréversible.`
 
     if (!window.confirm(confirmMessage)) return
 
     try {
       console.log(`🗑️ Suppression du bloc "${block.name}"...`)
 
-      if (block.type === 'custom') {
-        // Supprimer le bloc personnalisé d'IndexedDB
-        await IndexedDBService.deleteCompleteBlock(block.id)
+      // 1. IMPORTANT: Supprimer toutes les extensions du bloc du state seriesDatabase AVANT Supabase
+      // pour éviter que la sync automatique ne les re-crée
+      const extensions = block.extensions || []
+      extensions.forEach(ext => {
+        deleteSeriesBlock(ext.id)
+      })
+      console.log(`📊 State seriesDatabase: ${extensions.length} extensions supprimées`)
 
-        // Supprimer du state customBlocks
+      // 2. Supprimer de Supabase (discovered_cards + series_database)
+      const supabaseResult = await SupabaseService.deleteDiscoveredBlock(block.name, extensions)
+      console.log(`📊 Supabase: ${supabaseResult.deletedExtensions} extensions, ${supabaseResult.totalDeletedCards} cartes supprimées`)
+
+      // 3. Supprimer du cache local (IndexedDB)
+      if (block.type === 'custom') {
+        await IndexedDBService.deleteCompleteBlock(block.id)
         setCustomBlocks(prev => prev.filter(cb => cb.id !== block.id))
       } else {
-        // Pour les blocs générés, supprimer toutes les extensions et cartes
         await IndexedDBService.deleteCompleteBlock(block.id)
       }
 
-      // Supprimer du state blocksData
+      // 4. Supprimer du state blocksData
       setBlocksData(prev => prev.filter(b => b.id !== block.id))
 
       // Si on était dans ce bloc, retourner à la vue blocs
@@ -631,7 +849,8 @@ export function AdminDatabaseEditor() {
         handleBackToBlocks()
       }
 
-      console.log(`✅ Bloc "${block.name}" supprimé avec succès`)
+      console.log(`✅ Bloc "${block.name}" supprimé avec succès (${supabaseResult.totalDeletedCards} cartes)`)
+      alert(`Bloc "${block.name}" supprimé avec succès !\n${supabaseResult.totalDeletedCards} cartes supprimées.`)
 
     } catch (error) {
       console.error('❌ Erreur lors de la suppression du bloc:', error)
@@ -640,20 +859,30 @@ export function AdminDatabaseEditor() {
   }
 
   const handleDeleteExtension = async (extension) => {
-    const confirmMessage = `Supprimer l'extension "${extension.name}" ?\n\nCela supprimera l'extension et toutes ses cartes de la base de données locale.\nCette action est irréversible.`
+    const confirmMessage = `Supprimer l'extension "${extension.name}" ?\n\nCela supprimera l'extension et toutes ses cartes de la base de données (Supabase + local).\nCette action est irréversible.`
 
     if (!window.confirm(confirmMessage)) return
 
     try {
       console.log(`🗑️ Suppression de l'extension "${extension.name}"...`)
 
-      // Supprimer l'extension d'IndexedDB
+      // 1. IMPORTANT: Supprimer du state seriesDatabase AVANT Supabase
+      // pour éviter que la sync automatique ne la re-crée
+      deleteSeriesBlock(extension.id)
+      console.log(`📊 State seriesDatabase: extension ${extension.id} supprimée`)
+
+      // 2. Supprimer de Supabase (discovered_cards + series_database)
+      // Passer aussi le nom pour matcher par nom si l'ID ne correspond pas
+      const supabaseResult = await SupabaseService.deleteDiscoveredExtension(extension.id, extension.name)
+      console.log(`📊 Supabase: ${supabaseResult.deletedCardsCount} cartes supprimées`)
+
+      // 3. Supprimer du cache local (IndexedDB)
       await IndexedDBService.deleteCompleteExtension(extension.id)
 
-      // Supprimer des customExtensions si c'est une extension déplacée
+      // 4. Supprimer des customExtensions si c'est une extension déplacée
       setCustomExtensions(prev => prev.filter(ce => ce.id !== extension.id))
 
-      // Mettre à jour selectedBlock pour supprimer l'extension
+      // 5. Mettre à jour selectedBlock pour supprimer l'extension
       if (selectedBlock) {
         const updatedSelectedBlock = {
           ...selectedBlock,
@@ -664,7 +893,7 @@ export function AdminDatabaseEditor() {
         setSelectedBlock(updatedSelectedBlock)
       }
 
-      // Mettre à jour blocksData
+      // 5. Mettre à jour blocksData
       setBlocksData(prev =>
         prev.map(block => ({
           ...block,
@@ -674,7 +903,8 @@ export function AdminDatabaseEditor() {
         }))
       )
 
-      console.log(`✅ Extension "${extension.name}" supprimée avec succès`)
+      console.log(`✅ Extension "${extension.name}" supprimée avec succès (${supabaseResult.deletedCardsCount} cartes)`)
+      alert(`Extension "${extension.name}" supprimée avec succès !\n${supabaseResult.deletedCardsCount} cartes supprimées.`)
 
     } catch (error) {
       console.error('❌ Erreur lors de la suppression de l\'extension:', error)
@@ -711,7 +941,9 @@ export function AdminDatabaseEditor() {
       supertype: card.supertype || 'Pokémon',
       imageUrl: card.images?.small || card.image || '',
       hp: card.hp || '',
-      types: card.types?.join(', ') || ''
+      types: card.types?.join(', ') || '',
+      targetExtensionId: '', // Réinitialiser pour le Select
+      mergeTargetExtensionId: ''
     })
     console.log(`✏️ Édition de la carte "${card.name}"`)
   }
@@ -796,7 +1028,20 @@ export function AdminDatabaseEditor() {
 
   // Note: Le filtrage est maintenant géré par getFilteredData selon la vue actuelle
 
+  // Variables helper pour le rendu (simplifie l'utilisation de paginatedData)
+  const displayItems = currentView === 'cards' ? paginatedData.items : paginatedData
+  const totalItems = currentView === 'cards' ? paginatedData.totalItems : getFilteredData.length
+  const isPaginated = currentView === 'cards' && paginatedData.totalPages > 1
+
   // Loading state
+  // Toggle expand/collapse d'une section
+  const toggleSection = (sectionKey) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }))
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -846,6 +1091,7 @@ export function AdminDatabaseEditor() {
             <p className="text-muted-foreground">
               {mainTab === 'cards' && 'Gérez vos blocs, extensions et cartes personnalisés'}
               {mainTab === 'sealed-products' && 'Gérez votre collection de produits scellés'}
+              {mainTab === 'backup' && 'Sauvegardez et restaurez vos données (IndexedDB et Supabase)'}
             </p>
           </div>
         </div>
@@ -880,35 +1126,113 @@ export function AdminDatabaseEditor() {
           <Package className="h-4 w-4 mr-2" />
           Produits Scellés
         </Button>
+        <Button
+          variant={mainTab === 'backup' ? 'default' : 'ghost'}
+          onClick={() => setMainTab('backup')}
+          className="rounded-b-none"
+        >
+          <Archive className="h-4 w-4 mr-2" />
+          Backup
+        </Button>
       </div>
 
       {/* Affichage selon l'onglet sélectionné */}
       {mainTab === 'sealed-products' ? (
         <SealedProductsManager />
+      ) : mainTab === 'backup' ? (
+        <>
+          {/* Sauvegarde de la base de données locale (IndexedDB) */}
+          <CollapsibleSection
+            title="Sauvegarde de la base de données locale (IndexedDB)"
+            isExpanded={expandedSections.databaseBackup}
+            onToggle={() => toggleSection('databaseBackup')}
+            icon={Download}
+          >
+            <DatabaseBackup />
+          </CollapsibleSection>
+
+          {/* Sauvegarde complète Supabase (Cloud) */}
+          <CollapsibleSection
+            title="Sauvegarde complète Supabase (Cloud)"
+            isExpanded={expandedSections.databaseBackupPanel}
+            onToggle={() => toggleSection('databaseBackupPanel')}
+            icon={Archive}
+          >
+            <DatabaseBackupPanel />
+          </CollapsibleSection>
+        </>
       ) : (
         <>
           {/* Migration des données IndexedDB → Backend */}
-          <DataMigration />
+          <CollapsibleSection
+            title="Migration des données IndexedDB → Supabase"
+            isExpanded={expandedSections.dataMigration}
+            onToggle={() => toggleSection('dataMigration')}
+            icon={Upload}
+          >
+            <DataMigration />
+          </CollapsibleSection>
 
-      {/* Sauvegarde de la base de données locale (IndexedDB) */}
-      <DatabaseBackup />
+          {/* Migration des prix depuis l'API Pokemon TCG */}
+          <CollapsibleSection
+            title="Migration des prix depuis l'API Pokemon TCG"
+            isExpanded={expandedSections.priceMigration}
+            onToggle={() => toggleSection('priceMigration')}
+            icon={DollarSign}
+          >
+            <PriceMigrationPanel />
+          </CollapsibleSection>
 
-      {/* Sauvegarde complète Supabase (Cloud) */}
-      <DatabaseBackupPanel />
+          {/* Actualisation automatique quotidienne des prix */}
+          <CollapsibleSection
+            title="Actualisation automatique quotidienne des prix"
+            isExpanded={expandedSections.priceRefresh}
+            onToggle={() => toggleSection('priceRefresh')}
+            icon={RefreshCw}
+          >
+            <PriceRefreshPanel />
+          </CollapsibleSection>
 
-      {/* Migration des prix depuis l'API Pokemon TCG */}
-      <PriceMigrationPanel />
-      {/* Actualisation automatique quotidienne des prix */}
-      <PriceRefreshPanel />
-      {/* Migration des attaques depuis l'API Pokemon TCG */}
-      <AttacksMigrationPanel />
-      {/* Import automatique d'extensions */}
-      <SetImportPanel />
-      {/* Debug des liens CardMarket */}
-      <CardMarketBulkHelper />
+          {/* Migration des attaques depuis l'API Pokemon TCG */}
+          <CollapsibleSection
+            title="Migration des attaques depuis l'API Pokemon TCG"
+            isExpanded={expandedSections.attacksMigration}
+            onToggle={() => toggleSection('attacksMigration')}
+            icon={Swords}
+          >
+            <AttacksMigrationPanel />
+          </CollapsibleSection>
 
-      {/* Debug des liens CardMarket */}
-      <CardMarketDebugPanel />
+          {/* Découverte de nouvelles extensions */}
+          <CollapsibleSection
+            title="Découverte de nouvelles extensions"
+            isExpanded={expandedSections.extensionDiscovery}
+            onToggle={() => toggleSection('extensionDiscovery')}
+            icon={Search}
+          >
+            <ExtensionDiscoveryPanel />
+          </CollapsibleSection>
+
+
+          {/* Debug des liens CardMarket */}
+          <CollapsibleSection
+            title="Générateur de liens CardMarket en masse"
+            isExpanded={expandedSections.cardMarketBulk}
+            onToggle={() => toggleSection('cardMarketBulk')}
+            icon={Link}
+          >
+            <CardMarketBulkHelper />
+          </CollapsibleSection>
+
+          {/* Debug des liens CardMarket */}
+          <CollapsibleSection
+            title="Debug des liens CardMarket"
+            isExpanded={expandedSections.cardMarketDebug}
+            onToggle={() => toggleSection('cardMarketDebug')}
+            icon={Bug}
+          >
+            <CardMarketDebugPanel />
+          </CollapsibleSection>
 
       {/* Statistiques */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -975,11 +1299,11 @@ export function AdminDatabaseEditor() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Blocs ({getFilteredData.length})
+                Blocs ({totalItems})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {getFilteredData.length === 0 ? (
+              {displayItems.length === 0 ? (
                 <div className="text-center py-8">
                   <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="text-lg font-semibold mb-2">Aucun bloc trouvé</h3>
@@ -989,7 +1313,7 @@ export function AdminDatabaseEditor() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {getFilteredData.map((block) => (
+                  {displayItems.map((block) => (
                     <div
                       key={block.id}
                       className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
@@ -1062,10 +1386,20 @@ export function AdminDatabaseEditor() {
       {currentView === 'extensions' && selectedBlock && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Extensions de {selectedBlock.name} ({selectedBlock.extensions?.length || 0})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Extensions de {selectedBlock.name} ({selectedBlock.extensions?.length || 0})
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBackToBlocks}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour aux blocs
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {!selectedBlock.extensions || selectedBlock.extensions.length === 0 ? (
@@ -1143,23 +1477,39 @@ export function AdminDatabaseEditor() {
       {currentView === 'cards' && selectedExtension && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Cartes de {selectedExtension.name} ({getFilteredData.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                Cartes de {selectedExtension.name} ({totalItems})
+                {isPaginated && (
+                  <Badge variant="outline" className="ml-2">
+                    Page {paginatedData.currentPage}/{paginatedData.totalPages}
+                  </Badge>
+                )}
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBackToExtensions}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour aux extensions
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            {getFilteredData.length === 0 ? (
+            {totalItems === 0 ? (
               <div className="text-center py-8">
                 <Database className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">Aucune carte trouvée</h3>
                 <p className="text-muted-foreground">
-                  Cette extension ne contient aucune carte dans la base de données locale.
+                  {searchQuery ? 'Aucune carte ne correspond à votre recherche.' : 'Cette extension ne contient aucune carte dans la base de données locale.'}
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {getFilteredData.map((card, cardIndex) => (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {displayItems.map((card, cardIndex) => (
                   <Card
                     key={`card-${card.id || cardIndex}`}
                     className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
@@ -1224,6 +1574,30 @@ export function AdminDatabaseEditor() {
                   </Card>
                 ))}
               </div>
+
+              {/* Boutons de pagination */}
+              {isPaginated && (
+                <div className="flex justify-between items-center mt-6 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    disabled={!paginatedData.hasPrevPage}
+                  >
+                    Précédent
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {paginatedData.currentPage} sur {paginatedData.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    disabled={!paginatedData.hasNextPage}
+                  >
+                    Suivant
+                  </Button>
+                </div>
+              )}
+            </>
             )}
           </CardContent>
         </Card>
@@ -1483,6 +1857,79 @@ export function AdminDatabaseEditor() {
                 </div>
               </div>
 
+
+              {/* Fusionner avec une autre extension */}
+              <div className="border-t border-border/50 pt-4 mt-4">
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-orange-500 mb-2 flex items-center">
+                    <GitMerge className="w-4 h-4 mr-2" />
+                    Fusionner avec une autre extension
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Toutes les cartes de l'extension source seront déplacées vers l'extension de destination. L'extension source sera supprimée.
+                  </p>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.mergeTargetExtensionId}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, mergeTargetExtensionId: value }))}
+                    >
+                      <SelectTrigger className="golden-border">
+                        <SelectValue placeholder="Fusionner avec..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {blocksData
+                          .flatMap(block => block.extensions || [])
+                          .filter(ext => ext.id !== editingExtension.id)
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((ext) => (
+                            <SelectItem key={ext.id} value={ext.id}>
+                              {ext.name} ({ext.cardsCount || 0} cartes)
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.mergeTargetExtensionId && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={async () => {
+                          const targetExt = blocksData.flatMap(b => b.extensions || []).find(e => e.id === formData.mergeTargetExtensionId)
+                          const cardsToMove = discoveredCards.filter(c => c.set?.id === editingExtension.id)
+
+                          if (window.confirm(
+                            `FUSION D'EXTENSIONS\n\n` +
+                            `Source: "${editingExtension.name}" (${cardsToMove.length} cartes)\n` +
+                            `Destination: "${targetExt?.name}" (${targetExt?.cardsCount || 0} cartes)\n\n` +
+                            `Toutes les ${cardsToMove.length} cartes seront déplacées vers "${targetExt?.name}".\n` +
+                            `L'extension "${editingExtension.name}" sera SUPPRIMÉE.\n\n` +
+                            `Cette action est IRRÉVERSIBLE. Continuer ?`
+                          )) {
+                            try {
+                              // Déplacer toutes les cartes
+                              for (const card of cardsToMove) {
+                                await IndexedDBService.updateDiscoveredCard(card.id, {
+                                  set: targetExt
+                                })
+                              }
+
+                              // Supprimer l'extension source
+                              await IndexedDBService.deleteCompleteExtension(editingExtension.id)
+
+                              alert(`✅ Fusion terminée!\n\n${cardsToMove.length} cartes déplacées de "${editingExtension.name}" vers "${targetExt.name}".\n\nL'extension source a été supprimée.`)
+                              window.location.reload()
+                            } catch (error) {
+                              alert('❌ Erreur lors de la fusion: ' + error.message)
+                            }
+                          }
+                        }}
+                      >
+                        Fusionner
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Actions */}
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setEditingExtension(null)}>
@@ -1651,6 +2098,81 @@ export function AdminDatabaseEditor() {
                     />
                   </div>
                 )}
+              </div>
+
+
+              {/* Déplacer vers une autre extension */}
+              <div className="border-t border-border/50 pt-4">
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-blue-500 mb-2 flex items-center">
+                    <Package className="w-4 h-4 mr-2" />
+                    Déplacer vers une autre extension
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Sélectionnez une extension de destination pour déplacer cette carte.
+                  </p>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.targetExtensionId}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, targetExtensionId: value }))}
+                    >
+                      <SelectTrigger className="golden-border">
+                        <SelectValue placeholder="Choisir une extension" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {discoveredCards
+                          .map(c => c.set)
+                          .filter((set, index, self) =>
+                            set && set.id !== editingCard.set?.id &&
+                            self.findIndex(s => s?.id === set.id) === index
+                          )
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((set) => (
+                            <SelectItem key={set.id} value={set.id}>
+                              {set.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.targetExtensionId && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          // Chercher l'extension cible dans blocksData
+                          let targetSet = null
+                          for (const block of blocksData) {
+                            const ext = block.extensions?.find(e => e.id === formData.targetExtensionId)
+                            if (ext) {
+                              targetSet = ext
+                              break
+                            }
+                          }
+
+                          if (!targetSet) {
+                            alert('❌ Extension de destination non trouvée')
+                            return
+                          }
+
+                          if (window.confirm(`Déplacer "${editingCard.name}" vers "${targetSet.name}" ?\n\nCette action mettra à jour la carte.`)) {
+                            try {
+                              const updates = {
+                                set: targetSet
+                              }
+                              await IndexedDBService.updateDiscoveredCard(editingCard.id, updates)
+                              alert('✅ Carte déplacée avec succès!')
+                              window.location.reload()
+                            } catch (error) {
+                              alert('❌ Erreur: ' + error.message)
+                            }
+                          }
+                        }}
+                      >
+                        Déplacer
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Actions */}

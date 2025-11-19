@@ -19,6 +19,111 @@ export class PriceRefreshService {
   static MIN_PRICE_THRESHOLD = 0.10 // Skip cartes < 0.10€ (peu de variation)
   static PRIORITY_PRICE_THRESHOLD = 5.00 // Cartes > 5€ sont prioritaires
   static REQUEST_DELAY_MS = 1000 // Pause de 1s entre chaque requête pour éviter rate limiting
+  static STORAGE_KEY_PROGRESS = 'vaultestim_price_refresh_progress' // Clé localStorage pour la progression
+  static STORAGE_KEY_DAILY_REQUESTS = 'vaultestim_price_refresh_daily_requests' // Clé localStorage pour le compteur de requêtes
+
+  /**
+   * Obtenir la progression sauvegardée
+   */
+  static getProgress() {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY_PROGRESS)
+      if (!stored) return null
+
+      const progress = JSON.parse(stored)
+      return progress
+    } catch (error) {
+      console.warn('⚠️ Erreur lecture progression:', error)
+      return null
+    }
+  }
+
+  /**
+   * Sauvegarder la progression actuelle
+   */
+  static saveProgress(current, total) {
+    try {
+      const progress = {
+        current,
+        total,
+        percentage: Math.round((current / total) * 100),
+        lastUpdated: Date.now()
+      }
+      localStorage.setItem(this.STORAGE_KEY_PROGRESS, JSON.stringify(progress))
+    } catch (error) {
+      console.warn('⚠️ Erreur sauvegarde progression:', error)
+    }
+  }
+
+  /**
+   * Réinitialiser la progression
+   */
+  static clearProgress() {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY_PROGRESS)
+    } catch (error) {
+      console.warn('⚠️ Erreur réinitialisation progression:', error)
+    }
+  }
+
+  /**
+   * Obtenir le compteur de requêtes quotidiennes
+   */
+  static getDailyRequests() {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY_DAILY_REQUESTS)
+      const today = new Date().toDateString()
+
+      if (!stored) {
+        // Initialiser et persister
+        const newData = { count: 0, date: today }
+        localStorage.setItem(this.STORAGE_KEY_DAILY_REQUESTS, JSON.stringify(newData))
+        return newData
+      }
+
+      const data = JSON.parse(stored)
+
+      // Réinitialiser si on a changé de jour ET persister
+      if (data.date !== today) {
+        const resetData = { count: 0, date: today }
+        localStorage.setItem(this.STORAGE_KEY_DAILY_REQUESTS, JSON.stringify(resetData))
+        console.log('🔄 PriceRefreshService: Nouveau jour détecté, reset du compteur de requêtes')
+        return resetData
+      }
+
+      return data
+    } catch (error) {
+      console.warn('⚠️ Erreur lecture compteur requêtes:', error)
+      return { count: 0, date: new Date().toDateString() }
+    }
+  }
+
+  /**
+   * Incrémenter le compteur de requêtes quotidiennes
+   */
+  static incrementDailyRequests() {
+    try {
+      const current = this.getDailyRequests()
+      current.count++
+      localStorage.setItem(this.STORAGE_KEY_DAILY_REQUESTS, JSON.stringify(current))
+      return current.count
+    } catch (error) {
+      console.warn('⚠️ Erreur incrémentation compteur requêtes:', error)
+      return 0
+    }
+  }
+
+  /**
+   * Réinitialiser le compteur de requêtes quotidiennes
+   */
+  static resetDailyRequests() {
+    try {
+      const data = { count: 0, date: new Date().toDateString() }
+      localStorage.setItem(this.STORAGE_KEY_DAILY_REQUESTS, JSON.stringify(data))
+    } catch (error) {
+      console.warn('⚠️ Erreur réinitialisation compteur requêtes:', error)
+    }
+  }
 
   /**
    * Vérifier si une actualisation est nécessaire
@@ -109,6 +214,10 @@ export class PriceRefreshService {
    * Actualiser les prix d'un batch de cartes
    */
   static async refreshBatch(cards, onProgress) {
+    // Récupérer la progression sauvegardée (si actualisation de page)
+    const savedProgress = this.getProgress()
+    const startIndex = savedProgress && savedProgress.total === cards.length ? savedProgress.current : 0
+
     const results = {
       success: 0,
       errors: 0,
@@ -116,15 +225,28 @@ export class PriceRefreshService {
       total: cards.length
     }
 
-    console.log(`🔄 Début actualisation de ${cards.length} cartes...`)
-    console.log(`⏱️ Durée estimée: ~${Math.round((cards.length * this.REQUEST_DELAY_MS) / 1000 / 60)} minutes`)
+    if (startIndex > 0) {
+      console.log(`🔄 Reprise de l'actualisation à la carte ${startIndex + 1}/${cards.length}`)
+    } else {
+      console.log(`🔄 Début actualisation de ${cards.length} cartes...`)
+    }
 
-    for (let i = 0; i < cards.length; i++) {
+    const remainingCards = cards.length - startIndex
+    console.log(`⏱️ Durée estimée: ~${Math.round((remainingCards * this.REQUEST_DELAY_MS) / 1000 / 60)} minutes`)
+
+    // Obtenir le compteur de requêtes quotidiennes
+    const dailyRequests = this.getDailyRequests()
+    console.log(`📊 Requêtes API aujourd'hui (${dailyRequests.date}): ${dailyRequests.count}`)
+
+    for (let i = startIndex; i < cards.length; i++) {
       const card = cards[i]
 
       try {
         // Rechercher la carte mise à jour depuis l'API
         const searchResults = await TCGdxService.searchCards(card.name, 100)
+
+        // Incrémenter le compteur de requêtes
+        const requestCount = this.incrementDailyRequests()
 
         // Trouver la carte correspondante (même ID)
         const updatedCard = searchResults.find(c => c.id === card.id)
@@ -153,11 +275,14 @@ export class PriceRefreshService {
           const newPrice = updatedCard.marketPrice || 'N/A'
           const diff = oldPrice !== 'N/A' && newPrice !== 'N/A' ? (newPrice - oldPrice).toFixed(2) : '?'
 
-          console.log(`✅ ${card.name}: ${oldPrice}€ → ${newPrice}€ (${diff > 0 ? '+' : ''}${diff}€)`)
+          console.log(`✅ [${i + 1}/${cards.length}] ${card.name}: ${oldPrice}€ → ${newPrice}€ (${diff > 0 ? '+' : ''}${diff}€) | Requêtes: ${requestCount}`)
         } else {
           results.skipped++
-          console.log(`⏭️ ${card.name}: Aucun prix trouvé, carte skippée`)
+          console.log(`⏭️ [${i + 1}/${cards.length}] ${card.name}: Aucun prix trouvé, carte skippée | Requêtes: ${requestCount}`)
         }
+
+        // Sauvegarder la progression
+        this.saveProgress(i + 1, cards.length)
 
         // Callback de progression
         if (onProgress) {
@@ -166,7 +291,8 @@ export class PriceRefreshService {
             total: cards.length,
             percentage: Math.round(((i + 1) / cards.length) * 100),
             currentCard: card.name,
-            results
+            results,
+            dailyRequestCount: requestCount
           })
         }
 
@@ -175,14 +301,19 @@ export class PriceRefreshService {
 
       } catch (error) {
         results.errors++
-        console.error(`❌ Erreur actualisation ${card.name}:`, error)
+        console.error(`❌ [${i + 1}/${cards.length}] Erreur actualisation ${card.name}:`, error)
       }
     }
 
+    const finalRequestCount = this.getDailyRequests().count
     console.log(`\n📊 Résultats actualisation:`)
     console.log(`  ✅ ${results.success} prix mis à jour`)
     console.log(`  ⏭️ ${results.skipped} cartes skippées`)
     console.log(`  ❌ ${results.errors} erreurs`)
+    console.log(`  📡 ${finalRequestCount} requêtes API aujourd'hui`)
+
+    // Réinitialiser la progression (batch terminé)
+    this.clearProgress()
 
     return results
   }
@@ -192,6 +323,13 @@ export class PriceRefreshService {
    */
   static async autoRefresh(allCards, onProgress) {
     try {
+      // Vérifier si l'actualisation est activée
+      const enabled = localStorage.getItem('vaultestim_price_refresh_enabled')
+      if (enabled === 'false') {
+        console.log('⏭️ Actualisation prix cartes désactivée par l\'utilisateur')
+        return { skipped: true, reason: 'disabled' }
+      }
+
       // Vérifier si actualisation nécessaire
       if (!await this.shouldRefresh()) {
         console.log('⏭️ Actualisation pas nécessaire (< 24h)')

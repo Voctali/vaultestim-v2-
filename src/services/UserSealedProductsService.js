@@ -176,7 +176,7 @@ export class UserSealedProductsService {
   }
 
   /**
-   * Actualiser les prix depuis CardMarket pour tous les produits avec un ID CardMarket
+   * Actualiser les prix depuis RapidAPI/CardMarket pour tous les produits avec un ID CardMarket
    */
   static async refreshAllPrices(userId, onProgress = null) {
     try {
@@ -194,31 +194,25 @@ export class UserSealedProductsService {
         return { updated: 0, errors: 0, total: 0 }
       }
 
-      console.log(`🔄 Actualisation des prix pour ${products.length} produits...`)
+      console.log(`🔄 Actualisation des prix pour ${products.length} produits via RapidAPI...`)
 
       let updated = 0
       let errors = 0
 
-      // Importer CardMarketSupabaseService dynamiquement pour éviter les dépendances circulaires
-      const { CardMarketSupabaseService } = await import('./CardMarketSupabaseService')
+      // Importer HybridPriceService pour utiliser RapidAPI avec fallback Supabase
+      const { HybridPriceService } = await import('./HybridPriceService')
 
       for (let i = 0; i < products.length; i++) {
         const product = products[i]
 
         try {
-          // Obtenir l'ID de langue pour ce produit (par défaut français)
-          const languageId = CardMarketSupabaseService.getLanguageId(product.language || 'fr')
+          console.log(`🌐 Récupération prix RapidAPI pour ${product.name} (ID: ${product.cardmarket_id_product})`)
 
-          console.log(`🌐 Récupération prix pour ${product.name} en ${product.language || 'fr'} (ID: ${languageId})`)
+          // Récupérer le prix via HybridPriceService (RapidAPI → Supabase fallback)
+          const priceData = await HybridPriceService.getProductById(product.cardmarket_id_product)
 
-          // Récupérer le prix depuis CardMarket avec la langue du produit
-          const priceData = await CardMarketSupabaseService.getPriceForProduct(
-            product.cardmarket_id_product,
-            languageId
-          )
-
-          if (priceData?.avg) {
-            const newPrice = parseFloat(priceData.avg)
+          if (priceData?.price) {
+            const newPrice = parseFloat(priceData.price)
             const oldPrice = parseFloat(product.market_price) || 0
 
             // Mettre à jour uniquement si le prix a changé
@@ -228,12 +222,12 @@ export class UserSealedProductsService {
               })
 
               updated++
-              console.log(`✅ Prix mis à jour: ${product.name} (${oldPrice}€ → ${newPrice}€) [${product.language || 'fr'}]`)
+              console.log(`✅ Prix mis à jour: ${product.name} (${oldPrice}€ → ${newPrice}€) [${priceData._price_source || 'unknown'}]`)
             } else {
-              console.log(`⏭️ Prix inchangé: ${product.name} (${newPrice}€) [${product.language || 'fr'}]`)
+              console.log(`⏭️ Prix inchangé: ${product.name} (${newPrice}€) [${priceData._price_source || 'unknown'}]`)
             }
           } else {
-            console.log(`⚠️ Aucun prix trouvé pour ${product.name} en ${product.language || 'fr'}`)
+            console.log(`⚠️ Aucun prix trouvé pour ${product.name}`)
           }
         } catch (error) {
           errors++
