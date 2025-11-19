@@ -194,42 +194,9 @@ export function buildBlocksHierarchy(discoveredCards = [], seriesDatabase = [], 
     }
   })
 
-  // 9. Logs de debug
+  // 9. Logs de résumé
   console.log('✅ BlockHierarchyService - Hiérarchie construite:')
   console.log(`📦 ${finalBlocks.length} blocs uniques (triés du plus récent au plus ancien)`)
-  finalBlocks.forEach(block => {
-    const dateInfo = block.startDate && block.endDate ? ` (${block.startDate} → ${block.endDate})` : ''
-    console.log(`  📦 ${block.name}${dateInfo} (${block.type}): ${block.totalExtensions} extensions, ${block.totalCards} cartes`)
-    if (block.extensions.length > 0) {
-      block.extensions.slice(0, 3).forEach(ext => {
-        console.log(`    📚 ${ext.name} (${ext.cardsCount} cartes)${ext.isCustom ? ' [DÉPLACÉE]' : ''}`)
-      })
-      if (block.extensions.length > 3) {
-        console.log(`    ... et ${block.extensions.length - 3} autres extensions`)
-      }
-    }
-  })
-
-  // DEBUG: Vérifier spécifiquement le bloc Mega Evolution
-  const megaEvolutionBlock = finalBlocks.find(b => b.name === 'Mega Evolution')
-  if (megaEvolutionBlock) {
-    console.log(`✅ DEBUG BlockHierarchy: Bloc "Mega Evolution" trouvé avec ${megaEvolutionBlock.totalExtensions} extensions et ${megaEvolutionBlock.totalCards} cartes`)
-    megaEvolutionBlock.extensions.forEach(ext => {
-      console.log(`   Extension: ${ext.id} - ${ext.name} (${ext.cardsCount} cartes)`)
-    })
-  } else {
-    console.log(`❌ DEBUG BlockHierarchy: Bloc "Mega Evolution" NON TROUVÉ!`)
-    console.log(`   Blocs disponibles: ${finalBlocks.map(b => b.name).join(', ')}`)
-  }
-
-  // DEBUG: Chercher l'extension me2 dans seriesDatabase
-  const me2Extension = seriesDatabase.find(ext => ext.id === 'me2')
-  if (me2Extension) {
-    console.log(`✅ DEBUG BlockHierarchy: Extension me2 trouvée dans seriesDatabase`)
-    console.log(`   name: ${me2Extension.name}, series: ${me2Extension.series}`)
-  } else {
-    console.log(`❌ DEBUG BlockHierarchy: Extension me2 NON TROUVÉE dans seriesDatabase!`)
-  }
 
   return finalBlocks
 }

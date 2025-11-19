@@ -21,13 +21,6 @@ const CardDatabaseContext = createContext()
 const organizeCardsBySet = (cards) => {
   console.log('🗂️ Organisation des cartes par structure hiérarchique...')
 
-  // DEBUG: Compter les cartes me2 au début
-  const me2Cards = cards.filter(c => c.set?.id === 'me2' || c.id?.startsWith('me2-'))
-  console.log(`🔍 DEBUG: ${me2Cards.length} cartes me2 trouvées dans les ${cards.length} cartes à organiser`)
-  if (me2Cards.length > 0) {
-    console.log(`🔍 DEBUG: Première carte me2:`, JSON.stringify(me2Cards[0]?.set, null, 2))
-  }
-
   // Première passe : regrouper par extensions
   const extensionGroups = {}
   const blockGroups = {}
@@ -46,13 +39,6 @@ const organizeCardsBySet = (cards) => {
     // Priorité : originalSeries > series > nom de l'extension
     const seriesForMapping = card.set?.originalSeries || card.set?.series || card.series || 'Pokemon TCG'
     const blockName = TCGdxService.getBlockFromSeries(seriesForMapping, setName)
-
-    // DEBUG: Log pour les cartes Mega Evolution (me2)
-    if (setId === 'me2' || setId?.startsWith('me2')) {
-      console.log(`🔍 DEBUG ME2 - Carte: ${card.name}, setId: ${setId}, setName: ${setName}`)
-      console.log(`   originalSeries: ${card.set?.originalSeries}, series: ${card.set?.series}, card.series: ${card.series}`)
-      console.log(`   seriesForMapping: "${seriesForMapping}" → blockName: "${blockName}"`)
-    }
 
     // Log pour cartes avec informations manquantes
     if (!card.set?.id || !card.set?.name) {

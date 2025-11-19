@@ -495,34 +495,9 @@ await SealedProductPriceRefreshService.refreshBatch((progress) => {
 await SealedProductPriceRefreshService.autoRefreshIfNeeded()
 ```
 
-## 🚧 Tâches en Cours
-
-1. **Migration des Attaques** (92.3% complétée - 16,105/17,456 cartes) - Relancer Admin → Migration des attaques pour terminer
-
 ## ⚠️ Bugs Connus
 
-1. **Extension Phantasmal Flames non affichée sur Vercel** (Critique - 19/11/2025)
-   - **Problème** : L'extension Phantasmal Flames (me2) ne s'affiche PAS dans "Explorer les séries" sur Vercel
-   - **Symptômes** :
-     - Les 130 cartes me2 existent dans Supabase avec les bonnes données (`set.series: "Mega Evolution"`)
-     - Le mapping "Mega Evolution" existe dans TCGdxService.js
-     - Le bloc "Mega Evolution" devrait contenir l'extension
-     - Fonctionne localement mais PAS sur Vercel après vidage du cache IndexedDB
-   - **Données vérifiées** :
-     - Carte exemple : `me2-1` avec `set: {id: "me2", name: "Phantasmal Flames", series: "Mega Evolution"}`
-     - Mapping dans TCGdxService.js lignes 28-31
-   - **Tentatives de correction** :
-     - ✅ Vérification données Supabase (OK - 130 cartes)
-     - ✅ Vérification mapping TCGdxService (OK)
-     - ✅ Vidage cache IndexedDB sur Vercel
-     - ✅ Force rebuild Vercel (commit vide)
-     - ❌ **TOUJOURS PAS RÉSOLU**
-   - **Code concerné** :
-     - `src/hooks/useCardDatabase.jsx` - fonction `organizeCardsBySet()`
-     - `src/services/TCGdxService.js` - `SERIES_TO_BLOCK_MAPPING` et `getBlockFromSeries()`
-   - **Prochaine étape** : Ajouter logs console dans `organizeCardsBySet()` pour tracer pourquoi les cartes me2 ne sont pas groupées dans le bloc "Mega Evolution"
-
-2. **Admin Database Editor - Cartes non affichées** (Critique - 17/01/2025)
+1. **Admin Database Editor - Cartes non affichées** (Critique - 17/01/2025)
    - **Problème** : Les cartes ne s'affichent PAS dans l'onglet Admin → Édition Base de Données
    - **Symptômes** :
      - Les blocs s'affichent correctement
@@ -549,4 +524,4 @@ await SealedProductPriceRefreshService.autoRefreshIfNeeded()
 
 ---
 
-**Dernière mise à jour** : 2025-01-16 (v2.0.0)
+**Dernière mise à jour** : 2025-11-19 (v2.0.0)

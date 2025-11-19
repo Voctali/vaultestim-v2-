@@ -270,20 +270,6 @@ export class SupabaseService {
 
       console.log(`📦 ${allCards.length} cartes brutes chargées depuis Supabase`)
 
-      // DEBUG: Chercher les cartes me2 dans les données brutes
-      const me2CardsRaw = allCards.filter(c => c.id?.startsWith('me2-') || c.set_id === 'me2')
-      console.log(`🔍 DEBUG loadDiscoveredCards: ${me2CardsRaw.length} cartes me2 trouvées dans les données brutes`)
-      if (me2CardsRaw.length > 0) {
-        console.log(`   Première carte me2:`, JSON.stringify(me2CardsRaw[0], null, 2))
-      } else {
-        // Chercher si me2 apparaît quelque part
-        const anyMe2 = allCards.filter(c => JSON.stringify(c).includes('me2'))
-        console.log(`   Aucune carte me2 trouvée. Recherche "me2" dans JSON: ${anyMe2.length} résultats`)
-        if (anyMe2.length > 0) {
-          console.log(`   Exemple:`, JSON.stringify(anyMe2[0], null, 2))
-        }
-      }
-
       // DÉDUPLICATION : Ne garder qu'une seule version de chaque carte (par id)
       // Privilégier les cartes les plus récentes (_saved_at) ou les plus complètes
       const uniqueCardsMap = new Map()
@@ -310,10 +296,6 @@ export class SupabaseService {
 
       console.log(`✨ ${uniqueCards.length} cartes UNIQUES après déduplication`)
       console.log(`   (${allCards.length - uniqueCards.length} doublons supprimés)`)
-
-      // DEBUG: Vérifier les cartes me2 après déduplication
-      const me2CardsUnique = uniqueCards.filter(c => c.id?.startsWith('me2-') || c.set_id === 'me2')
-      console.log(`🔍 DEBUG après déduplication: ${me2CardsUnique.length} cartes me2 uniques`)
 
       return uniqueCards
     } catch (error) {
