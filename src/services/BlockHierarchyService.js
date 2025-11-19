@@ -210,6 +210,27 @@ export function buildBlocksHierarchy(discoveredCards = [], seriesDatabase = [], 
     }
   })
 
+  // DEBUG: Vérifier spécifiquement le bloc Mega Evolution
+  const megaEvolutionBlock = finalBlocks.find(b => b.name === 'Mega Evolution')
+  if (megaEvolutionBlock) {
+    console.log(`✅ DEBUG BlockHierarchy: Bloc "Mega Evolution" trouvé avec ${megaEvolutionBlock.totalExtensions} extensions et ${megaEvolutionBlock.totalCards} cartes`)
+    megaEvolutionBlock.extensions.forEach(ext => {
+      console.log(`   Extension: ${ext.id} - ${ext.name} (${ext.cardsCount} cartes)`)
+    })
+  } else {
+    console.log(`❌ DEBUG BlockHierarchy: Bloc "Mega Evolution" NON TROUVÉ!`)
+    console.log(`   Blocs disponibles: ${finalBlocks.map(b => b.name).join(', ')}`)
+  }
+
+  // DEBUG: Chercher l'extension me2 dans seriesDatabase
+  const me2Extension = seriesDatabase.find(ext => ext.id === 'me2')
+  if (me2Extension) {
+    console.log(`✅ DEBUG BlockHierarchy: Extension me2 trouvée dans seriesDatabase`)
+    console.log(`   name: ${me2Extension.name}, series: ${me2Extension.series}`)
+  } else {
+    console.log(`❌ DEBUG BlockHierarchy: Extension me2 NON TROUVÉE dans seriesDatabase!`)
+  }
+
   return finalBlocks
 }
 
