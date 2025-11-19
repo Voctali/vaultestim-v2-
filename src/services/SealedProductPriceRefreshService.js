@@ -117,13 +117,48 @@ export class SealedProductPriceRefreshService {
    * @param {Function} onProgress - Callback de progression (current, total, updated, errors)
    * @returns {Promise<{updated: number, errors: number, total: number}>}
    */
-  static async refreshBatch(onProgress = null) {
+  static async refreshBatch(onProgress = null, userId = null) {
     console.log('🔄 Actualisation des prix des produits scellés...')
 
     try {
-      // 1. Récupérer tous les produits du catalogue CardMarket (pas la collection utilisateur)
-      const allProducts = await CardMarketSupabaseService.getAllCatalogProducts()
-      console.log(`📦 ${allProducts.length} produits catalogue trouvés`)
+      // 1. Récupérer les produits à actualiser avec priorité :
+      //    - D'abord : produits de la collection personnelle de l'utilisateur
+      //    - Ensuite : produits du catalogue visible (catégories non masquées)
+
+      let allProducts = []
+      let userProductIds = new Set()
+
+      // 1a. Produits de la collection personnelle (prioritaires)
+      if (userId) {
+        const userProducts = await CardMarketSupabaseService.getAllSealedProducts(userId)
+        console.log(`👤 ${userProducts.length} produits dans la collection personnelle`)
+
+        // Extraire les id_product uniques de la collection utilisateur
+        for (const product of userProducts) {
+          if (product.id_product && !userProductIds.has(product.id_product)) {
+            userProductIds.add(product.id_product)
+            allProducts.push({
+              id_product: product.id_product,
+              name: product.name || `Produit ${product.id_product}`,
+              isUserProduct: true
+            })
+          }
+        }
+        console.log(`⭐ ${userProductIds.size} produits uniques de la collection à actualiser en priorité`)
+      }
+
+      // 1b. Produits du catalogue visible (sans doublons avec la collection)
+      const catalogProducts = await CardMarketSupabaseService.getAllCatalogProducts()
+      console.log(`📦 ${catalogProducts.length} produits catalogue visibles`)
+
+      for (const product of catalogProducts) {
+        // Ne pas ajouter si déjà dans la collection utilisateur
+        if (!userProductIds.has(product.id_product)) {
+          allProducts.push(product)
+        }
+      }
+
+      console.log(`📊 Total: ${allProducts.length} produits à actualiser (${userProductIds.size} prioritaires + ${allProducts.length - userProductIds.size} catalogue)`)
 
       if (allProducts.length === 0) {
         console.log('ℹ️ Aucun produit scellé à actualiser')
@@ -264,8 +299,9 @@ export class SealedProductPriceRefreshService {
   /**
    * Actualiser automatiquement si nécessaire (appelé au démarrage)
    * @param {Function} onProgress - Callback optionnel pour suivre la progression
+   * @param {string} userId - ID de l'utilisateur pour prioriser sa collection
    */
-  static async autoRefreshIfNeeded(onProgress = null) {
+  static async autoRefreshIfNeeded(onProgress = null, userId = null) {
     // Vérifier si l'actualisation automatique est activée
     if (!this.isEnabled()) {
       console.log('ℹ️ Actualisation automatique des prix produits scellés DÉSACTIVÉE par l\'utilisateur')
@@ -282,7 +318,7 @@ export class SealedProductPriceRefreshService {
     console.log('🚀 Lancement de l\'actualisation automatique des prix produits scellés...')
 
     try {
-      await this.refreshBatch(onProgress)
+      await this.refreshBatch(onProgress, userId)
       return true
     } catch (error) {
       console.error('❌ Erreur actualisation automatique:', error)

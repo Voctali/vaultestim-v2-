@@ -493,9 +493,13 @@ export function CardDatabaseProvider({ children }) {
             console.log('💰 Vérification actualisation automatique des prix produits catalogue...')
             const { SealedProductPriceRefreshService } = await import('@/services/SealedProductPriceRefreshService')
 
+            // Récupérer l'utilisateur courant pour prioriser sa collection
+            const { data: { user } } = await supabase.auth.getUser()
+            const userId = user?.id || null
+
             await SealedProductPriceRefreshService.autoRefreshIfNeeded((progress) => {
               console.log(`💰 Actualisation prix catalogue produits: ${progress.current}/${progress.total} (${Math.round((progress.current / progress.total) * 100)}%)`)
-            })
+            }, userId)
 
           } catch (refreshError) {
             console.warn('⚠️ Erreur actualisation prix:', refreshError)
