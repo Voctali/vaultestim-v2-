@@ -18,12 +18,23 @@ export class RapidAPIService {
   static API_HOST = 'cardmarket-api-tcg.p.rapidapi.com'
   static DAILY_QUOTA = parseInt(import.meta.env.VITE_RAPIDAPI_DAILY_QUOTA || '100')
   static ENABLED = import.meta.env.VITE_USE_RAPIDAPI === 'true'
+  static STORAGE_KEY = 'vaultestim_price_api_source'
 
   /**
    * Vérifier si le service est configuré et activé
+   * Prend en compte la préférence localStorage de l'utilisateur
    */
   static isAvailable() {
-    if (!this.ENABLED) {
+    // Vérifier d'abord la préférence utilisateur dans localStorage
+    const userPreference = localStorage.getItem(this.STORAGE_KEY)
+    if (userPreference === 'pokemontcg') {
+      console.log('⏭️ RapidAPI désactivé (préférence utilisateur: Pokemon TCG API)')
+      return false
+    }
+
+    // Si l'utilisateur a choisi RapidAPI ou pas de préférence, vérifier la config
+    const isEnabled = userPreference === 'rapidapi' || this.ENABLED
+    if (!isEnabled) {
       console.log('⏭️ RapidAPI désactivé (VITE_USE_RAPIDAPI=false)')
       return false
     }

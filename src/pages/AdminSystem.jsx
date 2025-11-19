@@ -4,6 +4,7 @@ import { DataMigration } from '@/components/features/settings/DataMigration'
 import { QuotaAlert } from '@/components/ui/QuotaAlert'
 import { PriceRefreshToggle } from '@/components/features/admin/PriceRefreshToggle'
 import { SealedPriceRefreshToggle } from '@/components/features/admin/SealedPriceRefreshToggle'
+import { PriceAPISelector } from '@/components/features/admin/PriceAPISelector'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export function AdminSystem() {
@@ -20,6 +21,9 @@ export function AdminSystem() {
           </p>
         </div>
       </div>
+
+      {/* Source des prix API */}
+      <PriceAPISelector />
 
       {/* Quota RapidAPI */}
       <Card>
