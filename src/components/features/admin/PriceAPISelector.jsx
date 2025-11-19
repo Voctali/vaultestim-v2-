@@ -11,20 +11,18 @@ const STORAGE_KEY = 'vaultestim_price_api_source'
  * - RapidAPI (CardMarket API TCG) - abonnement requis, 100 req/jour gratuit
  * - Pokemon TCG API - gratuit, illimité
  */
-export function PriceAPISelector() {
-  const [apiSource, setApiSource] = useState('rapidapi')
+// Déterminer la valeur initiale basée sur localStorage ou .env
+function getInitialApiSource() {
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (saved) {
+    return saved
+  }
+  // Par défaut, utiliser la valeur de .env
+  return import.meta.env.VITE_USE_RAPIDAPI === 'true' ? 'rapidapi' : 'pokemontcg'
+}
 
-  // Charger l'état au montage
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      setApiSource(saved)
-    } else {
-      // Par défaut, utiliser la valeur de .env
-      const envValue = import.meta.env.VITE_USE_RAPIDAPI
-      setApiSource(envValue === 'true' ? 'rapidapi' : 'pokemontcg')
-    }
-  }, [])
+export function PriceAPISelector() {
+  const [apiSource, setApiSource] = useState(getInitialApiSource)
 
   const handleChange = (value) => {
     setApiSource(value)
