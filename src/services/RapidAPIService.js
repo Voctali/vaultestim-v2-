@@ -275,34 +275,53 @@ export class RapidAPIService {
    * @param {Function} onProgress - Callback de progression (count, total)
    * @returns {Promise<Array>} Toutes les cartes de l'extension au format app
    */
-  static async importAllCardsByExpansion(expansionSlug, onProgress = null) {
+  static async importAllCardsByExpansion(expansionInput, onProgress = null) {
     if (!this.isAvailable()) {
       throw new Error('RapidAPI non disponible')
     }
 
     try {
-      console.log(`📦 RapidAPI: Import complet de l'extension "${expansionSlug}"...`)
+      // Accepter soit un string (slug), soit un objet { slug, episodeId, name }
+      let expansionSlug, episodeId, extensionName
 
-      // Étape 1: Trouver l'ID de l'extension via la recherche
-      // Convertir le slug en terme de recherche (phantasmal-flames -> phantasmal flames)
-      const searchTerm = expansionSlug.replace(/-/g, ' ')
-      console.log(`🔍 Recherche de l'extension "${searchTerm}"...`)
-      const searchResult = await this.searchExpansions(searchTerm, { limit: 10 })
-
-      if (!searchResult.data || searchResult.data.length === 0) {
-        throw new Error(`Extension "${expansionSlug}" non trouvée sur RapidAPI`)
+      if (typeof expansionInput === 'string') {
+        // Ancien comportement: string = slug uniquement
+        expansionSlug = expansionInput
+        episodeId = null
+        extensionName = null
+      } else {
+        // Nouveau comportement: objet avec données complètes
+        expansionSlug = expansionInput.slug
+        episodeId = expansionInput.episodeId || null
+        extensionName = expansionInput.name || null
       }
 
-      // Trouver l'extension qui correspond au slug
-      const extension = searchResult.data.find(ext =>
-        ext.slug === expansionSlug ||
-        ext.slug === expansionSlug.toLowerCase() ||
-        ext.name.toLowerCase().includes(searchTerm.toLowerCase())
-      ) || searchResult.data[0]
+      console.log(`📦 RapidAPI: Import complet de l'extension "${expansionSlug}" (episodeId: ${episodeId})...`)
 
-      const episodeId = extension.id
-      const extensionName = extension.name
-      console.log(`✅ Extension trouvée: "${extensionName}" (ID: ${episodeId})`)
+      // Étape 1: Trouver l'ID de l'extension via la recherche (seulement si episodeId non fourni)
+      if (!episodeId) {
+        // Convertir le slug en terme de recherche (phantasmal-flames -> phantasmal flames)
+        const searchTerm = expansionSlug.replace(/-/g, ' ')
+        console.log(`🔍 Recherche de l'extension "${searchTerm}"...`)
+        const searchResult = await this.searchExpansions(searchTerm, { limit: 10 })
+
+        if (!searchResult.data || searchResult.data.length === 0) {
+          throw new Error(`Extension "${expansionSlug}" non trouvée sur RapidAPI`)
+        }
+
+        // Trouver l'extension qui correspond au slug
+        const extension = searchResult.data.find(ext =>
+          ext.slug === expansionSlug ||
+          ext.slug === expansionSlug.toLowerCase() ||
+          ext.name.toLowerCase().includes(searchTerm.toLowerCase())
+        ) || searchResult.data[0]
+
+        episodeId = extension.id
+        extensionName = extension.name
+        console.log(`✅ Extension trouvée: "${extensionName}" (ID: ${episodeId})`)
+      } else {
+        console.log(`✅ Utilisation episodeId direct: ${episodeId} (skip recherche)`)
+      }
 
       // Étape 2: Récupérer toutes les cartes avec episode_id
       const allCards = []

@@ -148,7 +148,8 @@ class NewExtensionDiscoveryService {
 
             return {
               id: tcgApiId,
-              slug: exp.slug || cardmarketCode.toLowerCase(), // AJOUT: garder le slug pour l'import
+              episodeId: exp.id, // ID RapidAPI pour import direct (évite recherche par slug)
+              slug: exp.slug || cardmarketCode.toLowerCase(),
               cardmarketCode: cardmarketCode, // Garder le code original pour référence
               name: exp.name,
               series: exp.series || 'Unknown',
@@ -252,9 +253,10 @@ class NewExtensionDiscoveryService {
     const setId = extension.id || extension
     const setName = extension.name || setId
     const slug = extension.slug || setId.toLowerCase()
+    const episodeId = extension.episodeId || null // ID RapidAPI si disponible
     const total = extension.total || 0
 
-    console.log(`📦 Import de l'extension ${setName} (slug: ${slug})...`)
+    console.log(`📦 Import de l'extension ${setName} (slug: ${slug}, episodeId: ${episodeId})...`)
 
     try {
       let cards = []
@@ -265,7 +267,8 @@ class NewExtensionDiscoveryService {
 
         try {
           // Utiliser la méthode dédiée qui gère correctement la pagination avec episode_id
-          cards = await RapidAPIService.importAllCardsByExpansion(slug, (progressData) => {
+          // Passer episodeId si disponible (évite recherche par slug)
+          cards = await RapidAPIService.importAllCardsByExpansion({ slug, episodeId, name: setName }, (progressData) => {
             if (onProgress) {
               onProgress({
                 status: 'importing',
