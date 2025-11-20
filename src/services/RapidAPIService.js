@@ -451,6 +451,7 @@ export class RapidAPIService {
       'sv7': 'Scarlet & Violet',
       'sv8': 'Scarlet & Violet',
       'sv9': 'Scarlet & Violet',
+      'sve': 'Scarlet & Violet',  // Énergies
       'swsh1': 'Sword & Shield',
       'swsh2': 'Sword & Shield',
       'swsh3': 'Sword & Shield',

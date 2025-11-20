@@ -35,6 +35,8 @@ export const CARDMARKET_TO_TCGAPI = {
   'SV2': 'sv2',
   'SV2a': 'sv2pt5',
   'SV1': 'sv1',
+  'SVI': 'sv1',  // Alias pour Scarlet & Violet base
+  'SVE': 'sve',  // Scarlet & Violet Energies
   'MEW': 'sv3pt5',
   'PAL': 'sv2',
   'OBF': 'sv3',

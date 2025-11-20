@@ -166,10 +166,12 @@ export class SupabaseService {
     try {
       console.log(`🔍 Vérification des cartes existantes pour l'extension ${setId}...`)
 
+      // IMPORTANT: Chercher par pattern d'ID au lieu de set_id
+      // Car les anciennes cartes peuvent avoir set_id = NULL mais ID correct
       const { data, error } = await supabase
         .from('discovered_cards')
         .select('id')
-        .eq('set_id', setId)
+        .like('id', `${setId}-%`)
 
       if (error) {
         console.error(`❌ Erreur lors de la récupération des IDs existants:`, error)
@@ -177,7 +179,7 @@ export class SupabaseService {
       }
 
       const existingIds = new Set(data.map(card => card.id))
-      console.log(`✅ ${existingIds.size} cartes déjà présentes pour l'extension ${setId}`)
+      console.log(`✅ ${existingIds.size} cartes déjà présentes pour l'extension ${setId} (filtre par ID pattern)`)
 
       return existingIds
     } catch (error) {
