@@ -40,6 +40,7 @@ export class QuotaTracker {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY)
       if (!stored) {
+        console.log('📊 QuotaTracker: Aucune donnée en localStorage, initialisation...')
         return this.initQuotaData()
       }
 
@@ -51,6 +52,7 @@ export class QuotaTracker {
         return this.initQuotaData()
       }
 
+      console.log(`📊 QuotaTracker: Données chargées - ${data.used}/${data.limit} utilisées`)
       return data
     } catch (error) {
       console.error('❌ QuotaTracker: Erreur lecture quota:', error)
