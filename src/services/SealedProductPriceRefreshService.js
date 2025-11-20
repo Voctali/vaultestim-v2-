@@ -133,13 +133,15 @@ export class SealedProductPriceRefreshService {
         const userProducts = await CardMarketSupabaseService.getAllSealedProducts(userId)
         console.log(`👤 ${userProducts.length} produits dans la collection personnelle`)
 
-        // Extraire les id_product uniques de la collection utilisateur
+        // Extraire les cardmarket_id_product uniques de la collection utilisateur
         for (const product of userProducts) {
-          if (product.id_product && !userProductIds.has(product.id_product)) {
-            userProductIds.add(product.id_product)
+          // user_sealed_products utilise cardmarket_id_product (pas id_product)
+          const productId = product.cardmarket_id_product
+          if (productId && !userProductIds.has(productId)) {
+            userProductIds.add(productId)
             allProducts.push({
-              id_product: product.id_product,
-              name: product.name || `Produit ${product.id_product}`,
+              id_product: productId,
+              name: product.name || `Produit ${productId}`,
               isUserProduct: true
             })
           }

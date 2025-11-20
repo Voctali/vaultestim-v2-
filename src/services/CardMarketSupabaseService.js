@@ -792,14 +792,21 @@ export class CardMarketSupabaseService {
    */
   static async getAllCatalogProducts() {
     try {
-      // 1. Récupérer les catégories masquées depuis localStorage
+      // 1. Récupérer les catégories masquées depuis Supabase (source de vérité)
       let hiddenCategories = []
       try {
-        const stored = localStorage.getItem('vaultestim_hidden_sealed_categories')
-        hiddenCategories = stored ? JSON.parse(stored) : []
-        console.log(`🙈 ${hiddenCategories.length} catégories masquées:`, hiddenCategories)
+        const { AdminPreferencesService } = await import('./AdminPreferencesService.js')
+        hiddenCategories = await AdminPreferencesService.getHiddenSealedCategories()
+        console.log(`🙈 ${hiddenCategories.length} catégories masquées (depuis Supabase):`, hiddenCategories)
       } catch (error) {
-        console.warn('⚠️ Erreur lecture catégories masquées:', error)
+        console.warn('⚠️ Erreur lecture catégories masquées depuis Supabase, fallback localStorage:', error)
+        // Fallback sur localStorage si Supabase échoue
+        try {
+          const stored = localStorage.getItem('vaultestim_hidden_sealed_categories')
+          hiddenCategories = stored ? JSON.parse(stored) : []
+        } catch (e) {
+          console.warn('⚠️ Erreur lecture localStorage:', e)
+        }
       }
 
       // 2. Charger TOUS les produits
