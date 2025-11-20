@@ -280,21 +280,27 @@ export class RapidAPIService {
       throw new Error('RapidAPI non disponible')
     }
 
-    try {
-      // Accepter soit un string (slug), soit un objet { slug, episodeId, name }
-      let expansionSlug, episodeId, extensionName, extension = null
+    // Accepter soit un string (slug), soit un objet { slug, episodeId, name }
+    let expansionSlug, episodeId, extensionName, extension = null
 
-      if (typeof expansionInput === 'string') {
-        // Ancien comportement: string = slug uniquement
-        expansionSlug = expansionInput
-        episodeId = null
-        extensionName = null
-      } else {
-        // Nouveau comportement: objet avec données complètes
-        expansionSlug = expansionInput.slug
-        episodeId = expansionInput.episodeId || null
-        extensionName = expansionInput.name || null
-      }
+    if (typeof expansionInput === 'string') {
+      // Ancien comportement: string = slug uniquement
+      expansionSlug = expansionInput
+      episodeId = null
+      extensionName = null
+    } else {
+      // Nouveau comportement: objet avec données complètes
+      expansionSlug = expansionInput.slug
+      episodeId = expansionInput.episodeId || null
+      extensionName = expansionInput.name || null
+    }
+
+    // Validation
+    if (!expansionSlug) {
+      throw new Error('Le slug de l\'extension est requis')
+    }
+
+    try {
 
       console.log(`📦 RapidAPI: Import complet de l'extension "${expansionSlug}" (episodeId: ${episodeId})...`)
 

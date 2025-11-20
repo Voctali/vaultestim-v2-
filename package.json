@@ -1,7 +1,7 @@
 {
   "name": "vaultestim-v2",
   "private": true,
-  "version": "1.8.2",
+  "version": "1.8.3",
   "type": "module",
   "description": "VaultEstim v2 - Application de gestion de collections de cartes Pokémon",
   "scripts": {
