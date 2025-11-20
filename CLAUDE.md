@@ -57,7 +57,7 @@ src/
 - **SealedProductPriceRefreshService** : Actualisation automatique des prix produits scellés (500 produits/jour)
 - **HybridPriceService** : Système hybride intelligent RapidAPI + Pokemon TCG (100 req/jour → fallback automatique)
 - **RapidAPIService** : Connexion CardMarket API TCG via RapidAPI (prix EUR précis, cartes gradées, produits scellés)
-- **QuotaTracker** : Gestion quota quotidien avec localStorage et reset automatique
+- **QuotaTracker** : Gestion quota quotidien avec persistance Supabase + localStorage et reset automatique
 - **CardMarketUrlFixService** : Correction automatique des liens CardMarket via RapidAPI
 - **CardMarketDynamicLinkService** : Récupération dynamique des liens CardMarket au clic (cache → RapidAPI → sauvegarde Supabase)
 
@@ -90,7 +90,7 @@ src/
   - 100 requêtes gratuites par jour
   - Host : `cardmarket-api-tcg.p.rapidapi.com`
 - **Fallback automatique** : Pokemon TCG API si quota épuisé ou erreur
-- **Gestion quota** : QuotaTracker avec localStorage, reset quotidien à minuit
+- **Gestion quota** : QuotaTracker avec persistance Supabase + localStorage, reset quotidien à minuit
 - **Activation** : Variable `.env` `VITE_USE_RAPIDAPI=true`
 - **Test** : Page `/test-hybrid-system.html` pour validation complète
 - **Formats** : CardMarket (EUR) + TCGPlayer (USD)
@@ -298,6 +298,37 @@ Système intelligent de récupération des liens CardMarket au clic utilisateur.
 - ✅ Fallback intelligent si erreur
 - ✅ Aucun délai ressenti par l'utilisateur
 
+### 📊 Persistance Quota RapidAPI dans Supabase (20/11/2025)
+Le compteur de quota RapidAPI persiste maintenant dans Supabase pour éviter la perte au rafraîchissement.
+
+**Fonctionnement** :
+- Sauvegarde dans localStorage (cache local) + Supabase (persistance)
+- Restauration automatique depuis Supabase si localStorage est vide
+- Synchronisation à chaque modification du compteur
+- Reset quotidien à minuit synchronisé
+
+**Clé Supabase** : `rapidapi_quota_tracker` dans table `admin_preferences`
+
+### ⚙️ Sélecteur Source des Prix (20/11/2025)
+Interface admin pour choisir manuellement entre RapidAPI et Pokemon TCG API.
+
+**Composant** : `PriceAPISelector.jsx` dans Admin → Système
+
+**Options** :
+- **RapidAPI (CardMarket)** : Prix EUR précis, cartes gradées, 100 req/jour (plan gratuit)
+- **Pokemon TCG API** : Gratuit illimité, prix TCGPlayer USD
+
+**Stockage** : `vaultestim_price_api_source` dans localStorage
+
+### 🔄 Actualisation Produits Scellés Optimisée (20/11/2025)
+L'actualisation des prix produits scellés respecte maintenant les catégories masquées.
+
+**Améliorations** :
+- Charge les catégories masquées depuis Supabase (plus fiable que localStorage)
+- Priorise les produits de la collection personnelle de l'utilisateur
+- Réduit de 6000+ produits à ~1500 produits visibles
+- Utilise `cardmarket_id_product` pour les produits utilisateur
+
 ### 🚀 Système Hybride de Prix RapidAPI (13/11/2025)
 - **Implémentation complète** (v2.0.0) : Système intelligent de récupération des prix
   - **HybridPriceService** : Orchestrateur avec tentative RapidAPI → fallback Pokemon TCG API
@@ -504,4 +535,4 @@ await SealedProductPriceRefreshService.autoRefreshIfNeeded()
 
 ---
 
-**Dernière mise à jour** : 2025-11-19 (v2.0.0)
+**Dernière mise à jour** : 2025-11-20 (v1.6.2)
