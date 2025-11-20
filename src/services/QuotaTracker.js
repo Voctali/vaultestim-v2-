@@ -345,4 +345,118 @@ export class QuotaTracker {
     }
     console.log('================================\n')
   }
+
+  /**
+   * Synchroniser le compteur local avec le quota réel de RapidAPI
+   * Lit les headers HTTP de la dernière réponse RapidAPI
+   *
+   * @param {Headers} responseHeaders - Headers de la réponse fetch()
+   * @returns {Object} Données de quota synchronisées
+   */
+  static syncFromRapidAPIHeaders(responseHeaders) {
+    try {
+      // Lire les headers RapidAPI
+      const limit = responseHeaders.get('x-ratelimit-requests-limit')
+      const remaining = responseHeaders.get('x-ratelimit-requests-remaining')
+      const resetSeconds = responseHeaders.get('x-ratelimit-requests-reset')
+
+      if (!limit || !remaining) {
+        console.warn('⚠️ QuotaTracker: Headers RapidAPI non trouvés dans la réponse')
+        return null
+      }
+
+      const limitNum = parseInt(limit)
+      const remainingNum = parseInt(remaining)
+      const usedNum = limitNum - remainingNum
+
+      // Calculer le timestamp de reset (secondes → millisecondes)
+      const resetAt = resetSeconds ? Date.now() + (parseInt(resetSeconds) * 1000) : null
+
+      console.log(`🔄 QuotaTracker: Synchronisation avec RapidAPI`)
+      console.log(`   Quota réel: ${usedNum}/${limitNum} (${remainingNum} restantes)`)
+
+      // Mettre à jour les données locales
+      const data = this.getQuotaData()
+      const oldUsed = data.used
+
+      data.used = usedNum
+      data.limit = limitNum
+      if (resetAt) {
+        data.resetAt = resetAt
+      }
+      data.lastUpdated = Date.now()
+      data.pendingRequests = 0 // Reset les pending car on a le vrai compteur
+
+      this.saveQuotaData(data)
+
+      const drift = usedNum - oldUsed
+      if (drift !== 0) {
+        console.log(`📊 QuotaTracker: Dérive corrigée: ${drift > 0 ? '+' : ''}${drift}`)
+      }
+
+      return {
+        used: usedNum,
+        limit: limitNum,
+        remaining: remainingNum,
+        drift,
+        synced: true
+      }
+    } catch (error) {
+      console.error('❌ QuotaTracker: Erreur synchronisation headers:', error)
+      return null
+    }
+  }
+
+  /**
+   * Synchroniser avec RapidAPI en faisant un appel test léger
+   * Utilise l'endpoint /pokemon/expansions (rapide et peu coûteux)
+   *
+   * @returns {Promise<Object>} Résultat de la synchronisation
+   */
+  static async syncWithRapidAPI() {
+    try {
+      console.log('🔄 QuotaTracker: Synchronisation avec RapidAPI...')
+
+      const API_KEY = import.meta.env.VITE_RAPIDAPI_KEY
+      const API_HOST = 'cardmarket-api-tcg.p.rapidapi.com'
+
+      if (!API_KEY) {
+        throw new Error('Clé API RapidAPI manquante')
+      }
+
+      // Faire un appel test léger (liste des extensions, limit=1)
+      const response = await fetch(
+        `https://${API_HOST}/pokemon/expansions?limit=1`,
+        {
+          headers: {
+            'X-RapidAPI-Key': API_KEY,
+            'X-RapidAPI-Host': API_HOST
+          }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      // Synchroniser depuis les headers
+      const syncResult = this.syncFromRapidAPIHeaders(response.headers)
+
+      if (syncResult && syncResult.synced) {
+        console.log(`✅ QuotaTracker: Synchronisé - ${syncResult.used}/${syncResult.limit} (${syncResult.remaining} restantes)`)
+        return {
+          success: true,
+          ...syncResult
+        }
+      } else {
+        throw new Error('Headers RapidAPI introuvables')
+      }
+    } catch (error) {
+      console.error('❌ QuotaTracker: Erreur synchronisation:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
 }

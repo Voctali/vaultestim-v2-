@@ -1,4 +1,5 @@
 import { CARDMARKET_TO_TCGAPI } from './NewExtensionDiscoveryService'
+import { QuotaTracker } from './QuotaTracker'
 
 /**
  * RapidAPIService - Service pour l'API CardMarket API TCG via RapidAPI
@@ -9,7 +10,7 @@ import { CARDMARKET_TO_TCGAPI } from './NewExtensionDiscoveryService'
  * - Support des prix CardMarket (EUR) avec localisation (DE, FR)
  * - Prix des cartes gradées (PSA, CGC)
  * - Moyennes 7j et 30j
- * - Gestion automatique du quota quotidien (100 requêtes/jour sur plan Basic)
+ * - Gestion automatique du quota quotidien avec synchronisation headers RapidAPI
  *
  * @see https://rapidapi.com/tcggopro/api/cardmarket-api-tcg
  */
@@ -58,6 +59,21 @@ export class RapidAPIService {
       'X-RapidAPI-Host': this.API_HOST,
       'Content-Type': 'application/json'
     }
+  }
+
+  /**
+   * Wrapper fetch qui synchronise automatiquement le quota depuis les headers
+   * @param {string} url - URL complète de la requête
+   * @param {Object} options - Options fetch (method, headers, body, etc.)
+   * @returns {Promise<Response>} - Réponse fetch avec quota synchronisé
+   */
+  static async fetchWithQuotaSync(url, options = {}) {
+    const response = await fetch(url, options)
+
+    // Synchroniser le quota depuis les headers de réponse RapidAPI
+    QuotaTracker.syncFromRapidAPIHeaders(response.headers)
+
+    return response
   }
 
   /**
@@ -138,7 +154,7 @@ export class RapidAPIService {
           await new Promise(resolve => setTimeout(resolve, delay))
         }
 
-        const response = await fetch(`${this.BASE_URL}/pokemon/cards/search?${params}`, {
+        const response = await this.fetchWithQuotaSync(`${this.BASE_URL}/pokemon/cards/search?${params}`, {
           method: 'GET',
           headers: this.getHeaders()
         })
@@ -205,7 +221,7 @@ export class RapidAPIService {
     try {
       console.log(`🔍 RapidAPI: Récupération carte ID ${cardId}...`)
 
-      const response = await fetch(`${this.BASE_URL}/pokemon/cards/${cardId}`, {
+      const response = await this.fetchWithQuotaSync(`${this.BASE_URL}/pokemon/cards/${cardId}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
@@ -248,7 +264,7 @@ export class RapidAPIService {
         limit: limit.toString()
       })
 
-      const response = await fetch(`${this.BASE_URL}/pokemon/cards/expansion/${expansionSlug}?${params}`, {
+      const response = await this.fetchWithQuotaSync(`${this.BASE_URL}/pokemon/cards/expansion/${expansionSlug}?${params}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
@@ -345,7 +361,7 @@ export class RapidAPIService {
 
         console.log(`📄 Page ${currentPage}: Récupération...`)
 
-        const response = await fetch(`${this.BASE_URL}/pokemon/cards/search?${params}`, {
+        const response = await this.fetchWithQuotaSync(`${this.BASE_URL}/pokemon/cards/search?${params}`, {
           method: 'GET',
           headers: this.getHeaders()
         })
@@ -626,7 +642,7 @@ export class RapidAPIService {
           sort
         })
 
-        const response = await fetch(`${this.BASE_URL}/pokemon/products/search?${params}`, {
+        const response = await this.fetchWithQuotaSync(`${this.BASE_URL}/pokemon/products/search?${params}`, {
           method: 'GET',
           headers: this.getHeaders()
         })
@@ -659,7 +675,7 @@ export class RapidAPIService {
 
         console.log(`  📄 Page ${currentPage}...`)
 
-        const response = await fetch(`${this.BASE_URL}/pokemon/products/search?${params}`, {
+        const response = await this.fetchWithQuotaSync(`${this.BASE_URL}/pokemon/products/search?${params}`, {
           method: 'GET',
           headers: this.getHeaders()
         })
@@ -720,7 +736,7 @@ export class RapidAPIService {
     try {
       console.log(`📦 RapidAPI: Récupération produit ID ${productId}...`)
 
-      const response = await fetch(`${this.BASE_URL}/pokemon/products/${productId}`, {
+      const response = await this.fetchWithQuotaSync(`${this.BASE_URL}/pokemon/products/${productId}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
@@ -778,7 +794,7 @@ export class RapidAPIService {
         limit: limit.toString()
       })
 
-      const response = await fetch(`${this.BASE_URL}/pokemon/products/expansion/${expansionSlug}?${params}`, {
+      const response = await this.fetchWithQuotaSync(`${this.BASE_URL}/pokemon/products/expansion/${expansionSlug}?${params}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
@@ -820,7 +836,7 @@ export class RapidAPIService {
         limit: limit.toString()
       })
 
-      const response = await fetch(`${this.BASE_URL}/pokemon/episodes?${params}`, {
+      const response = await this.fetchWithQuotaSync(`${this.BASE_URL}/pokemon/episodes?${params}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
@@ -862,7 +878,7 @@ export class RapidAPIService {
         limit: limit.toString()
       })
 
-      const response = await fetch(`${this.BASE_URL}/pokemon/episodes/search?${params}`, {
+      const response = await this.fetchWithQuotaSync(`${this.BASE_URL}/pokemon/episodes/search?${params}`, {
         method: 'GET',
         headers: this.getHeaders()
       })
