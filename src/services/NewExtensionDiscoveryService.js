@@ -349,30 +349,20 @@ class NewExtensionDiscoveryService {
       // 🎯 OPTIMISATION: Vérifier quelles cartes existent déjà en base
       console.log(`🔍 Vérification des cartes déjà présentes dans la base...`)
       const existingIds = await SupabaseService.getExistingCardIdsBySet(setId)
-
-      // Filtrer pour ne garder que les nouvelles cartes
-      const newCards = uniqueCards.filter(card => !existingIds.has(card.id))
-      const existingCount = uniqueCards.length - newCards.length
+      const existingCount = uniqueCards.filter(card => existingIds.has(card.id)).length
 
       if (existingCount > 0) {
-        console.log(`✅ ${existingCount} cartes déjà présentes (ignorées)`)
-        console.log(`➕ ${newCards.length} nouvelles cartes à importer`)
+        console.log(`✅ ${existingCount} cartes déjà présentes (seront mises à jour)`)
+        console.log(`➕ ${uniqueCards.length - existingCount} nouvelles cartes à insérer`)
       } else {
-        console.log(`➕ Toutes les cartes sont nouvelles (${newCards.length} cartes)`)
+        console.log(`➕ Toutes les cartes sont nouvelles (${uniqueCards.length} cartes)`)
       }
 
-      // Si aucune nouvelle carte, ne rien faire
-      if (newCards.length === 0) {
-        console.log(`✅ Aucune nouvelle carte à importer pour ${setName}`)
-        return {
-          success: true,
-          setId,
-          setName,
-          cardsImported: 0,
-          cardsAlreadyExisting: existingCount,
-          message: 'Extension déjà à jour'
-        }
-      }
+      // 🔥 CHANGEMENT: Ne plus filtrer, envoyer TOUTES les cartes à upsert
+      // L'upsert mettra à jour les existantes et insérera les nouvelles
+      const newCards = uniqueCards
+
+      console.log(`📤 Envoi de ${newCards.length} cartes à Supabase (upsert intelligent)`)
 
       // Ajouter les cartes via le context si fourni
       if (addDiscoveredCards) {
