@@ -881,6 +881,7 @@ export function CardDatabaseProvider({ children }) {
         if (!existingCardsMap.has(card.id)) {
           // Carte complètement nouvelle
           uniqueNewCards.push(card)
+          existingCardsMap.set(card.id, card) // 🔥 IMPORTANT: Ajouter à la map pour mise à jour React
         } else {
           // Carte existante : mettre à jour les prix ET les structures complètes
           const existingCard = existingCardsMap.get(card.id)
