@@ -450,12 +450,31 @@ export class RapidAPIService {
       console.log(`📍 Série détectée via mapping: ${setId} -> ${series}`)
     }
 
-    console.log(`🔄 Transform: ${rapidApiCard.name} -> set.id: ${setId} (tcgid: ${rapidApiCard.tcgid})`)
+    // Générer un ID STABLE basé sur setId + numéro de carte
+    // Cela garantit qu'une carte aura toujours le même ID lors des réimports
+    const cardNumber = rapidApiCard.card_number?.toString() || ''
+    let stableId
+
+    if (cardNumber && setId) {
+      // Format: {setId}-{number} (ex: "meg-001", "sv9-145")
+      // Padding du numéro sur 3 chiffres pour uniformité
+      const paddedNumber = cardNumber.padStart(3, '0')
+      stableId = `${setId}-${paddedNumber}`
+    } else if (rapidApiCard.tcgid) {
+      // Fallback sur tcgid si disponible (déjà au bon format)
+      stableId = rapidApiCard.tcgid
+    } else {
+      // Dernier recours : utiliser l'ID RapidAPI (non stable mais mieux que rien)
+      stableId = `rapidapi-${rapidApiCard.id}`
+      console.warn(`⚠️ ID non stable pour ${rapidApiCard.name} - Utilisation de rapidapi-${rapidApiCard.id}`)
+    }
+
+    console.log(`🔄 Transform: ${rapidApiCard.name} -> ID stable: ${stableId} (setId: ${setId}, number: ${cardNumber})`)
 
     return {
-      id: rapidApiCard.tcgid || `rapidapi-${rapidApiCard.id}`,
+      id: stableId,
       name: rapidApiCard.name,
-      number: rapidApiCard.card_number?.toString() || '',
+      number: cardNumber,
       supertype: rapidApiCard.supertype || 'Pokémon',
       subtypes: rapidApiCard.subtypes || [],
       hp: rapidApiCard.hp?.toString() || '',
@@ -499,6 +518,8 @@ export class RapidAPIService {
       } : null,
       // Lien CardMarket direct
       cardmarket_url: rapidApiCard.links?.cardmarket || '',
+      // IMPORTANT: set_id pour groupement par extension (utilisé par Supabase et IndexedDB)
+      set_id: setId,
       // Métadonnées
       _source: 'rapidapi',
       _timestamp: new Date().toISOString()

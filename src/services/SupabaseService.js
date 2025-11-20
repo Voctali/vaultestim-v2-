@@ -27,6 +27,7 @@ export class SupabaseService {
     '_source',
     'cardmarket',  // Structure complète des prix CardMarket (EUR)
     'tcgplayer',   // Structure complète des prix TCGPlayer (USD)
+    'cardmarket_url', // Lien direct vers CardMarket (IMPORTANT: ne pas écraser lors des réimports!)
     'attacks',     // Attaques de la carte (CRITIQUE pour matching CardMarket!)
     'abilities',   // Talents/Capacités
     'weaknesses',  // Faiblesses
