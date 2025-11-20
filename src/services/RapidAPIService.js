@@ -282,7 +282,7 @@ export class RapidAPIService {
 
     try {
       // Accepter soit un string (slug), soit un objet { slug, episodeId, name }
-      let expansionSlug, episodeId, extensionName
+      let expansionSlug, episodeId, extensionName, extension = null
 
       if (typeof expansionInput === 'string') {
         // Ancien comportement: string = slug uniquement
@@ -310,7 +310,7 @@ export class RapidAPIService {
         }
 
         // Trouver l'extension qui correspond au slug
-        const extension = searchResult.data.find(ext =>
+        extension = searchResult.data.find(ext =>
           ext.slug === expansionSlug ||
           ext.slug === expansionSlug.toLowerCase() ||
           ext.name.toLowerCase().includes(searchTerm.toLowerCase())
