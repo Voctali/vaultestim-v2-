@@ -4,16 +4,20 @@
  * Fonctionnalités :
  * - Compteur de requêtes quotidiennes avec reset automatique à minuit
  * - Alertes avant épuisement du quota (à 90%)
- * - Sauvegarde dans localStorage avec timestamp
+ * - Sauvegarde dans Supabase (persistant) + localStorage (cache)
  * - Support multi-plans (Free: 100, Pro: 2500, Ultra: 15000, Mega: 50000)
  */
 
+import { supabase } from '@/lib/supabaseClient'
+
 export class QuotaTracker {
   static STORAGE_KEY = 'rapidapi_quota'
+  static SUPABASE_KEY = 'rapidapi_quota_tracker'
   static DAILY_LIMIT = parseInt(import.meta.env.VITE_RAPIDAPI_DAILY_QUOTA || '100')
   static WARNING_THRESHOLD = 0.9 // Alerte à 90%
   static BLOCK_THRESHOLD = 0.99 // Bloquer à 99%
   static requestLock = false // Verrou pour empêcher requêtes simultanées
+  static supabaseLoaded = false // Flag pour savoir si on a chargé depuis Supabase
 
   /**
    * Obtenir le nombre de requêtes en cours depuis localStorage
@@ -34,13 +38,17 @@ export class QuotaTracker {
   }
 
   /**
-   * Obtenir les données du quota depuis localStorage
+   * Obtenir les données du quota depuis localStorage ou Supabase
    */
   static getQuotaData() {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY)
       if (!stored) {
-        console.log('📊 QuotaTracker: Aucune donnée en localStorage, initialisation...')
+        console.log('📊 QuotaTracker: Aucune donnée en localStorage, chargement depuis Supabase...')
+        // Retourner des données par défaut, le chargement Supabase se fait en async
+        if (!this.supabaseLoaded) {
+          this.loadFromSupabase()
+        }
         return this.initQuotaData()
       }
 
@@ -49,7 +57,9 @@ export class QuotaTracker {
       // Vérifier si on doit reset (nouveau jour)
       if (this.shouldReset(data.resetAt)) {
         console.log('🔄 QuotaTracker: Nouveau jour détecté, reset du compteur')
-        return this.initQuotaData()
+        const newData = this.initQuotaData()
+        this.saveToSupabase(newData) // Sync vers Supabase
+        return newData
       }
 
       console.log(`📊 QuotaTracker: Données chargées - ${data.used}/${data.limit} utilisées`)
@@ -57,6 +67,70 @@ export class QuotaTracker {
     } catch (error) {
       console.error('❌ QuotaTracker: Erreur lecture quota:', error)
       return this.initQuotaData()
+    }
+  }
+
+  /**
+   * Charger les données du quota depuis Supabase
+   */
+  static async loadFromSupabase() {
+    try {
+      const { data, error } = await supabase
+        .from('admin_preferences')
+        .select('preference_value')
+        .eq('preference_key', this.SUPABASE_KEY)
+        .maybeSingle()
+
+      if (error) {
+        console.warn('⚠️ QuotaTracker: Erreur chargement Supabase:', error)
+        return
+      }
+
+      if (data && data.preference_value) {
+        const quotaData = data.preference_value
+
+        // Vérifier si on doit reset (nouveau jour)
+        if (this.shouldReset(quotaData.resetAt)) {
+          console.log('🔄 QuotaTracker: Données Supabase obsolètes, reset...')
+          return
+        }
+
+        // Sauvegarder dans localStorage
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(quotaData))
+        this.supabaseLoaded = true
+        console.log(`✅ QuotaTracker: Données restaurées depuis Supabase - ${quotaData.used}/${quotaData.limit} utilisées`)
+      } else {
+        console.log('ℹ️ QuotaTracker: Aucune donnée dans Supabase')
+      }
+    } catch (error) {
+      console.error('❌ QuotaTracker: Exception chargement Supabase:', error)
+    }
+  }
+
+  /**
+   * Sauvegarder les données du quota dans Supabase
+   */
+  static async saveToSupabase(data) {
+    try {
+      const { error } = await supabase
+        .from('admin_preferences')
+        .upsert({
+          preference_key: this.SUPABASE_KEY,
+          preference_value: data
+        }, {
+          onConflict: 'preference_key'
+        })
+
+      if (error) {
+        console.warn('⚠️ QuotaTracker: Erreur sauvegarde Supabase:', error)
+        return false
+      }
+
+      console.log(`✅ QuotaTracker: Sauvegardé dans Supabase - ${data.used}/${data.limit}`)
+      return true
+    } catch (error) {
+      console.error('❌ QuotaTracker: Exception sauvegarde Supabase:', error)
+      return false
     }
   }
 
@@ -80,11 +154,13 @@ export class QuotaTracker {
   }
 
   /**
-   * Sauvegarder les données du quota
+   * Sauvegarder les données du quota (localStorage + Supabase)
    */
   static saveQuotaData(data) {
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data))
+      // Sauvegarder aussi dans Supabase (fire-and-forget)
+      this.saveToSupabase(data)
     } catch (error) {
       console.error('❌ QuotaTracker: Erreur sauvegarde quota:', error)
     }
