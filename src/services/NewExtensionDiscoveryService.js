@@ -147,6 +147,7 @@ class NewExtensionDiscoveryService {
 
             return {
               id: tcgApiId,
+              slug: exp.slug || cardmarketCode.toLowerCase(), // AJOUT: garder le slug pour l'import
               cardmarketCode: cardmarketCode, // Garder le code original pour référence
               name: exp.name,
               series: exp.series || 'Unknown',
@@ -249,79 +250,37 @@ class NewExtensionDiscoveryService {
   static async importExtension(extension, onProgress = null, addDiscoveredCards = null) {
     const setId = extension.id || extension
     const setName = extension.name || setId
-    const cardmarketCode = extension.cardmarketCode || setId
+    const slug = extension.slug || setId.toLowerCase()
     const total = extension.total || 0
 
-    console.log(`📦 Import de l'extension ${setName} (${cardmarketCode})...`)
+    console.log(`📦 Import de l'extension ${setName} (slug: ${slug})...`)
 
     try {
       let cards = []
 
-      // Utiliser RapidAPI pour l'import des cartes
+      // Utiliser RapidAPI avec importAllCardsByExpansion (pagination complète)
       if (RapidAPIService.isAvailable()) {
-        console.log(`📡 Import via RapidAPI...`)
+        console.log(`📡 Import via RapidAPI (pagination complète)...`)
 
-        // Récupérer les cartes en utilisant plusieurs pages de recherche
-        const allRapidCards = []
-        let page = 1
-        const maxPages = 20 // Limite pour éviter les boucles infinies
-        let consecutiveEmpty = 0
-
-        while (page <= maxPages && consecutiveEmpty < 2) {
-          try {
-            // Rechercher avec le nom de l'extension + pagination
-            const result = await RapidAPIService.searchCards(setName, {
-              limit: 100,
-              page,
-              sort: 'card_number_asc'
-            })
-
-            if (result.data && result.data.length > 0) {
-              // Filtrer pour ne garder que les cartes de cette extension
-              const extensionCards = result.data.filter(card => {
-                const cardCode = card.episode?.code || ''
-                return cardCode.toUpperCase() === cardmarketCode.toUpperCase()
+        try {
+          // Utiliser la méthode dédiée qui gère correctement la pagination avec episode_id
+          cards = await RapidAPIService.importAllCardsByExpansion(slug, (progressData) => {
+            if (onProgress) {
+              onProgress({
+                status: 'importing',
+                setId,
+                setName: progressData.setName || setName,
+                current: progressData.count,
+                total: progressData.total || total,
+                page: progressData.page
               })
-
-              if (extensionCards.length > 0) {
-                allRapidCards.push(...extensionCards)
-                consecutiveEmpty = 0
-              } else {
-                consecutiveEmpty++
-              }
-
-              if (onProgress) {
-                onProgress({
-                  status: 'importing',
-                  setId,
-                  setName,
-                  current: allRapidCards.length,
-                  total: total || allRapidCards.length,
-                  page
-                })
-              }
-
-              // Si on a moins de résultats que la limite, c'est la dernière page
-              if (result.data.length < 100) {
-                break
-              }
-              page++
-            } else {
-              break
             }
-          } catch (searchError) {
-            console.warn(`⚠️ Erreur page ${page}:`, searchError.message)
-            break
-          }
+          })
 
-          // Pause entre les requêtes pour respecter le rate limit
-          await new Promise(resolve => setTimeout(resolve, 200))
-        }
-
-        // Transformer les cartes RapidAPI vers le format standard
-        if (allRapidCards.length > 0) {
-          cards = allRapidCards.map(card => this.transformRapidAPICard(card, extension))
           console.log(`✅ RapidAPI: ${cards.length} cartes récupérées pour ${setName}`)
+        } catch (rapidError) {
+          console.warn(`⚠️ RapidAPI échoué pour ${setName}:`, rapidError.message)
+          cards = [] // Réinitialiser pour fallback
         }
       }
 
@@ -394,69 +353,6 @@ class NewExtensionDiscoveryService {
     }
   }
 
-  /**
-   * Transformer une carte RapidAPI vers le format standard
-   */
-  static transformRapidAPICard(rapidCard, extension) {
-    const cardmarketCode = extension.cardmarketCode || extension.id
-
-    // Utiliser tcgid de RapidAPI (compatible Pokemon TCG API) ou générer un ID
-    // Format tcgid: "xy6-1", "swsh1-25", etc.
-    const tcgId = rapidCard.tcgid || `${cardmarketCode.toLowerCase()}-${rapidCard.card_number}`
-
-    // Extraire le set_id depuis tcgid (partie avant le tiret)
-    const setId = tcgId.includes('-') ? tcgId.split('-')[0] : cardmarketCode.toLowerCase()
-
-    return {
-      id: tcgId,
-      name: rapidCard.name,
-      supertype: rapidCard.supertype || 'Pokémon',
-      subtypes: rapidCard.subtypes || [],
-      hp: rapidCard.hp ? String(rapidCard.hp) : null,
-      types: rapidCard.types || [],
-      evolvesFrom: rapidCard.evolves_from || null,
-      attacks: rapidCard.attacks || [],
-      weaknesses: rapidCard.weaknesses || [],
-      resistances: rapidCard.resistances || [],
-      retreatCost: rapidCard.retreat_cost || [],
-      number: String(rapidCard.card_number || ''),
-      artist: rapidCard.artist?.name || '',
-      rarity: rapidCard.rarity || '',
-      nationalPokedexNumbers: rapidCard.pokedex_numbers || [],
-      images: {
-        small: rapidCard.image || '',
-        large: rapidCard.image || ''
-      },
-      // IMPORTANT: set_id est utilisé pour regrouper les cartes par extension
-      set_id: setId,
-      // Garder le code CardMarket en référence
-      cardmarket_code: cardmarketCode,
-      set: {
-        id: setId,
-        name: extension.name,
-        series: typeof extension.series === 'object' ? extension.series.name : extension.series,
-        printedTotal: extension.total,
-        total: extension.total,
-        releaseDate: extension.releaseDate,
-        images: extension.images || {}
-      },
-      // Prix CardMarket depuis RapidAPI
-      cardmarket: rapidCard.prices?.cardmarket ? {
-        url: rapidCard.links?.cardmarket || '',
-        updatedAt: new Date().toISOString(),
-        prices: {
-          averageSellPrice: rapidCard.prices.cardmarket['30d_average'] || null,
-          avg1: rapidCard.prices.cardmarket['7d_average'] || null,
-          avg7: rapidCard.prices.cardmarket['7d_average'] || null,
-          avg30: rapidCard.prices.cardmarket['30d_average'] || null,
-          lowPrice: rapidCard.prices.cardmarket.lowest_near_mint || null,
-          trendPrice: rapidCard.prices.cardmarket['30d_average'] || null
-        }
-      } : null,
-      // Lien CardMarket
-      cardmarket_url: rapidCard.links?.cardmarket || null
-    }
-  }
 
   /**
    * Importer plusieurs extensions en séquence

@@ -482,11 +482,9 @@ const ExtensionDiscoveryPanel = () => {
                           <Calendar className="h-3 w-3 mr-1" />
                           {formatDate(ext.releaseDate)}
                         </Badge>
-                        {ext.total && (
-                          <Badge variant="outline" className="text-xs border-gray-600">
-                            {ext.total} cartes
-                          </Badge>
-                        )}
+                        <Badge variant="outline" className="text-xs border-gray-600">
+                          {ext.total || '?'} {ext.total === 1 ? 'carte' : 'cartes'}
+                        </Badge>
                       </div>
                       {ext.series && (
                         <div className="text-xs text-gray-500 mt-1">
