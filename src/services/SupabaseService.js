@@ -156,6 +156,37 @@ export class SupabaseService {
   }
 
   /**
+   * Récupérer les IDs de toutes les cartes d'une extension déjà en base
+   * Utile pour éviter de réimporter des cartes existantes
+   *
+   * @param {string} setId - ID de l'extension (ex: "xy1", "sv3pt5")
+   * @returns {Promise<Set<string>>} Set des IDs de cartes existantes
+   */
+  static async getExistingCardIdsBySet(setId) {
+    try {
+      console.log(`🔍 Vérification des cartes existantes pour l'extension ${setId}...`)
+
+      const { data, error } = await supabase
+        .from('discovered_cards')
+        .select('id')
+        .eq('set_id', setId)
+
+      if (error) {
+        console.error(`❌ Erreur lors de la récupération des IDs existants:`, error)
+        return new Set() // Retourner un Set vide en cas d'erreur
+      }
+
+      const existingIds = new Set(data.map(card => card.id))
+      console.log(`✅ ${existingIds.size} cartes déjà présentes pour l'extension ${setId}`)
+
+      return existingIds
+    } catch (error) {
+      console.error('❌ Erreur getExistingCardIdsBySet:', error)
+      return new Set()
+    }
+  }
+
+  /**
    * Charger seulement les cartes modifiées depuis un certain timestamp (sync incrémentale)
    * BASE COMMUNE : charge les cartes de tous les utilisateurs
    */
