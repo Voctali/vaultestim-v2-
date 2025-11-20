@@ -18,7 +18,8 @@ const getSupabaseClient = async () => {
 
 // Mapping des codes CardMarket vers les IDs Pokemon TCG API
 // Source: https://pokemontcg.io/sets
-const CARDMARKET_TO_TCGAPI = {
+// IMPORTANT: Utilisé par RapidAPIService pour garantir la compatibilité des IDs
+export const CARDMARKET_TO_TCGAPI = {
   // Scarlet & Violet
   'SV9': 'sv9',
   'SV8': 'sv8',

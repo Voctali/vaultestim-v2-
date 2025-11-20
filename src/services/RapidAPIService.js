@@ -1,3 +1,5 @@
+import { CARDMARKET_TO_TCGAPI } from './NewExtensionDiscoveryService'
+
 /**
  * RapidAPIService - Service pour l'API CardMarket API TCG via RapidAPI
  *
@@ -450,26 +452,49 @@ export class RapidAPIService {
       console.log(`📍 Série détectée via mapping: ${setId} -> ${series}`)
     }
 
-    // Générer un ID STABLE basé sur setId + numéro de carte
-    // Cela garantit qu'une carte aura toujours le même ID lors des réimports
+    // Générer un ID STABLE compatible avec Pokemon TCG API
+    // PRIORITÉ 1: tcgid de RapidAPI (déjà au format Pokemon TCG: "xy1-1", "sv3pt5-151")
+    // PRIORITÉ 2: Construire setId Pokemon TCG + numéro (via mapping CardMarket → Pokemon TCG)
+    // PRIORITÉ 3: Utiliser rapidapi-{id} en dernier recours
     const cardNumber = rapidApiCard.card_number?.toString() || ''
     let stableId
+    let tcgSetId = setId // Par défaut, utiliser le setId extrait
 
-    if (cardNumber && setId) {
-      // Format: {setId}-{number} (ex: "meg-001", "sv9-145")
-      // Padding du numéro sur 3 chiffres pour uniformité
-      const paddedNumber = cardNumber.padStart(3, '0')
-      stableId = `${setId}-${paddedNumber}`
-    } else if (rapidApiCard.tcgid) {
-      // Fallback sur tcgid si disponible (déjà au bon format)
+    // PRIORITÉ 1: Utiliser tcgid si disponible (format Pokemon TCG officiel)
+    if (rapidApiCard.tcgid) {
       stableId = rapidApiCard.tcgid
-    } else {
-      // Dernier recours : utiliser l'ID RapidAPI (non stable mais mieux que rien)
+      // Extraire aussi le setId Pokemon TCG depuis tcgid pour cohérence
+      const match = rapidApiCard.tcgid.match(/^([a-zA-Z0-9]+)-/)
+      if (match) {
+        tcgSetId = match[1].toLowerCase()
+      }
+      console.log(`✅ Utilisation tcgid: ${stableId}`)
+    }
+    // PRIORITÉ 2: Construire ID avec mapping CardMarket → Pokemon TCG
+    else if (cardNumber && episode.code) {
+      // Convertir le code CardMarket en setId Pokemon TCG via mapping
+      const cardmarketCode = episode.code.toUpperCase()
+      tcgSetId = CARDMARKET_TO_TCGAPI[cardmarketCode] || cardmarketCode.toLowerCase()
+
+      // Format: {tcgSetId}-{number} (ex: "xy1-1", "sv3pt5-151")
+      stableId = `${tcgSetId}-${cardNumber}`
+      console.log(`🔄 Mapping CardMarket → Pokemon TCG: ${cardmarketCode} → ${tcgSetId} (ID: ${stableId})`)
+    }
+    // PRIORITÉ 3: Fallback basique
+    else if (cardNumber && setId) {
+      stableId = `${setId}-${cardNumber}`
+      console.log(`⚠️ ID basique sans mapping: ${stableId}`)
+    }
+    // PRIORITÉ 4: Dernier recours (ID non stable)
+    else {
       stableId = `rapidapi-${rapidApiCard.id}`
-      console.warn(`⚠️ ID non stable pour ${rapidApiCard.name} - Utilisation de rapidapi-${rapidApiCard.id}`)
+      console.warn(`❌ ID NON STABLE pour ${rapidApiCard.name} - Utilisation de ${stableId}`)
     }
 
-    console.log(`🔄 Transform: ${rapidApiCard.name} -> ID stable: ${stableId} (setId: ${setId}, number: ${cardNumber})`)
+    // Utiliser tcgSetId pour le groupement par extension
+    setId = tcgSetId
+
+    console.log(`🔄 Transform: ${rapidApiCard.name} -> ID: ${stableId} (setId: ${setId}, number: ${cardNumber})`)
 
     return {
       id: stableId,
