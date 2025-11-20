@@ -483,7 +483,7 @@ const ExtensionDiscoveryPanel = () => {
                           {formatDate(ext.releaseDate)}
                         </Badge>
                         <Badge variant="outline" className="text-xs border-gray-600">
-                          {ext.total || '?'} {ext.total === 1 ? 'carte' : 'cartes'}
+                          {ext.total ? `${ext.total} ${ext.total === 1 ? 'carte' : 'cartes'}` : 'Nombre inconnu'}
                         </Badge>
                       </div>
                       {ext.series && (
