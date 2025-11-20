@@ -122,7 +122,9 @@
       "Bash(if exist node_modules.vite rmdir /s /q node_modules.vite)",
       "Bash(python3:*)",
       "Bash(chmod:*)",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(exit 0)",
+      "Bash(Select-String \"SUPABASE\")"
     ],
     "deny": [],
     "ask": []

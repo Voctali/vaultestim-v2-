@@ -16,6 +16,184 @@ const getSupabaseClient = async () => {
   return supabase
 }
 
+// Mapping des codes CardMarket vers episodeId RapidAPI
+// Généré automatiquement le 20/11/2025 18:40:17
+// Total: 165 extensions
+
+export const CARDMARKET_EPISODE_ID_MAPPING = {
+  // OTHER Series
+  'SV': 113, // Supreme Victors
+  'SVE': 20, // Scarlet & Violet Energies
+  'SVI': 19, // Scarlet & Violet
+  'XY': 87, // XY
+  'AOR': 79, // Ancient Origins
+  'AQ': 155, // Aquapolis
+  'AR': 112, // Arceus
+  'ASR': 31, // Astral Radiance Trainer Gallery
+  'B2': 167, // Base Set 2
+  'BCR': 94, // Boundaries Crossed
+  'BKP': 76, // BREAKpoint
+  'BKT': 78, // BREAKthrough
+  'BLK': 223, // Black Bolt
+  'BLW': 103, // Black & White
+  'BP': 156, // Best of Game
+  'BRS': 33, // Brilliant Stars Trainer Gallery
+  'BS': 171, // Base
+  'BST': 39, // Battle Styles
+  'BUS': 67, // Burning Shadows
+  'CEC': 50, // Cosmic Eclipse
+  'CEL': 36, // Celebrations: Classic Collection
+  'CES': 61, // Celestial Storm
+  'CG': 131, // Crystal Guardians
+  'CIN': 65, // Crimson Invasion
+  'CL': 105, // Call of Legends
+  'CPA': 44, // Champion's Path
+  'CRE': 38, // Chilling Reign
+  'CRZ': 22, // Crown Zenith Galarian Gallery
+  'DAA': 46, // Darkness Ablaze
+  'DCR': 81, // Double Crisis
+  'DET': 56, // Detective Pikachu
+  'DEX': 98, // Dark Explorers
+  'DF': 130, // Dragon Frontiers
+  'DP': 126, // Diamond & Pearl
+  'DR': 150, // Dragon
+  'DRI': 221, // Destined Rivals
+  'DRM': 60, // Dragon Majesty
+  'DRV': 95, // Dragon Vault
+  'DRX': 96, // Dragons Exalted
+  'DS': 138, // Delta Species
+  'DX': 142, // Deoxys
+  'EM': 141, // Emerald
+  'EPO': 101, // Emerging Powers
+  'EVO': 71, // Evolutions
+  'EVS': 37, // Evolving Skies
+  'EX': 157, // Expedition Base Set
+  'EX-TRAINER-KIT-2-MINUN': 136, // EX Trainer Kit 2 Minun
+  'EX-TRAINER-KIT-2-PLUSLE': 135, // EX Trainer Kit 2 Plusle
+  'EX-TRAINER-KIT-LATIAS': 147, // EX Trainer Kit Latias
+  'EX-TRAINER-KIT-LATIOS': 148, // EX Trainer Kit Latios
+  'FCO': 74, // Fates Collide
+  'FFI': 84, // Furious Fists
+  'FLF': 86, // Flashfire
+  'FLI': 62, // Forbidden Light
+  'FO': 168, // Fossil
+  'FST': 34, // Fusion Strike
+  'FUT20': 45, // Pokémon Futsal Collection
+  'G1': 165, // Gym Heroes
+  'G2': 164, // Gym Challenge
+  'GE': 122, // Great Encounters
+  'GEN': 75, // Generations
+  'GRI': 68, // Guardians Rising
+  'HIDDEN-FATES-SHINY-VAULT': 53, // Hidden Fates Shiny Vault
+  'HIF': 52, // Hidden Fates
+  'HL': 146, // Hidden Legends
+  'HP': 133, // Holon Phantoms
+  'HS': 109, // HeartGold & SoulSilver
+  'JTG': 220, // Journey Together
+  'JU': 170, // Jungle
+  'KSS': 88, // Kalos Starter Set
+  'LA': 119, // Legends Awakened
+  'LC': 158, // Legendary Collection
+  'LM': 137, // Legend Maker
+  'LOR': 27, // Lost Origin Trainer Gallery
+  'LOT': 58, // Lost Thunder
+  'LTR': 89, // Legendary Treasures
+  'MA': 149, // Team Magma vs Team Aqua
+  'MCDONALDS-COLLECTION-2011': 102, // McDonald's Collection 2011
+  'MCDONALDS-COLLECTION-2012': 97, // McDonald's Collection 2012
+  'MCDONALDS-COLLECTION-2014': 85, // McDonald's Collection 2014
+  'MCDONALDS-COLLECTION-2015': 77, // McDonald's Collection 2015
+  'MCDONALDS-COLLECTION-2016': 72, // McDonald's Collection 2016
+  'MCDONALDS-COLLECTION-2017': 64, // McDonald's Collection 2017
+  'MCDONALDS-COLLECTION-2018': 59, // McDonald's Collection 2018
+  'MCDONALDS-COLLECTION-2019': 51, // McDonald's Collection 2019
+  'MCDONALDS-COLLECTION-2021': 42, // McDonald's Collection 2021
+  'MCDONALDS-COLLECTION-2022': 28, // McDonald's Collection 2022
+  'MD': 120, // Majestic Dawn
+  'MEG': 230, // Mega Evolution
+  'MEW': 16, // 151
+  'MT': 125, // Mysterious Treasures
+  'N1': 163, // Neo Genesis
+  'N2': 162, // Neo Discovery
+  'N3': 160, // Neo Revelation
+  'N4': 159, // Neo Destiny
+  'NVI': 100, // Noble Victories
+  'NXD': 99, // Next Destinies
+  'OBF': 17, // Obsidian Flames
+  'PAF': 14, // Paldean Fates
+  'PAL': 18, // Paldea Evolved
+  'PAR': 15, // Paradox Rift
+  'PFL': 231, // Phantasmal Flames
+  'PGO': 29, // Pokémon GO
+  'PHF': 83, // Phantom Forces
+  'PK': 129, // Power Keepers
+  'PL': 116, // Platinum
+  'PLB': 91, // Plasma Blast
+  'PLF': 92, // Plasma Freeze
+  'PLS': 93, // Plasma Storm
+  'POKEMON': 226, // Pokémon
+  'POKEMON-PRODUCTS': 225, // Pokémon products
+  'POKEMON-RUMBLE': 111, // Pokémon Rumble
+  'POP-SERIES-1': 145, // POP Series 1
+  'POP-SERIES-2': 140, // POP Series 2
+  'POP-SERIES-3': 134, // POP Series 3
+  'POP-SERIES-4': 132, // POP Series 4
+  'POP-SERIES-5': 128, // POP Series 5
+  'POP-SERIES-6': 124, // POP Series 6
+  'POP-SERIES-7': 121, // POP Series 7
+  'POP-SERIES-8': 118, // POP Series 8
+  'POP-SERIES-9': 115, // POP Series 9
+  'PR': 169, // Wizards Black Star Promos
+  'PR-BLW': 104, // BW Black Star Promos
+  'PR-DPP': 127, // DP Black Star Promos
+  'PR-HS': 110, // HGSS Black Star Promos
+  'PR-NP': 151, // Nintendo Black Star Promos
+  'PR-SM': 70, // SM Black Star Promos
+  'PR-SV': 23, // SV Black Star Promos
+  'PR-SW': 49, // SWSH Black Star Promos
+  'PR-XY': 90, // XY Black Star Promos
+  'PRC': 82, // Primal Clash
+  'PRE': 212, // Prismatic Evolutions
+  'RCL': 47, // Rebel Clash
+  'RG': 144, // FireRed & LeafGreen
+  'ROS': 80, // Roaring Skies
+  'RR': 114, // Rising Rivals
+  'RS': 153, // Ruby & Sapphire
+  'SCR': 10, // Stellar Crown
+  'SF': 117, // Stormfront
+  'SFA': 11, // Shrouded Fable
+  'SHF': 41, // Shining Fates Shiny Vault
+  'SIT': 25, // Silver Tempest Trainer Gallery
+  'SK': 154, // Skyridge
+  'SLG': 66, // Shining Legends
+  'SOUTHERN-ISLANDS': 161, // Southern Islands
+  'SS': 152, // Sandstorm
+  'SSH': 48, // Sword & Shield
+  'SSP': 172, // Surging Sparks
+  'STS': 73, // Steam Siege
+  'SUM': 69, // Sun & Moon
+  'SW': 123, // Secret Wonders
+  'TEF': 13, // Temporal Forces
+  'TEU': 57, // Team Up
+  'TM': 106, // HS—Triumphant
+  'TR': 166, // Team Rocket
+  'TRR': 143, // Team Rocket Returns
+  'TWM': 12, // Twilight Masquerade
+  'UD': 107, // HS—Undaunted
+  'UF': 139, // Unseen Forces
+  'UL': 108, // HS—Unleashed
+  'UNB': 55, // Unbroken Bonds
+  'UNM': 54, // Unified Minds
+  'UPR': 63, // Ultra Prism
+  'VIV': 43, // Vivid Voltage
+  'WHT': 224, // White Flare
+}
+
+// Fonction helper pour obtenir l'episodeId à partir du code CardMarket
+export function getEpisodeIdFromCode(cardmarketCode) {
+  return CARDMARKET_EPISODE_ID_MAPPING[cardmarketCode] || null
+}
+
 // Mapping des codes CardMarket vers les IDs Pokemon TCG API
 // Source: https://pokemontcg.io/sets
 // IMPORTANT: Utilisé par RapidAPIService pour garantir la compatibilité des IDs
@@ -148,9 +326,12 @@ class NewExtensionDiscoveryService {
             // Convertir le code CardMarket en ID Pokemon TCG API
             const tcgApiId = CARDMARKET_TO_TCGAPI[cardmarketCode] || cardmarketCode.toLowerCase()
 
+            // Récupérer le bon episodeId depuis le mapping (fallback sur exp.id si non mappé)
+            const episodeId = getEpisodeIdFromCode(cardmarketCode) || exp.id
+
             return {
               id: tcgApiId,
-              episodeId: exp.id, // ID RapidAPI pour import direct (évite recherche par slug)
+              episodeId: episodeId, // ID RapidAPI correct depuis le mapping
               slug: exp.slug || cardmarketCode.toLowerCase(),
               cardmarketCode: cardmarketCode, // Garder le code original pour référence
               name: exp.name,
