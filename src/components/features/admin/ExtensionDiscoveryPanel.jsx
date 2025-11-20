@@ -163,13 +163,15 @@ const ExtensionDiscoveryPanel = () => {
 
       setImportResults(results)
 
-      // Retirer les extensions importées avec succès de la liste
+      // Marquer les extensions importées avec succès comme "isImported"
       const successIds = new Set(
         results.details
           .filter(r => r.success)
           .map(r => r.setId)
       )
-      setNewExtensions(prev => prev.filter(ext => !successIds.has(ext.id)))
+      setNewExtensions(prev => prev.map(ext =>
+        successIds.has(ext.id) ? { ...ext, isImported: true } : ext
+      ))
       setSelectedExtensions(new Set())
 
       // Mettre à jour les stats
@@ -237,7 +239,7 @@ const ExtensionDiscoveryPanel = () => {
           Découverte de Nouvelles Extensions
         </CardTitle>
         <CardDescription className="text-gray-400">
-          Détecte et importe automatiquement les nouvelles extensions depuis l'API Pokemon TCG
+          Parcourez et importez les extensions depuis l'API Pokemon TCG (nouvelles extensions en premier, puis déjà importées)
         </CardDescription>
       </CardHeader>
 
@@ -470,8 +472,14 @@ const ExtensionDiscoveryPanel = () => {
                     )}
 
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-white truncate">
+                      <div className="font-medium text-white truncate flex items-center gap-2">
                         {ext.name}
+                        {ext.isImported && (
+                          <Badge className="text-xs bg-green-600/30 text-green-400 border-green-600">
+                            <Check className="h-3 w-3 mr-1" />
+                            Déjà importée
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-2 mt-1">
                         <Badge variant="outline" className="text-xs border-gray-600">
@@ -506,10 +514,10 @@ const ExtensionDiscoveryPanel = () => {
         )}
 
         {/* Message si aucune nouvelle extension */}
-        {stats && newExtensions.length === 0 && !discovering && (
+        {stats && stats.new === 0 && !discovering && (
           <div className="text-center text-green-400 py-4">
             <Check className="h-8 w-8 mx-auto mb-2" />
-            Toutes les extensions sont à jour !
+            Toutes les extensions sont à jour ! ({stats.existing} extensions importées)
           </div>
         )}
       </CardContent>

@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.120' // Dernière mise à jour: 2025-11-13 - Ajout "jet energy"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.122' // Dernière mise à jour: 2025-11-18 - Ajout "ignition energy"
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -480,6 +480,9 @@ const TRAINER_TRANSLATIONS = {
   'gants justiciers': 'justified gloves', // Objet Dresseur
   'gants purifiants': 'cleansing gloves', // Objet Dresseur
   'gants spongieux': 'spongy gloves', // Objet Dresseur
+  'énergie amorce': 'ignition energy', // Objet Dresseur
+  'energie amorce': 'ignition energy', // Variante sans accent
+  'aurore': 'dawn', // Objet Dresseur
   'énergie propulsion': 'jet energy', // Objet Dresseur
   'energie propulsion': 'jet energy', // Variante sans accent
   'énergie enrichissante': 'enriching energy', // Objet Dresseur

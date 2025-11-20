@@ -115,7 +115,14 @@
       "Bash(nul)",
       "Bash(grep:*)",
       "Bash(git reset:*)",
-      "WebFetch(domain:rapidapi.com)"
+      "WebFetch(domain:rapidapi.com)",
+      "Bash(.env.temp)",
+      "Bash(lsof:*)",
+      "Bash(move /Y CacheService.new.js CacheService.js)",
+      "Bash(if exist node_modules.vite rmdir /s /q node_modules.vite)",
+      "Bash(python3:*)",
+      "Bash(chmod:*)",
+      "Bash(npx shadcn@latest add:*)"
     ],
     "deny": [],
     "ask": []

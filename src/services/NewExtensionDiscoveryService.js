@@ -192,13 +192,25 @@ class NewExtensionDiscoveryService {
       const existingSetIds = await this.getExistingSetIds()
       console.log(`💾 ${existingSetIds.size} extensions déjà dans la base`)
 
-      // 3. Identifier les extensions manquantes
-      const newSets = apiSets.filter(set => !existingSetIds.has(set.id))
+      // 3. Marquer les extensions avec leur statut d'import
+      const allSetsWithStatus = apiSets.map(set => ({
+        ...set,
+        isImported: existingSetIds.has(set.id)
+      }))
 
-      // Trier par date de sortie (plus récentes en premier)
+      // Séparer nouvelles et déjà importées pour les stats
+      const newSets = allSetsWithStatus.filter(set => !set.isImported)
+      const importedSets = allSetsWithStatus.filter(set => set.isImported)
+
+      // Trier : nouvelles en premier (par date), puis déjà importées (par date)
       newSets.sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate))
+      importedSets.sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate))
+
+      // Combiner : nouvelles extensions d'abord, puis déjà importées
+      const allSets = [...newSets, ...importedSets]
 
       console.log(`🆕 ${newSets.length} nouvelles extensions détectées`)
+      console.log(`✅ ${importedSets.length} extensions déjà importées`)
 
       // 4. Sauvegarder la date de dernière vérification
       localStorage.setItem(STORAGE_KEY, Date.now().toString())
@@ -206,8 +218,9 @@ class NewExtensionDiscoveryService {
       return {
         totalApiSets: apiSets.length,
         existingSets: existingSetIds.size,
-        newSets: newSets,
-        newSetsCount: newSets.length
+        newSets: allSets, // CHANGEMENT: Maintenant contient TOUTES les extensions avec flag isImported
+        newSetsCount: newSets.length,
+        importedSetsCount: importedSets.length
       }
     } catch (error) {
       console.error('❌ Erreur lors de la découverte des extensions:', error)
