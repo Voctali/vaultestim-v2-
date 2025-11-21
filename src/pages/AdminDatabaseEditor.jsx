@@ -1894,20 +1894,40 @@ export function AdminDatabaseEditor() {
                         variant="destructive"
                         size="sm"
                         onClick={async () => {
-                          const targetExt = blocksData.flatMap(b => b.extensions || []).find(e => e.id === formData.mergeTargetExtensionId)
+                          const targetExtLocal = blocksData.flatMap(b => b.extensions || []).find(e => e.id === formData.mergeTargetExtensionId)
                           const cardsToMove = allCards.filter(c => c.set?.id === editingExtension.id)
+
+                          if (!targetExtLocal) {
+                            alert('❌ Extension cible introuvable')
+                            return
+                          }
 
                           if (window.confirm(
                             `FUSION D'EXTENSIONS\n\n` +
                             `Source: "${editingExtension.name}" (${cardsToMove.length} cartes)\n` +
-                            `Destination: "${targetExt?.name}" (${targetExt?.cardsCount || 0} cartes)\n\n` +
-                            `Toutes les ${cardsToMove.length} cartes seront déplacées vers "${targetExt?.name}".\n` +
+                            `Destination: "${targetExtLocal.name}" (${targetExtLocal.cardsCount || 0} cartes)\n\n` +
+                            `Toutes les ${cardsToMove.length} cartes seront déplacées vers "${targetExtLocal.name}".\n` +
                             `L'extension "${editingExtension.name}" sera SUPPRIMÉE.\n\n` +
                             `Cette action est IRRÉVERSIBLE. Continuer ?`
                           )) {
                             try {
-                              console.log(`🔄 Début fusion: ${editingExtension.name} → ${targetExt.name}`)
+                              console.log(`🔄 Début fusion: ${editingExtension.name} → ${targetExtLocal.name}`)
                               console.log(`📊 ${cardsToMove.length} cartes à déplacer`)
+
+                              // IMPORTANT: Récupérer l'extension cible depuis une CARTE réelle pour avoir les bonnes données
+                              console.log(`🔍 Récupération des données de l'extension cible depuis discovered_cards...`)
+                              const { data: targetCards, error: fetchError } = await supabase
+                                .from('discovered_cards')
+                                .select('set')
+                                .eq('set_id', targetExtLocal.id)
+                                .limit(1)
+
+                              if (fetchError || !targetCards || targetCards.length === 0) {
+                                throw new Error(`Extension cible "${targetExtLocal.name}" (ID: ${targetExtLocal.id}) introuvable dans discovered_cards. Fusion impossible.`)
+                              }
+
+                              const targetExt = targetCards[0].set
+                              console.log(`✅ Extension cible trouvée:`, targetExt)
 
                               // Mettre à jour directement dans Supabase (IndexedDB sera sync automatiquement)
                               console.log('🔄 Mise à jour Supabase...')
@@ -1915,15 +1935,7 @@ export function AdminDatabaseEditor() {
                                 .from('discovered_cards')
                                 .update({
                                   set_id: targetExt.id,
-                                  set: {
-                                    id: targetExt.id,
-                                    name: targetExt.name,
-                                    series: targetExt.series,
-                                    images: targetExt.images || {},
-                                    releaseDate: targetExt.releaseDate || '',
-                                    printedTotal: targetExt.printedTotal || 0,
-                                    total: targetExt.total || 0
-                                  }
+                                  set: targetExt
                                 })
                                 .eq('set_id', editingExtension.id)
 
