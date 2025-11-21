@@ -1915,8 +1915,15 @@ export function AdminDatabaseEditor() {
                                 .from('discovered_cards')
                                 .update({
                                   set_id: targetExt.id,
-                                  set_name: targetExt.name,
-                                  set_series: targetExt.series
+                                  set: {
+                                    id: targetExt.id,
+                                    name: targetExt.name,
+                                    series: targetExt.series,
+                                    images: targetExt.images || {},
+                                    releaseDate: targetExt.releaseDate || '',
+                                    printedTotal: targetExt.printedTotal || 0,
+                                    total: targetExt.total || 0
+                                  }
                                 })
                                 .eq('set_id', editingExtension.id)
 
