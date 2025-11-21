@@ -1935,16 +1935,23 @@ export function AdminDatabaseEditor() {
                               console.log(`✅ ${cardsToMove.length} cartes mises à jour dans Supabase`)
 
                               // Supprimer l'extension source de la table series_database
-                              console.log(`🗑️ Suppression de l'extension source "${editingExtension.name}" de series_database...`)
-                              const { error: deleteSeriesError } = await supabase
+                              console.log(`🗑️ Suppression de l'extension source "${editingExtension.name}" (ID: ${editingExtension.id}) de series_database...`)
+
+                              // Récupérer le user_id actuel
+                              const { data: { user } } = await supabase.auth.getUser()
+
+                              const { error: deleteSeriesError, count: deletedCount } = await supabase
                                 .from('series_database')
                                 .delete()
                                 .eq('id', editingExtension.id)
+                                .eq('user_id', user?.id)
 
                               if (deleteSeriesError) {
-                                console.warn('⚠️ Erreur suppression series_database:', deleteSeriesError)
-                                // Ne pas bloquer si l'extension n'existe pas dans series_database
+                                console.error('❌ Erreur suppression series_database:', deleteSeriesError)
+                                throw new Error(`Échec suppression series_database: ${deleteSeriesError.message}`)
                               }
+
+                              console.log(`✅ ${deletedCount || 0} extension(s) supprimée(s) de series_database`)
 
                               // Supprimer aussi de IndexedDB pour sync immédiate
                               try {
