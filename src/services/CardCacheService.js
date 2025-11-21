@@ -9,7 +9,7 @@ const STORE_NAME = 'cards'
 const METADATA_STORE = 'metadata'
 
 // Version du cache - INCREMENTER CETTE VALEUR pour forcer un rechargement complet sur tous les appareils
-const CACHE_VERSION = '2.1.0' // Incrémenté pour fix sync delta (2025-01-09)
+const CACHE_VERSION = '2.1.1' // Incrémenté pour fix sync delta (2025-01-09)
 
 export class CardCacheService {
   static db = null
