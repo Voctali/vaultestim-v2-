@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useCardDatabase } from '@/hooks/useCardDatabase'
 import { IndexedDBService } from '@/services/IndexedDBService'
 import { SupabaseService } from '@/services/SupabaseService'
+import { supabase } from '@/lib/supabaseClient'
 import { ImageUploadService } from '@/services/ImageUploadService'
 import { ImageUpload } from '@/components/features/ImageUpload'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -1910,7 +1911,7 @@ export function AdminDatabaseEditor() {
 
                               // Mettre à jour directement dans Supabase (IndexedDB sera sync automatiquement)
                               console.log('🔄 Mise à jour Supabase...')
-                              const { error: supabaseError, count } = await SupabaseService.supabase
+                              const { error: supabaseError, count } = await supabase
                                 .from('discovered_cards')
                                 .update({
                                   set_id: targetExt.id,
@@ -1928,7 +1929,7 @@ export function AdminDatabaseEditor() {
 
                               // Supprimer l'extension source de la table series_database
                               console.log(`🗑️ Suppression de l'extension source "${editingExtension.name}" de series_database...`)
-                              const { error: deleteSeriesError } = await SupabaseService.supabase
+                              const { error: deleteSeriesError } = await supabase
                                 .from('series_database')
                                 .delete()
                                 .eq('id', editingExtension.id)
