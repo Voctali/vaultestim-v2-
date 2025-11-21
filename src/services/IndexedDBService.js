@@ -18,6 +18,16 @@ export class IndexedDBService {
   static db = null
 
   /**
+   * Vérifier si un store existe dans la base de données
+   * @param {string} storeName - Nom du store à vérifier
+   * @returns {boolean} true si le store existe, false sinon
+   */
+  static checkStoreExists(storeName) {
+    if (!this.db) return false
+    return this.db.objectStoreNames.contains(storeName)
+  }
+
+  /**
    * Initialiser la base de données IndexedDB
    */
   static async initDB() {
@@ -99,6 +109,12 @@ export class IndexedDBService {
     try {
       await this.initDB()
 
+      // Vérifier si le store existe (ancienne version de la DB peut ne pas l'avoir)
+      if (!this.db.objectStoreNames.contains(this.STORES.CARDS)) {
+        console.warn('⚠️ Store discovered_cards n\'existe pas (ancienne version DB), opération annulée')
+        return false
+      }
+
       // Vider le store d'abord
       await this.clearStore(this.STORES.CARDS)
 
@@ -150,6 +166,13 @@ export class IndexedDBService {
   static async loadDiscoveredCards() {
     try {
       await this.initDB()
+
+      // Vérifier si le store existe (ancienne version de la DB peut ne pas l'avoir)
+      if (!this.db.objectStoreNames.contains(this.STORES.CARDS)) {
+        console.warn('⚠️ Store discovered_cards n\'existe pas (ancienne version DB), retour []')
+        return []
+      }
+
       const transaction = this.db.transaction([this.STORES.CARDS], 'readonly')
       const store = transaction.objectStore(this.STORES.CARDS)
 
@@ -177,6 +200,12 @@ export class IndexedDBService {
   static async addDiscoveredCards(newCards) {
     try {
       await this.initDB()
+
+      // Vérifier si le store existe (ancienne version de la DB peut ne pas l'avoir)
+      if (!this.db.objectStoreNames.contains(this.STORES.CARDS)) {
+        console.warn('⚠️ Store discovered_cards n\'existe pas (ancienne version DB), opération annulée')
+        return 0
+      }
 
       // Traitement par batch pour éviter les timeouts
       const BATCH_SIZE = 50
@@ -240,6 +269,12 @@ export class IndexedDBService {
     try {
       await this.initDB()
 
+      // Vérifier si le store existe (ancienne version de la DB peut ne pas l'avoir)
+      if (!this.db.objectStoreNames.contains(this.STORES.CARDS)) {
+        console.warn('⚠️ Store discovered_cards n\'existe pas (ancienne version DB), opération annulée')
+        return false
+      }
+
       return new Promise((resolve, reject) => {
         const transaction = this.db.transaction([this.STORES.CARDS], 'readwrite')
         const store = transaction.objectStore(this.STORES.CARDS)
@@ -294,6 +329,12 @@ export class IndexedDBService {
   static async saveSeriesDatabase(series) {
     try {
       await this.initDB()
+
+      // Vérifier si le store existe (ancienne version de la DB peut ne pas l'avoir)
+      if (!this.db.objectStoreNames.contains(this.STORES.SERIES)) {
+        console.warn('⚠️ Store series_database n\'existe pas (ancienne version DB), opération annulée')
+        return false
+      }
 
       // Vider le store d'abord
       await this.clearStore(this.STORES.SERIES)
@@ -371,6 +412,13 @@ export class IndexedDBService {
   static async loadSeriesDatabase() {
     try {
       await this.initDB()
+
+      // Vérifier si le store existe (ancienne version de la DB peut ne pas l'avoir)
+      if (!this.db.objectStoreNames.contains(this.STORES.SERIES)) {
+        console.warn('⚠️ Store series_database n\'existe pas (ancienne version DB), retour []')
+        return []
+      }
+
       const transaction = this.db.transaction([this.STORES.SERIES], 'readonly')
       const store = transaction.objectStore(this.STORES.SERIES)
 
@@ -398,6 +446,13 @@ export class IndexedDBService {
   static async searchCardsByName(query) {
     try {
       await this.initDB()
+
+      // Vérifier si le store existe (ancienne version de la DB peut ne pas l'avoir)
+      if (!this.db.objectStoreNames.contains(this.STORES.CARDS)) {
+        console.warn('⚠️ Store discovered_cards n\'existe pas (ancienne version DB), retour []')
+        return []
+      }
+
       const transaction = this.db.transaction([this.STORES.CARDS], 'readonly')
       const store = transaction.objectStore(this.STORES.CARDS)
 
@@ -466,14 +521,24 @@ export class IndexedDBService {
    * Vider un store complètement
    */
   static async clearStore(storeName) {
-    return new Promise((resolve) => {
-      const transaction = this.db.transaction([storeName], 'readwrite')
-      const store = transaction.objectStore(storeName)
-      const request = store.clear()
+    try {
+      // Vérifier si le store existe avant de tenter de le vider
+      if (!this.db.objectStoreNames.contains(storeName)) {
+        console.warn(`⚠️ Store "${storeName}" n'existe pas, opération clearStore ignorée`)
+        return
+      }
 
-      request.onsuccess = () => resolve()
-      request.onerror = () => resolve()
-    })
+      return new Promise((resolve) => {
+        const transaction = this.db.transaction([storeName], 'readwrite')
+        const store = transaction.objectStore(storeName)
+        const request = store.clear()
+
+        request.onsuccess = () => resolve()
+        request.onerror = () => resolve()
+      })
+    } catch (error) {
+      console.warn(`⚠️ Erreur clearStore("${storeName}"):`, error.message)
+    }
   }
 
   /**
@@ -539,6 +604,11 @@ export class IndexedDBService {
   static async saveCustomBlock(block) {
     try {
       await this.initDB()
+
+      if (!this.checkStoreExists(this.STORES.CUSTOM_BLOCKS)) {
+        console.warn('⚠️ Store custom_blocks n\'existe pas, opération annulée')
+        return false
+      }
 
       // Ajouter timestamp de création
       const blockWithTimestamp = {
@@ -612,6 +682,11 @@ export class IndexedDBService {
     try {
       await this.initDB()
 
+      if (!this.checkStoreExists(this.STORES.CUSTOM_BLOCKS)) {
+        console.warn('⚠️ Store custom_blocks n\'existe pas, opération annulée')
+        return false
+      }
+
       const transaction = this.db.transaction([this.STORES.CUSTOM_BLOCKS], 'readwrite')
       const store = transaction.objectStore(this.STORES.CUSTOM_BLOCKS)
 
@@ -640,6 +715,11 @@ export class IndexedDBService {
   static async updateCustomBlock(blockId, updates) {
     try {
       await this.initDB()
+
+      if (!this.checkStoreExists(this.STORES.CUSTOM_BLOCKS)) {
+        console.warn('⚠️ Store custom_blocks n\'existe pas, opération annulée')
+        return false
+      }
 
       const transaction = this.db.transaction([this.STORES.CUSTOM_BLOCKS], 'readwrite')
       const store = transaction.objectStore(this.STORES.CUSTOM_BLOCKS)
@@ -693,6 +773,11 @@ export class IndexedDBService {
   static async saveCustomExtension(extensionId, newSeries, originalSeries = null) {
     try {
       await this.initDB()
+
+      if (!this.checkStoreExists(this.STORES.CUSTOM_EXTENSIONS)) {
+        console.warn('⚠️ Store custom_extensions n\'existe pas, opération annulée')
+        return false
+      }
 
       const customExtension = {
         id: extensionId,
@@ -766,6 +851,11 @@ export class IndexedDBService {
     try {
       await this.initDB()
 
+      if (!this.checkStoreExists(this.STORES.CUSTOM_EXTENSIONS)) {
+        console.warn('⚠️ Store custom_extensions n\'existe pas, opération annulée')
+        return false
+      }
+
       const transaction = this.db.transaction([this.STORES.CUSTOM_EXTENSIONS], 'readwrite')
       const store = transaction.objectStore(this.STORES.CUSTOM_EXTENSIONS)
 
@@ -794,6 +884,11 @@ export class IndexedDBService {
   static async getCustomExtensionSeries(extensionId) {
     try {
       await this.initDB()
+
+      if (!this.checkStoreExists(this.STORES.CUSTOM_EXTENSIONS)) {
+        console.warn('⚠️ Store custom_extensions n\'existe pas, retour null')
+        return null
+      }
 
       const transaction = this.db.transaction([this.STORES.CUSTOM_EXTENSIONS], 'readonly')
       const store = transaction.objectStore(this.STORES.CUSTOM_EXTENSIONS)
@@ -824,6 +919,11 @@ export class IndexedDBService {
     try {
       await this.initDB()
 
+      if (!this.checkStoreExists(this.STORES.SERIES)) {
+        console.warn('⚠️ Store series_database n\'existe pas, opération annulée')
+        return false
+      }
+
       // Supprimer l'extension de la série database
       const transaction = this.db.transaction([this.STORES.SERIES], 'readwrite')
       const store = transaction.objectStore(this.STORES.SERIES)
@@ -853,6 +953,11 @@ export class IndexedDBService {
   static async deleteCardsFromExtension(extensionId) {
     try {
       await this.initDB()
+
+      if (!this.checkStoreExists(this.STORES.CARDS)) {
+        console.warn('⚠️ Store discovered_cards n\'existe pas, opération annulée')
+        return 0
+      }
 
       const transaction = this.db.transaction([this.STORES.CARDS], 'readwrite')
       const store = transaction.objectStore(this.STORES.CARDS)
