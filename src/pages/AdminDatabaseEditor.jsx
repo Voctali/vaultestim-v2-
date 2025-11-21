@@ -1946,14 +1946,25 @@ export function AdminDatabaseEditor() {
                                 // Ne pas bloquer si l'extension n'existe pas dans series_database
                               }
 
+                              // Supprimer aussi de IndexedDB pour sync immédiate
+                              try {
+                                await IndexedDBService.deleteExtensionFromDatabase(editingExtension.id)
+                                console.log(`✅ Extension supprimée d'IndexedDB`)
+                              } catch (error) {
+                                console.warn('⚠️ Erreur suppression IndexedDB:', error.message)
+                                // Ne pas bloquer
+                              }
+
                               console.log(`✅ Fusion terminée avec succès`)
 
-                              alert(`✅ Fusion terminée!\n\n${cardsToMove.length} cartes déplacées de "${editingExtension.name}" vers "${targetExt.name}".\n\nL'extension source a été supprimée.\n\n⏳ Rechargement de la page...`)
+                              // Fermer la modale immédiatement
+                              setEditingExtension(null)
 
-                              // Recharger UNIQUEMENT si tout s'est bien passé
-                              setTimeout(() => {
-                                window.location.reload()
-                              }, 1000)
+                              // Alert avec timeout court
+                              alert(`✅ Fusion terminée!\n\n${cardsToMove.length} cartes déplacées de "${editingExtension.name}" vers "${targetExt.name}".\n\nL'extension source a été supprimée.\n\nRechargement immédiat...`)
+
+                              // Recharger immédiatement (pas de setTimeout)
+                              window.location.reload()
 
                             } catch (error) {
                               console.error('❌ ERREUR CRITIQUE LORS DE LA FUSION:', error)
