@@ -535,4 +535,37 @@ await SealedProductPriceRefreshService.autoRefreshIfNeeded()
 
 ---
 
-**Dernière mise à jour** : 2025-11-20 (v1.6.2)
+## 🐛 Bugs Connus et Limitations
+
+### Fusion d'Extensions (AdminDatabaseEditor)
+**Problème** : La fonctionnalité de fusion d'extensions peut échouer dans certains cas.
+
+**Symptômes** :
+- Message "Fusion réussie" mais action ne s'exécute pas
+- Erreurs dans les logs (app se rafraîchit immédiatement)
+- Tentative de fusion d'une extension avec elle-même (doublons dans la base)
+
+**Causes identifiées** :
+1. **Doublons d'extensions** : Même extension importée plusieurs fois avec des `set_id` légèrement différents (ex: `sv08` vs `sv8`)
+2. **Schéma Supabase** :
+   - Colonnes `set_name` et `set_series` n'existent PAS
+   - Seuls `set_id` (texte) et `set` (JSONB) sont disponibles
+3. **Conflit IndexedDB** : Ancien schéma vs nouveau CardCacheService
+
+**Correctifs appliqués (v1.11.0 → v1.11.3)** :
+- ✅ v1.11.0 : Empêcher reload automatique en cas d'erreur
+- ✅ v1.11.1 : Utiliser uniquement Supabase (pas IndexedDB)
+- ✅ v1.11.2 : Import direct du client Supabase
+- ✅ v1.11.3 : Mise à jour du champ JSONB `set` complet
+
+**Solution de contournement** :
+Si fusion échoue, **supprimer manuellement** l'extension vide au lieu de fusionner :
+1. Admin → Éditeur de Base de Données
+2. Trouver l'extension avec 0-2 cartes
+3. Cliquer sur "Supprimer" au lieu de "Fusionner"
+
+**État** : Partiellement résolu (v1.11.3), tests en cours
+
+---
+
+**Dernière mise à jour** : 2025-11-21 (v1.11.3)
