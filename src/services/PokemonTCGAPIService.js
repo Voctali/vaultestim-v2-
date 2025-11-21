@@ -15,7 +15,11 @@
  * 2. Optionnel : Ajouter VITE_POKEMON_TCG_API_KEY pour augmenter le rate limit
  */
 
-const BASE_URL = 'https://api.pokemontcg.io/v2'
+// Utiliser le proxy en production pour éviter CORS
+const BASE_URL = import.meta.env.DEV
+  ? 'https://api.pokemontcg.io/v2'  // Dev: appel direct (proxy Vite)
+  : '/api/pokemontcg/v2'             // Production: via proxy Vercel
+
 const API_KEY = import.meta.env.VITE_POKEMON_TCG_API_KEY || ''
 const ENABLED = import.meta.env.VITE_USE_POKEMON_TCG_API === 'true'
 
