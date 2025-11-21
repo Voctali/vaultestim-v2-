@@ -618,6 +618,52 @@ export function AdminDatabaseEditor() {
         await IndexedDBService.saveSeriesDatabase(updatedSeriesDatabase)
         console.log(`💾 Extension "${formData.name}" mise à jour dans IndexedDB`)
 
+        // NOUVEAU: Mettre à jour le champ JSONB 'set' dans toutes les cartes de cette extension
+        console.log(`🔄 Mise à jour du JSONB 'set' pour toutes les cartes de l'extension "${editingExtension.id}"...`)
+
+        const { data: { user } } = await supabase.auth.getUser()
+
+        // Construire l'objet de mise à jour pour le JSONB
+        const setUpdates = {}
+        if (formData.name !== editingExtension.name) {
+          setUpdates.name = formData.name
+        }
+        if (formData.releaseDate && formData.releaseDate !== editingExtension.releaseDate) {
+          setUpdates.releaseDate = formData.releaseDate
+        }
+
+        // Si il y a des modifications à appliquer
+        if (Object.keys(setUpdates).length > 0) {
+          const { data: cardsToUpdate, error: fetchError } = await supabase
+            .from('discovered_cards')
+            .select('id, set')
+            .eq('set_id', editingExtension.id)
+
+          if (fetchError) {
+            console.error('❌ Erreur lors de la récupération des cartes:', fetchError)
+          } else if (cardsToUpdate && cardsToUpdate.length > 0) {
+            console.log(`📋 ${cardsToUpdate.length} cartes à mettre à jour`)
+
+            // Mettre à jour chaque carte avec le nouveau nom/date dans le JSONB
+            for (const card of cardsToUpdate) {
+              const updatedSet = { ...card.set, ...setUpdates }
+
+              const { error: updateError } = await supabase
+                .from('discovered_cards')
+                .update({ set: updatedSet })
+                .eq('id', card.id)
+
+              if (updateError) {
+                console.error(`❌ Erreur mise à jour carte ${card.id}:`, updateError)
+              }
+            }
+
+            console.log(`✅ JSONB 'set' mis à jour pour ${cardsToUpdate.length} cartes`)
+          } else {
+            console.log('ℹ️ Aucune carte trouvée pour cette extension')
+          }
+        }
+
         // Forcer la reconstruction de la hiérarchie pour refléter les changements
         await forceRebuildHierarchy()
 
