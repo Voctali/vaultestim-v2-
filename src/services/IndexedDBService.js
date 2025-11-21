@@ -576,6 +576,12 @@ export class IndexedDBService {
     try {
       await this.initDB()
 
+      // Vérifier si le store existe (ancienne version de la DB peut ne pas l'avoir)
+      if (!this.db.objectStoreNames.contains(this.STORES.CUSTOM_BLOCKS)) {
+        console.warn('⚠️ Store custom_blocks n\'existe pas (ancienne version DB), retour []')
+        return []
+      }
+
       const transaction = this.db.transaction([this.STORES.CUSTOM_BLOCKS], 'readonly')
       const store = transaction.objectStore(this.STORES.CUSTOM_BLOCKS)
 
@@ -723,6 +729,12 @@ export class IndexedDBService {
   static async loadCustomExtensions() {
     try {
       await this.initDB()
+
+      // Vérifier si le store existe (ancienne version de la DB peut ne pas l'avoir)
+      if (!this.db.objectStoreNames.contains(this.STORES.CUSTOM_EXTENSIONS)) {
+        console.warn('⚠️ Store custom_extensions n\'existe pas (ancienne version DB), retour []')
+        return []
+      }
 
       const transaction = this.db.transaction([this.STORES.CUSTOM_EXTENSIONS], 'readonly')
       const store = transaction.objectStore(this.STORES.CUSTOM_EXTENSIONS)
