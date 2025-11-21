@@ -1894,7 +1894,7 @@ export function AdminDatabaseEditor() {
                         size="sm"
                         onClick={async () => {
                           const targetExt = blocksData.flatMap(b => b.extensions || []).find(e => e.id === formData.mergeTargetExtensionId)
-                          const cardsToMove = discoveredCards.filter(c => c.set?.id === editingExtension.id)
+                          const cardsToMove = allCards.filter(c => c.set?.id === editingExtension.id)
 
                           if (window.confirm(
                             `FUSION D'EXTENSIONS\n\n` +
@@ -1905,20 +1905,61 @@ export function AdminDatabaseEditor() {
                             `Cette action est IRRÉVERSIBLE. Continuer ?`
                           )) {
                             try {
-                              // Déplacer toutes les cartes
+                              console.log(`🔄 Début fusion: ${editingExtension.name} → ${targetExt.name}`)
+                              console.log(`📊 ${cardsToMove.length} cartes à déplacer`)
+
+                              // 1. Mettre à jour toutes les cartes dans IndexedDB
+                              let updatedCount = 0
                               for (const card of cardsToMove) {
-                                await IndexedDBService.updateDiscoveredCard(card.id, {
-                                  set: targetExt
-                                })
+                                try {
+                                  await IndexedDBService.updateDiscoveredCard(card.id, {
+                                    set: targetExt
+                                  })
+                                  updatedCount++
+                                  console.log(`✅ Carte ${updatedCount}/${cardsToMove.length}: "${card.name}" déplacée`)
+                                } catch (cardError) {
+                                  console.error(`❌ Erreur déplacement carte "${card.name}":`, cardError)
+                                  throw new Error(`Échec du déplacement de la carte "${card.name}": ${cardError.message}`)
+                                }
                               }
 
-                              // Supprimer l'extension source
+                              console.log(`✅ Toutes les cartes ont été déplacées dans IndexedDB (${updatedCount}/${cardsToMove.length})`)
+
+                              // 2. Mettre à jour dans Supabase
+                              console.log('🔄 Mise à jour Supabase...')
+                              const { error: supabaseError } = await SupabaseService.supabase
+                                .from('discovered_cards')
+                                .update({
+                                  set_id: targetExt.id,
+                                  set_name: targetExt.name,
+                                  set_series: targetExt.series
+                                })
+                                .eq('set_id', editingExtension.id)
+
+                              if (supabaseError) {
+                                console.error('❌ Erreur Supabase:', supabaseError)
+                                throw new Error(`Échec de la mise à jour Supabase: ${supabaseError.message}`)
+                              }
+
+                              console.log(`✅ Cartes mises à jour dans Supabase`)
+
+                              // 3. Supprimer l'extension source de IndexedDB
+                              console.log(`🗑️ Suppression de l'extension source "${editingExtension.name}"...`)
                               await IndexedDBService.deleteCompleteExtension(editingExtension.id)
 
-                              alert(`✅ Fusion terminée!\n\n${cardsToMove.length} cartes déplacées de "${editingExtension.name}" vers "${targetExt.name}".\n\nL'extension source a été supprimée.`)
-                              window.location.reload()
+                              console.log(`✅ Fusion terminée avec succès`)
+
+                              alert(`✅ Fusion terminée!\n\n${updatedCount} cartes déplacées de "${editingExtension.name}" vers "${targetExt.name}".\n\nL'extension source a été supprimée.\n\n⏳ Rechargement de la page...`)
+
+                              // Recharger UNIQUEMENT si tout s'est bien passé
+                              setTimeout(() => {
+                                window.location.reload()
+                              }, 1000)
+
                             } catch (error) {
-                              alert('❌ Erreur lors de la fusion: ' + error.message)
+                              console.error('❌ ERREUR CRITIQUE LORS DE LA FUSION:', error)
+                              alert(`❌ ERREUR lors de la fusion:\n\n${error.message}\n\nLa fusion a été interrompue. Vérifiez les logs de la console pour plus de détails.`)
+                              // NE PAS recharger en cas d'erreur pour que l'utilisateur puisse lire l'erreur
                             }
                           }
                         }}
