@@ -16,6 +16,36 @@ const getSupabaseClient = async () => {
   return supabase
 }
 
+// Mapping des codes PTCGO (utilisés par les utilisateurs) vers les IDs de l'API Pokemon TCG
+// Ces codes sont parfois différents des vrais IDs de l'API
+const PTCGO_TO_API_ID_MAPPING = {
+  'crz': 'swsh12pt5',           // Crown Zenith
+  'crzgg': 'swsh12pt5gg',       // Crown Zenith Galarian Gallery
+  'gg': 'swsh12pt5gg',          // Galarian Gallery (alias)
+  // Ajouter d'autres mappings ici si nécessaire
+}
+
+/**
+ * Normaliser un ID d'extension (convertir code PTCGO → ID API si nécessaire)
+ * @param {string} setId - ID potentiel (code PTCGO ou ID API)
+ * @returns {string} ID normalisé pour l'API
+ */
+function normalizeSetId(setId) {
+  if (!setId) return setId
+
+  const lowercaseId = setId.toLowerCase()
+
+  // Si c'est un code PTCGO connu, le convertir
+  if (PTCGO_TO_API_ID_MAPPING[lowercaseId]) {
+    const normalizedId = PTCGO_TO_API_ID_MAPPING[lowercaseId]
+    console.log(`🔄 Normalisation: "${setId}" → "${normalizedId}"`)
+    return normalizedId
+  }
+
+  // Sinon, retourner l'ID tel quel
+  return setId
+}
+
 // Mapping des codes CardMarket vers episodeId RapidAPI
 // Généré automatiquement le 20/11/2025 18:40:17
 // Total: 165 extensions
@@ -446,13 +476,14 @@ class NewExtensionDiscoveryService {
    * @returns {Promise<Object>} Résultat de l'import
    */
   static async importExtension(extension, onProgress = null, addDiscoveredCards = null) {
-    const setId = extension.id || extension
+    const rawSetId = extension.id || extension
+    const setId = normalizeSetId(rawSetId) // Normaliser l'ID (PTCGO code → API ID)
     const setName = extension.name || setId
     const slug = extension.slug || setId.toLowerCase()
     const episodeId = extension.episodeId || null // ID RapidAPI si disponible
     const total = extension.total || 0
 
-    console.log(`📦 Import de l'extension ${setName} (slug: ${slug}, episodeId: ${episodeId})...`)
+    console.log(`📦 Import de l'extension ${setName} (ID: ${setId}, slug: ${slug}, episodeId: ${episodeId})...`)
 
     try {
       let cards = []
