@@ -1908,26 +1908,9 @@ export function AdminDatabaseEditor() {
                               console.log(`🔄 Début fusion: ${editingExtension.name} → ${targetExt.name}`)
                               console.log(`📊 ${cardsToMove.length} cartes à déplacer`)
 
-                              // 1. Mettre à jour toutes les cartes dans IndexedDB
-                              let updatedCount = 0
-                              for (const card of cardsToMove) {
-                                try {
-                                  await IndexedDBService.updateDiscoveredCard(card.id, {
-                                    set: targetExt
-                                  })
-                                  updatedCount++
-                                  console.log(`✅ Carte ${updatedCount}/${cardsToMove.length}: "${card.name}" déplacée`)
-                                } catch (cardError) {
-                                  console.error(`❌ Erreur déplacement carte "${card.name}":`, cardError)
-                                  throw new Error(`Échec du déplacement de la carte "${card.name}": ${cardError.message}`)
-                                }
-                              }
-
-                              console.log(`✅ Toutes les cartes ont été déplacées dans IndexedDB (${updatedCount}/${cardsToMove.length})`)
-
-                              // 2. Mettre à jour dans Supabase
+                              // Mettre à jour directement dans Supabase (IndexedDB sera sync automatiquement)
                               console.log('🔄 Mise à jour Supabase...')
-                              const { error: supabaseError } = await SupabaseService.supabase
+                              const { error: supabaseError, count } = await SupabaseService.supabase
                                 .from('discovered_cards')
                                 .update({
                                   set_id: targetExt.id,
@@ -1941,15 +1924,23 @@ export function AdminDatabaseEditor() {
                                 throw new Error(`Échec de la mise à jour Supabase: ${supabaseError.message}`)
                               }
 
-                              console.log(`✅ Cartes mises à jour dans Supabase`)
+                              console.log(`✅ ${cardsToMove.length} cartes mises à jour dans Supabase`)
 
-                              // 3. Supprimer l'extension source de IndexedDB
-                              console.log(`🗑️ Suppression de l'extension source "${editingExtension.name}"...`)
-                              await IndexedDBService.deleteCompleteExtension(editingExtension.id)
+                              // Supprimer l'extension source de la table series_database
+                              console.log(`🗑️ Suppression de l'extension source "${editingExtension.name}" de series_database...`)
+                              const { error: deleteSeriesError } = await SupabaseService.supabase
+                                .from('series_database')
+                                .delete()
+                                .eq('id', editingExtension.id)
+
+                              if (deleteSeriesError) {
+                                console.warn('⚠️ Erreur suppression series_database:', deleteSeriesError)
+                                // Ne pas bloquer si l'extension n'existe pas dans series_database
+                              }
 
                               console.log(`✅ Fusion terminée avec succès`)
 
-                              alert(`✅ Fusion terminée!\n\n${updatedCount} cartes déplacées de "${editingExtension.name}" vers "${targetExt.name}".\n\nL'extension source a été supprimée.\n\n⏳ Rechargement de la page...`)
+                              alert(`✅ Fusion terminée!\n\n${cardsToMove.length} cartes déplacées de "${editingExtension.name}" vers "${targetExt.name}".\n\nL'extension source a été supprimée.\n\n⏳ Rechargement de la page...`)
 
                               // Recharger UNIQUEMENT si tout s'est bien passé
                               setTimeout(() => {
