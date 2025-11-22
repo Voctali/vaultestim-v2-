@@ -75,39 +75,29 @@ const organizeCardsBySet = (cards) => {
     }
   })
 
-  // Fusion automatique des extensions Gallery (pt5) avec leur extension parent
+  // Fusion automatique des extensions Gallery avec leur extension parent
+  // UNIQUEMENT pour les Galarian Gallery (gg) et Trainer Gallery (tg)
   // Exemples :
-  // - swsh12pt5gg (Galarian Gallery) → swsh12pt5 (Crown Zenith)
-  // - swsh9tg (Trainer Gallery) → swsh9
-  // - sv8pt5 (sous-extension) → sv8
+  // - swsh12pt5gg (Galarian Gallery) → swsh12pt5 (Crown Zenith) ✅
+  // - swsh9tg (Trainer Gallery) → swsh9 ✅
+  // - sv8pt5 et sv8 → NE PAS fusionner ❌ (extensions indépendantes)
   console.log('🔗 Fusion des extensions Gallery avec leurs extensions parent...')
 
   const galleryExtensions = Object.keys(extensionGroups).filter(id => {
-    // Cas 1 : Galarian Gallery (se termine par 'gg')
+    // UNIQUEMENT les extensions Gallery : suffixe 'gg' (Galarian) ou 'tg' (Trainer)
     if (id.endsWith('gg')) {
       // Le parent est l'ID sans 'gg' (ex: swsh12pt5gg → swsh12pt5)
       const parentId = id.slice(0, -2)
       return extensionGroups[parentId] !== undefined
     }
 
-    // Cas 2 : Trainer Gallery (se termine par 'tg')
     if (id.endsWith('tg')) {
       // Le parent est l'ID sans 'tg' (ex: swsh9tg → swsh9)
       const parentId = id.slice(0, -2)
       return extensionGroups[parentId] !== undefined
     }
 
-    // Cas 3 : Sous-extension pt5 (ex: sv8pt5 → sv8)
-    // IMPORTANT : Vérifier que ce n'est PAS une extension principale qui contient naturellement pt5
-    if (id.endsWith('pt5')) {
-      const parentId = id.slice(0, -3)
-      // Ne fusionner que si le parent existe ET que l'ID actuel n'est pas déjà le parent d'une Gallery
-      const hasGalleryChild = Object.keys(extensionGroups).some(otherId =>
-        otherId.startsWith(id) && otherId !== id && (otherId.endsWith('gg') || otherId.endsWith('tg'))
-      )
-      return !hasGalleryChild && extensionGroups[parentId] !== undefined
-    }
-
+    // NE PAS fusionner les extensions pt5 - ce sont des extensions indépendantes !
     return false
   })
 
@@ -118,8 +108,6 @@ const organizeCardsBySet = (cards) => {
       parentId = galleryId.slice(0, -2) // swsh12pt5gg → swsh12pt5
     } else if (galleryId.endsWith('tg')) {
       parentId = galleryId.slice(0, -2) // swsh9tg → swsh9
-    } else if (galleryId.endsWith('pt5')) {
-      parentId = galleryId.slice(0, -3) // sv8pt5 → sv8
     }
 
     if (parentId && extensionGroups[parentId]) {
