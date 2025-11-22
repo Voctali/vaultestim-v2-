@@ -411,6 +411,9 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
                   onChange={(e) => handleInputChange('purchasePrice', e.target.value)}
                   className="golden-border"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Laissez vide pour prix par défaut (0.60€)
+                </p>
               </div>
 
               <div className="flex items-center space-x-2">
