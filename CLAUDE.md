@@ -270,22 +270,29 @@ CREATE INDEX IF NOT EXISTS idx_discovered_cards_tcgplayer ON discovered_cards US
 
 ## ✅ Fonctionnalités Récentes (Novembre 2024 - Janvier 2025)
 
-### 🔗 Liens CardMarket Dynamiques (Nouveau - 16/11/2025)
-Système intelligent de récupération des liens CardMarket au clic utilisateur.
+### 🔗 Liens CardMarket Dynamiques & Récupération Prix (22/11/2025)
+Système intelligent de récupération des liens CardMarket au clic utilisateur + récupération prix produits scellés.
 
-**Service** : `CardMarketDynamicLinkService.js`
+**Service** : `CardMarketDynamicLinkService.js` + `RapidAPIService.js`
 
-**Fonctionnement** :
+**Fonctionnement liens CardMarket** :
 1. **Au clic** sur bouton "CardMarket (EUR)" ou "Voir sur CardMarket"
 2. **Vérification cache** : Cherche `cardmarket_url` dans Supabase
 3. **Si absent** : Appelle RapidAPI pour obtenir le lien officiel (`links.cardmarket`)
 4. **Redirection immédiate** : Ouvre CardMarket dans un nouvel onglet
 5. **Sauvegarde arrière-plan** : Enregistre le lien dans Supabase (fire-and-forget)
 
+**Récupération prix produits scellés (v1.14.0)** :
+- Bouton "Récupérer le prix" dans modale d'édition produit scellé
+- Utilise `RapidAPIService.getSealedProductById()` au lieu de CardMarket Supabase
+- Champ prix : `prices.cardmarket.lowest` (structure correcte pour produits scellés)
+- Résout l'erreur "Aucun prix trouvé pour cet ID CardMarket en Français"
+
 **Composants impactés** :
 - `CardMarketLinks.jsx` : Bouton "CardMarket (EUR)" pour les cartes
 - `SealedProducts.jsx` : Bouton "Voir sur CardMarket" (collection personnelle)
 - `SealedProductsCatalog.jsx` : Bouton "Voir sur CardMarket" (catalogue)
+- `SealedProductModal.jsx` : Bouton "Récupérer le prix" via RapidAPI
 
 **Tables Supabase** :
 - `discovered_cards.cardmarket_url` - Cartes
@@ -294,6 +301,7 @@ Système intelligent de récupération des liens CardMarket au clic utilisateur.
 
 **Avantages** :
 - ✅ Liens officiels CardMarket (100% fiables)
+- ✅ Prix produits scellés précis via RapidAPI
 - ✅ Cache automatique (pas de quota gaspillé)
 - ✅ Fallback intelligent si erreur
 - ✅ Aucun délai ressenti par l'utilisateur
@@ -568,4 +576,4 @@ Si fusion échoue, **supprimer manuellement** l'extension vide au lieu de fusion
 
 ---
 
-**Dernière mise à jour** : 2025-11-21 (v1.11.3)
+**Dernière mise à jour** : 2025-11-22 (v1.14.0)
