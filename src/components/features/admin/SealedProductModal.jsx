@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ImageUpload } from '@/components/features/ImageUpload'
 import { Package, Euro, Link, Tag, FileText, RefreshCw, Plus, Minus, Image as ImageIcon } from 'lucide-react'
 import { CardMarketSupabaseService, LANGUAGE_LABELS } from '@/services/CardMarketSupabaseService'
+import { RapidAPIService } from '@/services/RapidAPIService'
 
 const PRODUCT_CATEGORIES = [
   'Booster Pack',
@@ -133,27 +134,30 @@ export function SealedProductModal({ isOpen, onClose, onSave, product = null }) 
     try {
       setLoadingPrice(true)
 
-      // Obtenir l'ID de langue pour la langue sélectionnée
-      const languageId = CardMarketSupabaseService.getLanguageId(formData.language)
-      console.log(`🌐 Récupération du prix en ${formData.language} (ID: ${languageId})`)
+      console.log(`🌐 Récupération du prix via RapidAPI (ID: ${formData.cardmarketIdProduct})`)
 
-      const priceData = await CardMarketSupabaseService.getPriceForProduct(
-        parseInt(formData.cardmarketIdProduct),
-        languageId
+      // Utiliser RapidAPI pour récupérer les informations du produit
+      const productData = await RapidAPIService.getSealedProductById(
+        parseInt(formData.cardmarketIdProduct)
       )
 
-      if (priceData?.avg) {
+      // Le prix est dans prices.cardmarket.lowest pour les produits scellés
+      const price = productData?.prices?.cardmarket?.lowest
+
+      if (price) {
         setFormData(prev => ({
           ...prev,
-          marketPrice: parseFloat(priceData.avg).toFixed(2)
+          marketPrice: parseFloat(price).toFixed(2)
         }))
-        console.log(`✅ Prix récupéré: ${priceData.avg}€ [${formData.language}]`)
+        console.log(`✅ Prix récupéré via RapidAPI: ${price}€`)
+        alert(`Prix récupéré avec succès : ${price}€`)
       } else {
-        alert(`Aucun prix trouvé pour cet ID CardMarket en ${LANGUAGE_LABELS[formData.language] || formData.language}`)
+        console.warn('⚠️ Aucun prix trouvé dans la réponse RapidAPI:', productData)
+        alert(`Aucun prix trouvé pour cet ID CardMarket`)
       }
     } catch (error) {
-      console.error('❌ Erreur récupération prix:', error)
-      alert('Erreur lors de la récupération du prix')
+      console.error('❌ Erreur récupération prix RapidAPI:', error)
+      alert('Erreur lors de la récupération du prix via RapidAPI')
     } finally {
       setLoadingPrice(false)
     }

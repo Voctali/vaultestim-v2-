@@ -772,6 +772,13 @@ export class RapidAPIService {
   }
 
   /**
+   * Alias pour getProduct (produits scellés)
+   */
+  static async getSealedProductById(productId) {
+    return this.getProduct(productId)
+  }
+
+  /**
    * Lister les produits scellés d'une extension
    *
    * @param {string} expansionSlug - Slug de l'extension
