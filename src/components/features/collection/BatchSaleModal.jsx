@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Euro, Package, TrendingUp, AlertCircle } from 'lucide-react'
+import { DEFAULT_CARD_PURCHASE_PRICE } from '@/constants/cardPricing'
 
 export function BatchSaleModal({ isOpen, onClose, onSubmit, batch }) {
   const [salePrice, setSalePrice] = useState('')
@@ -16,7 +17,7 @@ export function BatchSaleModal({ isOpen, onClose, onSubmit, batch }) {
 
   // Calculer le prix d'achat total du lot
   const totalPurchasePrice = (batch.cards || []).reduce((sum, card) => {
-    return sum + parseFloat(card.purchasePrice || 0)
+    return sum + parseFloat(card.purchasePrice || DEFAULT_CARD_PURCHASE_PRICE)
   }, 0)
 
   const calculatedProfit = salePrice ? (parseFloat(salePrice) - totalPurchasePrice).toFixed(2) : '0.00'

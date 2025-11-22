@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, createContext, useContext } from 'react'
 import { SupabaseCollectionService } from '@/services/SupabaseCollectionService'
 import { supabase } from '@/lib/supabaseClient'
 import { getNumericPrice } from '@/utils/priceFormatter'
+import { DEFAULT_CARD_PURCHASE_PRICE } from '@/constants/cardPricing'
 
 const CollectionContext = createContext()
 
@@ -256,7 +257,8 @@ export function CollectionProvider({ children }) {
     }, 0)
 
     const totalPurchaseValue = collection.reduce((sum, card) => {
-      const purchasePrice = parseFloat(card.purchasePrice || '0')
+      // Si pas de prix d'achat renseigné, utiliser le prix par défaut (0.60€)
+      const purchasePrice = parseFloat(card.purchasePrice || DEFAULT_CARD_PURCHASE_PRICE)
       const quantity = parseInt(card.quantity || 1)
       return sum + (purchasePrice * quantity)
     }, 0)

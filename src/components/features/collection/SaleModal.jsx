@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Euro, Calendar, TrendingUp, AlertCircle } from 'lucide-react'
 import { translateCondition } from '@/utils/cardConditions'
+import { DEFAULT_CARD_PURCHASE_PRICE } from '@/constants/cardPricing'
 
 export function SaleModal({ isOpen, onClose, onSubmit, card }) {
   const [salePrice, setSalePrice] = useState('')
@@ -17,7 +18,7 @@ export function SaleModal({ isOpen, onClose, onSubmit, card }) {
   if (!card) return null
 
   const maxQuantity = card.quantity || 1
-  const purchasePrice = parseFloat(card.purchasePrice || 0) * quantity
+  const purchasePrice = parseFloat(card.purchasePrice || DEFAULT_CARD_PURCHASE_PRICE) * quantity
   const calculatedProfit = salePrice ? (parseFloat(salePrice) - purchasePrice).toFixed(2) : '0.00'
   const profitPercentage = purchasePrice > 0 && salePrice
     ? ((parseFloat(calculatedProfit) / purchasePrice) * 100).toFixed(1)
@@ -107,7 +108,8 @@ export function SaleModal({ isOpen, onClose, onSubmit, card }) {
               </div>
               <div className="mt-2 text-sm">
                 <p className="text-muted-foreground">
-                  Prix d'achat unitaire: <span className="font-semibold text-foreground">{parseFloat(card.purchasePrice || 0).toFixed(2)}€</span>
+                  Prix d'achat unitaire: <span className="font-semibold text-foreground">{parseFloat(card.purchasePrice || DEFAULT_CARD_PURCHASE_PRICE).toFixed(2)}€</span>
+                  {!card.purchasePrice && <span className="text-xs text-muted-foreground ml-1">(estimé)</span>}
                 </p>
                 {quantity > 1 && (
                   <p className="text-muted-foreground">

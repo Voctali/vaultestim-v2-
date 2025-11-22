@@ -553,12 +553,25 @@ export function SealedProducts() {
                                   </div>
                                 )}
 
+                                {/* Prix d'achat */}
+                                {product.purchase_price && (
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <Euro className="w-4 h-4 text-blue-500" />
+                                      <span>Prix d'achat</span>
+                                    </div>
+                                    <span className="font-semibold text-blue-500">
+                                      {parseFloat(product.purchase_price).toFixed(2)} €
+                                    </span>
+                                  </div>
+                                )}
+
                                 {/* Prix du marché */}
                                 {product.market_price && (
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <Euro className="w-4 h-4 text-yellow-500" />
-                                      <span>Valeur marché</span>
+                                      <span>Prix marché</span>
                                     </div>
                                     <span className="font-bold text-yellow-500">
                                       {parseFloat(product.market_price).toFixed(2)} €
