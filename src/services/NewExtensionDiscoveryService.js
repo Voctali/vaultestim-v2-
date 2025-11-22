@@ -269,6 +269,7 @@ export const CARDMARKET_TO_TCGAPI = {
   'SWSH11': 'swsh11',
   'SWSH12': 'swsh12',
   'SWSH12.5': 'swsh12pt5',
+  'CRZ': 'swsh12pt5',  // Crown Zenith (code CardMarket)
   // Sun & Moon
   'SM1': 'sm1',
   'SM2': 'sm2',

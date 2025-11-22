@@ -75,6 +75,35 @@ const organizeCardsBySet = (cards) => {
     }
   })
 
+  // Fusion automatique des extensions Gallery (pt5) avec leur extension parent
+  // Exemples : swsh12pt5gg → swsh12pt5, sv8pt5 → sv8
+  console.log('🔗 Fusion des extensions Gallery avec leurs extensions parent...')
+  const galleryExtensions = Object.keys(extensionGroups).filter(id => id.includes('pt5'))
+
+  galleryExtensions.forEach(galleryId => {
+    // Trouver l'ID parent en enlevant 'pt5' ou 'pt5gg'
+    const parentId = galleryId.replace(/pt5gg|pt5/, '')
+
+    if (parentId && extensionGroups[parentId]) {
+      console.log(`🔗 Fusion ${galleryId} → ${parentId}`)
+
+      // Fusionner les cartes de la Gallery dans l'extension parent
+      const galleryCards = extensionGroups[galleryId].cards
+      galleryCards.forEach(card => {
+        const cardExists = extensionGroups[parentId].cards.some(c => c.id === card.id)
+        if (!cardExists) {
+          extensionGroups[parentId].cards.push(card)
+        }
+      })
+
+      // Supprimer l'extension Gallery (elle est maintenant fusionnée)
+      delete extensionGroups[galleryId]
+      console.log(`✅ Extension ${galleryId} fusionnée dans ${parentId}`)
+    } else {
+      console.log(`⚠️ Extension parent ${parentId} introuvable pour ${galleryId}, conservation séparée`)
+    }
+  })
+
   // Deuxième passe : regrouper les extensions par blocs
   Object.values(extensionGroups).forEach(extension => {
     const blockName = extension.series

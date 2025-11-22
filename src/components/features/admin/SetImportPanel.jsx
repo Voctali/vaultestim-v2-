@@ -16,6 +16,7 @@ import { useCardDatabase } from '@/hooks/useCardDatabase.jsx'
 import { Download, Package, Calendar, TrendingUp, CheckCircle, AlertCircle, X, Zap } from 'lucide-react'
 import SetImportService from '@/services/SetImportService'
 import { RapidAPIService } from '@/services/RapidAPIService'
+import { CARDMARKET_TO_TCGAPI, getEpisodeIdFromCode } from '@/services/NewExtensionDiscoveryService'
 
 export function SetImportPanel() {
   const { addDiscoveredCards, updateSeriesDatabase, discoveredCards, seriesDatabase } = useCardDatabase()
@@ -32,9 +33,23 @@ export function SetImportPanel() {
   const [setNameSearch, setSetNameSearch] = useState('')
   const [useRapidAPI, setUseRapidAPI] = useState(RapidAPIService.isAvailable())
   const [rapidAPISlug, setRapidAPISlug] = useState('')
+  const [importedSetIds, setImportedSetIds] = useState(new Set())
 
   // NE PAS charger automatiquement pour éviter les timeouts
   // Les extensions seront chargées à la demande (clic sur dropdown ou bouton)
+
+  // Calculer les extensions déjà importées à partir des cartes découvertes
+  useEffect(() => {
+    if (discoveredCards.length > 0) {
+      const existingIds = new Set(
+        discoveredCards
+          .map(card => card.set?.id || card.setId)
+          .filter(Boolean)
+      )
+      setImportedSetIds(existingIds)
+      console.log(`📊 ${existingIds.size} extensions détectées comme déjà importées`)
+    }
+  }, [discoveredCards])
 
   const loadSets = async () => {
     setIsLoadingSets(true)
@@ -90,12 +105,10 @@ export function SetImportPanel() {
     setAbortController(controller)
 
     try {
-      // Déterminer la source d'import
-      const importSource = useRapidAPI ? 'RapidAPI' : 'Pokemon TCG API'
       const setName = selectedSet?.name || rapidAPISlug
       const setId = selectedSet?.id || rapidAPISlug
 
-      console.log(`📦 Import de ${setName} via ${importSource}...`)
+      console.log(`📦 Import de ${setName}...`)
 
       // VÉRIFICATION DES DOUBLONS : Vérifier si l'extension existe déjà
       const existingExtension = seriesDatabase.find(series =>
@@ -125,22 +138,47 @@ export function SetImportPanel() {
       }
 
       let cards = []
+      let actualSlug = rapidAPISlug
+
+      // Si RapidAPI est disponible et qu'on a une extension sélectionnée, essayer de trouver le slug automatiquement
+      if (RapidAPIService.isAvailable() && selectedSet && !actualSlug) {
+        // Chercher le code CardMarket inverse depuis l'ID Pokemon TCG
+        const cardmarketCode = Object.entries(CARDMARKET_TO_TCGAPI).find(
+          ([code, tcgId]) => tcgId === selectedSet.id
+        )?.[0]
+
+        if (cardmarketCode) {
+          // Convertir le code en slug (minuscule avec tirets)
+          actualSlug = cardmarketCode.toLowerCase().replace(/_/g, '-')
+          console.log(`🔍 Mapping trouvé: ${selectedSet.id} → ${cardmarketCode} → slug: ${actualSlug}`)
+        }
+      }
 
       // Import via RapidAPI ou Pokemon TCG API
-      if (useRapidAPI && rapidAPISlug) {
-        // Import via RapidAPI (CardMarket)
-        console.log(`⚡ Import via RapidAPI avec slug: "${rapidAPISlug}"`)
-        cards = await RapidAPIService.importAllCardsByExpansion(
-          rapidAPISlug,
-          (progressData) => {
-            setProgress({
-              ...progressData,
-              setName: rapidAPISlug
-            })
-          }
-        )
-      } else if (selectedSet) {
-        // Import via Pokemon TCG API
+      if (RapidAPIService.isAvailable() && actualSlug) {
+        // Import via RapidAPI (CardMarket) - prioritaire car plus rapide et évite les timeouts
+        console.log(`⚡ Import via RapidAPI avec slug: "${actualSlug}"`)
+        try {
+          cards = await RapidAPIService.importAllCardsByExpansion(
+            actualSlug,
+            (progressData) => {
+              setProgress({
+                ...progressData,
+                setName: actualSlug
+              })
+            }
+          )
+          console.log(`✅ RapidAPI: ${cards.length} cartes récupérées`)
+        } catch (rapidError) {
+          console.warn(`⚠️ RapidAPI échoué, fallback sur Pokemon TCG API:`, rapidError)
+          // Continuer vers le fallback Pokemon TCG API
+          cards = []
+        }
+      }
+
+      // Fallback Pokemon TCG API si RapidAPI a échoué ou n'est pas disponible
+      if (cards.length === 0 && selectedSet) {
+        console.log(`📡 Import via Pokemon TCG API (fallback)...`)
         cards = await SetImportService.importSetCards(
           selectedSet.id,
           (progressData) => {
@@ -148,10 +186,14 @@ export function SetImportPanel() {
           },
           controller.signal
         )
-      } else {
-        throw new Error('Aucune extension sélectionnée')
       }
 
+      if (cards.length === 0) {
+        throw new Error('Aucune extension sélectionnée ou aucune carte trouvée')
+      }
+
+      // Déterminer la source réelle d'import
+      const importSource = actualSlug ? 'RapidAPI' : 'Pokemon TCG API'
       console.log(`✅ ${cards.length} cartes importées depuis ${importSource}`)
 
       // Filtrer les cartes déjà présentes pour éviter les doublons
@@ -166,6 +208,9 @@ export function SetImportPanel() {
 
       // Mettre à jour l'organisation par extensions
       await updateSeriesDatabase(cards)
+
+      // Mettre à jour la liste des extensions importées pour afficher le badge
+      setImportedSetIds(prev => new Set([...prev, setId]))
 
       setResult({
         success: true,
@@ -281,19 +326,27 @@ export function SetImportPanel() {
               <SelectValue placeholder={isLoadingSets ? "Chargement..." : "Choisir une extension"} />
             </SelectTrigger>
             <SelectContent className="max-h-[300px]">
-              {filteredSets.map(set => (
-                <SelectItem key={set.id} value={set.id}>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{set.name}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {set.total} cartes
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(set.releaseDate).toLocaleDateString('fr-FR')}
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
+              {filteredSets.map(set => {
+                const isImported = importedSetIds.has(set.id)
+                return (
+                  <SelectItem key={set.id} value={set.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{set.name}</span>
+                      {isImported && (
+                        <Badge className="text-xs bg-green-600/30 text-green-400 border-green-600">
+                          Déjà importée
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs">
+                        {set.total} cartes
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(set.releaseDate).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                  </SelectItem>
+                )
+              })}
             </SelectContent>
           </Select>
         </div>
