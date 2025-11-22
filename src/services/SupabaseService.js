@@ -243,11 +243,12 @@ export class SupabaseService {
     try {
       console.log('🌍 Chargement de la base de données COMMUNE (toutes les cartes découvertes)...')
 
-      // Charger par batch de 1000 (optimisé pour la base commune)
+      // Charger TOUTES les cartes en une seule requête (base commune)
+      // BATCH_SIZE augmenté à 50000 pour garantir qu'on charge TOUT
       let allCards = []
       let hasMore = true
       let offset = 0
-      const BATCH_SIZE = 1000
+      const BATCH_SIZE = 50000
 
       while (hasMore) {
         console.log(`🔄 Batch ${Math.floor(offset / BATCH_SIZE) + 1}: Requête offset=${offset}...`)

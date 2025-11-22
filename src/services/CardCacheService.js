@@ -9,7 +9,7 @@ const STORE_NAME = 'cards'
 const METADATA_STORE = 'metadata'
 
 // Version du cache - INCREMENTER CETTE VALEUR pour forcer un rechargement complet sur tous les appareils
-const CACHE_VERSION = '2.3.0' // Incrémenté pour fix set_id NULL des extensions Gallery (2025-01-22)
+const CACHE_VERSION = '2.4.0' // Fix BATCH_SIZE Supabase pour charger TOUTES les cartes (2025-01-22)
 
 export class CardCacheService {
   static db = null
