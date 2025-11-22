@@ -243,63 +243,49 @@ export class SupabaseService {
     try {
       console.log('🌍 Chargement de la base de données COMMUNE (toutes les cartes découvertes)...')
 
-      // Charger TOUTES les cartes en une seule requête (base commune)
-      // BATCH_SIZE augmenté à 50000 pour garantir qu'on charge TOUT
+      // Charger TOUTES les cartes avec pagination forcée (Supabase limite à ~1000 par défaut)
       let allCards = []
+      let page = 0
+      const PAGE_SIZE = 1000 // Limite Supabase
       let hasMore = true
-      let offset = 0
-      const BATCH_SIZE = 50000
 
       while (hasMore) {
-        console.log(`🔄 Batch ${Math.floor(offset / BATCH_SIZE) + 1}: Requête offset=${offset}...`)
+        const rangeStart = page * PAGE_SIZE
+        const rangeEnd = rangeStart + PAGE_SIZE - 1
+
+        console.log(`🔄 Page ${page + 1}: range(${rangeStart}, ${rangeEnd})...`)
 
         const startTime = Date.now()
 
-        let data, error
-
-        try {
-          console.log('⏳ Lancement requête Supabase...')
-
-          // Timeout 15s
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout après 15s')), 15000)
-          )
-
-          // CHANGEMENT : On ne filtre PLUS par user_id pour charger TOUTES les cartes
-          const queryPromise = supabase
-            .from('discovered_cards')
-            .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, attacks, abilities, weaknesses, resistances, retreat_cost, has_cosmos_holo')
-            .range(offset, offset + BATCH_SIZE - 1)
-
-          console.log('⏳ Attente réponse...')
-          const result = await Promise.race([queryPromise, timeoutPromise])
-          console.log('✅ Réponse reçue')
-
-          data = result.data
-          error = result.error
-        } catch (timeoutError) {
-          console.error('⏱️ TIMEOUT:', timeoutError.message)
-          throw timeoutError
-        }
+        const { data, error } = await supabase
+          .from('discovered_cards')
+          .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, attacks, abilities, weaknesses, resistances, retreat_cost, has_cosmos_holo')
+          .range(rangeStart, rangeEnd)
+          .order('id', { ascending: true }) // Important pour pagination stable
 
         const elapsed = Date.now() - startTime
-        console.log(`⏱️ Requête terminée en ${elapsed}ms`)
+        console.log(`⏱️ Page ${page + 1} terminée en ${elapsed}ms`)
 
         if (error) {
           console.error('❌ Erreur Supabase:', error)
           throw error
         }
 
+        if (!data || data.length === 0) {
+          console.log('✅ Plus de cartes à charger')
+          break
+        }
+
         allCards = allCards.concat(data)
-        console.log(`📦 Batch ${Math.floor(offset / BATCH_SIZE) + 1}: ${data.length} cartes reçues (${allCards.length} total)`)
+        console.log(`📦 Page ${page + 1}: ${data.length} cartes reçues (Total: ${allCards.length})`)
 
-        // Si on a reçu moins que BATCH_SIZE, on a tout chargé
-        hasMore = data.length === BATCH_SIZE
-        offset += BATCH_SIZE
+        // Continuer tant qu'on reçoit PAGE_SIZE cartes (il y en a peut-être encore)
+        hasMore = data.length === PAGE_SIZE
+        page++
 
-        // Petit délai entre batches pour ne pas surcharger Supabase
+        // Pause entre pages
         if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 100))
+          await new Promise(resolve => setTimeout(resolve, 50))
         }
       }
 
