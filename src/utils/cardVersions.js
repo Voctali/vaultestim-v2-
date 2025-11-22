@@ -201,7 +201,13 @@ export function getAvailableVersions(card) {
     return [{ value: 'Full Art', label: 'Full Art (★★ grises)' }]
   }
 
-  // 9. EX (2 étoiles noires) - Uniquement les vraies cartes EX
+  // 9. Double Rare - Uniquement version EX (★★ noires)
+  // Les cartes avec cette rareté sont des cartes EX modernes
+  if (rarity.includes('double rare')) {
+    return [{ value: 'EX', label: 'EX (★★ noires)' }]
+  }
+
+  // 10. EX (2 étoiles noires) - Uniquement les vraies cartes EX
   if (
     name.includes(' ex') ||
     name.includes('-ex')
