@@ -36,7 +36,17 @@ export function getAvailableVersions(card) {
   // Détection des raretés spéciales
   // ORDRE IMPORTANT: Du plus spécifique au plus général
 
-  // 0. PRIORITÉ MAX : Extensions spéciales avec Reverse Pokéball/Masterball
+  // 0a. PRIORITÉ ABSOLUE : Cartes EX et Double Rare - Version unique
+  // Doit être vérifié AVANT les extensions spéciales
+  if (
+    rarity.includes('double rare') ||
+    name.includes(' ex') ||
+    name.includes('-ex')
+  ) {
+    return [{ value: 'EX', label: 'EX (★★ noires)' }]
+  }
+
+  // 0b. PRIORITÉ MAX : Extensions spéciales avec Reverse Pokéball/Masterball
   // DOIT être vérifié EN PREMIER pour cartes Common/Uncommon/Rare de Prismatic Evolution, Black Bolt, White Flare
   const specialSets = [
     'sv8pt5', // Prismatic Evolution (ID réel trouvé)
@@ -199,20 +209,6 @@ export function getAvailableVersions(card) {
     name.includes('-vstar')
   ) {
     return [{ value: 'Full Art', label: 'Full Art (★★ grises)' }]
-  }
-
-  // 9. Double Rare - Uniquement version EX (★★ noires)
-  // Les cartes avec cette rareté sont des cartes EX modernes
-  if (rarity.includes('double rare')) {
-    return [{ value: 'EX', label: 'EX (★★ noires)' }]
-  }
-
-  // 10. EX (2 étoiles noires) - Uniquement les vraies cartes EX
-  if (
-    name.includes(' ex') ||
-    name.includes('-ex')
-  ) {
-    return [{ value: 'EX', label: 'EX (★★ noires)' }]
   }
 
   // Cartes normales : toutes les versions standard

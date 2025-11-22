@@ -12,6 +12,7 @@ import { useCollection } from '@/hooks/useCollection.jsx'
 import { formatCardPrice, formatCardPriceWithCondition } from '@/utils/priceFormatter'
 import { translateCondition } from '@/utils/cardConditions'
 import { translateCardName } from '@/utils/cardTranslations'
+import { getAvailableVersions } from '@/utils/cardVersions'
 import { ArrowLeft, Edit2, Save, X, Heart, List, Trash2, ExternalLink, Plus, Minus, Flag } from 'lucide-react'
 
 export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [] }) {
@@ -425,12 +426,11 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Normale">Normale</SelectItem>
-                        <SelectItem value="Reverse Holo">Reverse Holo</SelectItem>
-                        <SelectItem value="Holo">Holo</SelectItem>
-                        <SelectItem value="Tampon (logo extension)">Tampon (logo extension)</SelectItem>
-                        <SelectItem value="Full Art">Full Art</SelectItem>
-                        <SelectItem value="Alternate Art">Alternate Art</SelectItem>
+                        {getAvailableVersions(card).map((version) => (
+                          <SelectItem key={version.value} value={version.value}>
+                            {version.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
