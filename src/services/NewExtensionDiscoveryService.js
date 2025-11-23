@@ -366,7 +366,7 @@ class NewExtensionDiscoveryService {
               slug: exp.slug || cardmarketCode.toLowerCase(),
               cardmarketCode: cardmarketCode, // Garder le code original pour référence
               name: exp.name,
-              series: exp.series || 'Unknown',
+              series: exp.series || 'Série inconnue',
               releaseDate: exp.release_date || null,
               total: exp.card_count || 0,
               images: {

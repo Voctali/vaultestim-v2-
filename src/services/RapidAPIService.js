@@ -449,14 +449,14 @@ export class RapidAPIService {
     }
 
     // Déterminer la série
-    let series = 'Unknown'
+    let series = 'Série inconnue'
     if (episode.serie?.name) {
       series = episode.serie.name
     } else if (extensionInfo?.serie?.name) {
       series = extensionInfo.serie.name
     } else if (extensionInfo?.serie) {
       // Parfois serie est directement le nom
-      series = typeof extensionInfo.serie === 'string' ? extensionInfo.serie : 'Unknown'
+      series = typeof extensionInfo.serie === 'string' ? extensionInfo.serie : 'Série inconnue'
     }
 
     // Mapping des séries connues par setId
@@ -488,8 +488,8 @@ export class RapidAPIService {
       'swsh12': 'Sword & Shield',
     }
 
-    // Utiliser le mapping si la série est Unknown
-    if (series === 'Unknown' && knownSeries[setId]) {
+    // Utiliser le mapping si la série est inconnue
+    if (series === 'Série inconnue' && knownSeries[setId]) {
       series = knownSeries[setId]
       console.log(`📍 Série détectée via mapping: ${setId} -> ${series}`)
     }

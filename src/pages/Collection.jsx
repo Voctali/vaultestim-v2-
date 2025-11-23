@@ -116,7 +116,7 @@ export function Collection() {
   const cardsByBlock = sortedCards.reduce((acc, card) => {
     const blockName = card.set?.series || card.series || 'Sans bloc'
     const extensionKey = card.set?.id || card.extension || 'Sans extension'
-    const extensionName = card.set?.name || card.extension || 'Sans extension'
+    const extensionName = card.set?.name || (card.set?.id && card.set.id !== 'unknown' ? card.set.id : 'Extension inconnue')
     const releaseDate = card.set?.releaseDate || null
 
     // Créer le bloc s'il n'existe pas

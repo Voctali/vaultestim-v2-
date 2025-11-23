@@ -611,7 +611,7 @@ export class TCGdxService {
       number: item.number || '',
       set: {
         id: item.set?.id || 'unknown',
-        name: item.set?.name || 'Unknown Set',
+        name: item.set?.name || item.set?.id || 'Extension inconnue',
         series: correctBlock, // Utiliser le bloc mappé
         originalSeries: originalSeries, // Garder la série originale pour référence
         code: item.set?.ptcgoCode || item.set?.id || '',
