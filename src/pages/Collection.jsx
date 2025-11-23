@@ -383,15 +383,13 @@ export function Collection() {
 
                       {/* Card Info */}
                       <div className="space-y-2">
-                        <h3 className="font-semibold text-sm golden-glow">{translateCardName(card.name)}</h3>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs text-muted-foreground">{card.set?.name || card.extension || card.series}</p>
+                        <h3 className="font-semibold text-sm golden-glow truncate" title={translateCardName(card.name)}>
+                          {translateCardName(card.name)}
                           {card.number && (
-                            <Badge variant="outline" className="text-xs">
-                              #{card.number}
-                            </Badge>
+                            <span className="text-xs text-muted-foreground ml-1">#{card.number}</span>
                           )}
-                        </div>
+                        </h3>
+                        <p className="text-xs text-muted-foreground">{card.set?.name || card.extension || card.series}</p>
 
                         <div className="space-y-1">
                           <Badge variant="secondary" className="text-xs">
