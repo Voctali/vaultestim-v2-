@@ -574,6 +574,91 @@ Si fusion échoue, **supprimer manuellement** l'extension vide au lieu de fusion
 
 **État** : Partiellement résolu (v1.11.3), tests en cours
 
+### Tri des Cartes dans Collection (RÉSOLU - v1.19.2)
+**Problème** : Les cartes n'étaient pas triées correctement par numéro dans la vue Collection personnelle.
+
+**Symptômes** :
+- Cartes avec numéros élevés (47, 79, 80, 86) apparaissaient avant la carte #1
+- Extensions White Flare et Black Bolt particulièrement affectées
+- Incohérence entre "Explorer les séries" (tri correct) et "Ma Collection" (tri incorrect)
+
+**Cause identifiée** :
+- Tri primaire par `releaseDate` au lieu de `set.id`
+- Les cartes avec dates différentes n'étaient pas groupées correctement par extension
+- Algorithme de tri ne gérait pas les cas où une seule carte avait un numéro
+
+**Correctifs appliqués** :
+- ✅ v1.19.0 : Affichage des numéros de carte (format `#{number}`)
+- ✅ v1.19.2 : Changement tri primaire de `releaseDate` vers `set.id`
+- ✅ v1.19.2 : Tri secondaire par numéro de carte avec extraction intelligente
+- ✅ Algorithme amélioré dans `Collection.jsx`, `useCardDatabase.jsx`, `SeriesDetailView.jsx`
+
+**Solution finale** :
+```javascript
+// Tri par set.id (grouper extensions) puis par numéro
+const sortedCards = [...filteredCards].sort((a, b) => {
+  // 1. Trier par set.id
+  const setIdA = a.set?.id || a.extension || ''
+  const setIdB = b.set?.id || b.extension || ''
+  if (setIdA !== setIdB) return setIdA.localeCompare(setIdB)
+
+  // 2. Trier par numéro de carte
+  const numA = a.number || ''
+  const numB = b.number || ''
+  const matchA = numA.match(/^(\d+)/)
+  const matchB = numB.match(/^(\d+)/)
+
+  if (matchA && matchB) {
+    const intA = parseInt(matchA[1])
+    const intB = parseInt(matchB[1])
+    if (intA !== intB) return intA - intB
+    return numA.localeCompare(numB)
+  }
+  if (matchA && !matchB) return -1
+  if (!matchA && matchB) return 1
+  return numA.localeCompare(numB)
+})
+```
+
+**État** : ✅ Résolu (v1.19.2)
+
+### Limite Supabase 1000 lignes (RÉSOLU - v1.19.4)
+**Problème** : La collection était limitée à 1000 exemplaires maximum.
+
+**Symptômes** :
+- Impossible de voir plus de 1000 cartes dans "Ma Collection"
+- Statistiques bloquées à 1000 dans le Dashboard
+- Les cartes au-delà de la 1000ème n'apparaissaient pas
+
+**Cause identifiée** :
+- Supabase limite par défaut les requêtes `.select()` à 1000 lignes
+- Aucune limite explicite n'était spécifiée dans `getUserCollection()`
+- Les statistiques comptaient seulement les lignes au lieu des quantités
+
+**Correctifs appliqués** :
+- ✅ v1.19.4 : Ajout `.limit(10000)` dans `SupabaseCollectionService.js:37`
+- ✅ v1.19.4 : Modification calcul `totalCards` pour sommer les quantités
+- ✅ v1.19.4 : Ajout `uniqueCards` pour afficher le nombre de cartes distinctes
+- ✅ v1.19.4 : Mise à jour Dashboard et Statistics pour afficher les deux valeurs
+
+**Solution finale** :
+```javascript
+// SupabaseCollectionService.js - Ligne 37
+.limit(10000) // Limite augmentée pour collections volumineuses
+
+// useCollection.jsx - Lignes 252-258
+const totalCards = collection.reduce((sum, card) => {
+  return sum + parseInt(card.quantity || 1)
+}, 0)
+const uniqueCards = collection.length
+```
+
+**Affichage** :
+- **Dashboard** : "CARTES TOTAL: 1250" + "850 cartes uniques"
+- **Statistics** : "Total d'exemplaires · 850 cartes uniques"
+
+**État** : ✅ Résolu (v1.19.4)
+
 ---
 
-**Dernière mise à jour** : 2025-11-22 (v1.14.0)
+**Dernière mise à jour** : 2025-11-24 (v1.19.4)

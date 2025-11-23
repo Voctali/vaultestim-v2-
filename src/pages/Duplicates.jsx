@@ -400,41 +400,91 @@ export function Duplicates() {
     alert('Vente enregistrée avec succès !')
   }
 
-  // Trier et filtrer les cartes pour la modale d'édition
-  const sortedAndFilteredModalCards = useMemo(() => {
-    let cards = [...duplicateCards]
+  // Grouper et trier les cartes pour la modale d'édition par extension
+  const groupedModalCards = useMemo(() => {
+    // Grouper par bloc puis par extension
+    const groups = {}
 
-    // Filtrer par numéro si recherche active
-    if (modalSearchTerm.trim()) {
-      const term = modalSearchTerm.trim()
-      cards = cards.filter(card => {
-        if (!card.number) return false
-        return card.number.includes(term)
-      })
-    }
+    duplicateCards.forEach(card => {
+      const blockName = card.set?.series || card.series || 'Sans bloc'
+      const extensionKey = card.set?.id || card.extension || 'Sans extension'
+      const extensionName = card.set?.name || card.extension || 'Sans extension'
+      const releaseDate = card.set?.releaseDate || null
 
-    // Trier par extension puis par numéro
-    cards.sort((a, b) => {
-      // D'abord par extension
-      const extA = a.set?.name || a.extension || ''
-      const extB = b.set?.name || b.extension || ''
-      if (extA !== extB) return extA.localeCompare(extB)
-
-      // Ensuite par numéro
-      const numA = a.number || '999'
-      const numB = b.number || '999'
-
-      // Extraire la partie numérique (avant le /)
-      const parseNumber = (num) => {
-        const match = num.match(/^(\d+)/)
-        return match ? parseInt(match[1]) : 999
+      if (!groups[blockName]) {
+        groups[blockName] = {
+          blockName,
+          extensions: {}
+        }
       }
 
-      return parseNumber(numA) - parseNumber(numB)
+      if (!groups[blockName].extensions[extensionKey]) {
+        groups[blockName].extensions[extensionKey] = {
+          key: extensionKey,
+          name: extensionName,
+          releaseDate,
+          cards: []
+        }
+      }
+
+      groups[blockName].extensions[extensionKey].cards.push(card)
     })
 
-    return cards
-  }, [duplicateCards, modalSearchTerm])
+    // Trier les cartes par set.id puis par numéro dans chaque extension
+    Object.values(groups).forEach(block => {
+      Object.values(block.extensions).forEach(ext => {
+        ext.cards.sort((a, b) => {
+          // 1. Trier par set.id
+          const setIdA = a.set?.id || a.extension || ''
+          const setIdB = b.set?.id || b.extension || ''
+          if (setIdA !== setIdB) return setIdA.localeCompare(setIdB)
+
+          // 2. Trier par numéro de carte
+          const numA = a.number || ''
+          const numB = b.number || ''
+          const matchA = numA.match(/^(\d+)/)
+          const matchB = numB.match(/^(\d+)/)
+
+          if (matchA && matchB) {
+            const intA = parseInt(matchA[1])
+            const intB = parseInt(matchB[1])
+            if (intA !== intB) return intA - intB
+            return numA.localeCompare(numB)
+          }
+          if (matchA && !matchB) return -1
+          if (!matchA && matchB) return 1
+          return numA.localeCompare(numB)
+        })
+      })
+    })
+
+    // Convertir en tableau et trier
+    return Object.values(groups).map(block => ({
+      blockName: block.blockName,
+      extensions: Object.values(block.extensions).sort((a, b) => {
+        const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date(0)
+        const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date(0)
+        return dateB - dateA // Plus récent en premier
+      })
+    })).sort((a, b) => {
+      // Trier les blocs par date de la dernière extension
+      const dateA = a.extensions[0]?.releaseDate ? new Date(a.extensions[0].releaseDate) : new Date(0)
+      const dateB = b.extensions[0]?.releaseDate ? new Date(b.extensions[0].releaseDate) : new Date(0)
+      return dateB - dateA
+    })
+  }, [duplicateCards])
+
+  // Filtrer les cartes d'une extension par numéro dans la modale
+  const filterModalCardsByNumber = (cards, extensionKey) => {
+    const searchTerm = extensionSearchTerms[`modal-${extensionKey}`]
+    if (!searchTerm || !searchTerm.trim()) return cards
+
+    const term = searchTerm.trim()
+    return cards.filter(card => {
+      if (!card.number) return false
+      return card.number.includes(term)
+    })
+  }
 
   // Fonction pour ajouter les cartes sélectionnées à un lot existant
   const handleAddToBatch = (batchId) => {
@@ -1056,32 +1106,6 @@ export function Duplicates() {
               />
             </div>
 
-            {/* Champ de recherche par numéro dans la modale */}
-            <div>
-              <Label htmlFor="modal-search">Rechercher par numéro</Label>
-              <div className="flex items-center gap-2">
-                <Search className="w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="modal-search"
-                  placeholder="Rechercher par numéro (ex: 025 ou 025/165)"
-                  value={modalSearchTerm}
-                  onChange={(e) => setModalSearchTerm(e.target.value)}
-                  className="golden-border"
-                  style={{ textTransform: 'none' }}
-                />
-                {modalSearchTerm && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setModalSearchTerm('')}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    Réinitialiser
-                  </Button>
-                )}
-              </div>
-            </div>
-
             <div>
               <div className="flex items-center justify-between mb-4">
                 <Label>Sélectionner les cartes ({selectedCards.length})</Label>
@@ -1090,8 +1114,63 @@ export function Duplicates() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-96 overflow-y-auto">
-                {sortedAndFilteredModalCards.map((card) => {
+              <div className="max-h-[600px] overflow-y-auto space-y-6">
+                {groupedModalCards.map((block, blockIndex) => (
+                  <div key={blockIndex} className="space-y-4">
+                    {/* Séparateur de bloc */}
+                    <div className="flex items-center gap-3 sticky top-0 bg-background z-10 py-2">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                      <h3 className="text-sm font-bold golden-glow uppercase tracking-wide">{block.blockName}</h3>
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                    </div>
+
+                    {/* Extensions du bloc */}
+                    {block.extensions.map((extension, extIndex) => {
+                      const extensionSearchKey = `modal-${extension.key}`
+                      const filteredCards = filterModalCardsByNumber(extension.cards, extension.key)
+
+                      return (
+                        <div key={extIndex} className="space-y-3">
+                          {/* Nom de l'extension */}
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-semibold golden-glow">{extension.name}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {extension.cards.length} carte{extension.cards.length > 1 ? 's' : ''}
+                            </Badge>
+                          </div>
+
+                          {/* Champ de recherche par numéro pour cette extension */}
+                          <div className="flex items-center gap-2">
+                            <Search className="w-4 h-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Rechercher par numéro (ex: 025)"
+                              value={extensionSearchTerms[extensionSearchKey] || ''}
+                              onChange={(e) => setExtensionSearchTerms(prev => ({
+                                ...prev,
+                                [extensionSearchKey]: e.target.value
+                              }))}
+                              className="golden-border text-sm"
+                              style={{ textTransform: 'none' }}
+                            />
+                            {extensionSearchTerms[extensionSearchKey] && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setExtensionSearchTerms(prev => {
+                                  const newTerms = { ...prev }
+                                  delete newTerms[extensionSearchKey]
+                                  return newTerms
+                                })}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                ✕
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Grille de cartes */}
+                          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                            {filteredCards.map((card) => {
                   const isSelected = selectedCards.find(c => c.id === card.id)
                   const maxQuantity = card.quantity || 2
                   const batchQuantity = cardQuantities[card.id] || 1
@@ -1160,7 +1239,13 @@ export function Duplicates() {
                       )}
                     </div>
                   )
-                })}
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ))}
               </div>
             </div>
 

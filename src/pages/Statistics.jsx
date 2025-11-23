@@ -171,7 +171,9 @@ export function Statistics() {
                   <p className="text-3xl font-bold text-blue-500">
                     {stats.totalCards}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Total d'exemplaires</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total d'exemplaires · {stats.uniqueCards} cartes uniques
+                  </p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
                   <Package className="w-6 h-6 text-blue-500" />

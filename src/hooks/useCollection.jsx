@@ -249,7 +249,14 @@ export function CollectionProvider({ children }) {
 
   // Calculer les statistiques
   const getStats = () => {
-    const totalCards = collection.length
+    // Total d'exemplaires (somme des quantités)
+    const totalCards = collection.reduce((sum, card) => {
+      return sum + parseInt(card.quantity || 1)
+    }, 0)
+
+    // Nombre de cartes uniques (nombre de lignes distinctes)
+    const uniqueCards = collection.length
+
     const totalValue = collection.reduce((sum, card) => {
       const marketPrice = getNumericPrice(card) // Utilise la même logique que l'affichage
       const quantity = parseInt(card.quantity || 1)
@@ -272,7 +279,8 @@ export function CollectionProvider({ children }) {
     ).length
 
     return {
-      totalCards,
+      totalCards, // Total d'exemplaires (avec quantités)
+      uniqueCards, // Nombre de cartes uniques
       totalValue: totalValue.toFixed(2),
       totalPurchaseValue: totalPurchaseValue.toFixed(2),
       rareCards,

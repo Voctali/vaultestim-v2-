@@ -28,7 +28,7 @@ export function Dashboard() {
       value: collectionStats.totalCards.toString(),
       icon: '📚',
       color: '#3B82F6',
-      change: null
+      change: `${collectionStats.uniqueCards} cartes uniques`
     },
     {
       title: 'VALEUR ACHAT',

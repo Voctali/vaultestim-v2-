@@ -28,12 +28,13 @@ export class SupabaseCollectionService {
     try {
       const userId = await this.getCurrentUserId()
 
-      // Récupérer les cartes de la collection
+      // Récupérer les cartes de la collection (sans limite pour avoir toutes les cartes)
       const { data: collectionData, error: collectionError } = await supabase
         .from('user_collection')
         .select('*')
         .eq('user_id', userId)
         .order('date_added', { ascending: false })
+        .limit(10000) // Limite augmentée pour collections volumineuses
 
       if (collectionError) throw collectionError
 
