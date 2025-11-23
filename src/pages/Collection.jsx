@@ -97,14 +97,14 @@ export function Collection() {
     return matchesSearch && matchesRarity && matchesCondition && matchesType
   })
 
-  // Trier les cartes par extension (set.releaseDate) et numéro de carte
+  // Trier les cartes par extension (set.id) et numéro de carte
   const sortedCards = [...filteredCards].sort((a, b) => {
-    // 1. Trier par date de sortie de l'extension (plus récent en premier)
-    const dateA = a.set?.releaseDate ? new Date(a.set.releaseDate) : new Date(0)
-    const dateB = b.set?.releaseDate ? new Date(b.set.releaseDate) : new Date(0)
+    // 1. Trier par set.id pour grouper les extensions ensemble
+    const setIdA = a.set?.id || a.extension || ''
+    const setIdB = b.set?.id || b.extension || ''
 
-    if (dateB.getTime() !== dateA.getTime()) {
-      return dateB.getTime() - dateA.getTime()
+    if (setIdA !== setIdB) {
+      return setIdA.localeCompare(setIdB)
     }
 
     // 2. Si même extension, trier par numéro de carte (avec extraction intelligente)
