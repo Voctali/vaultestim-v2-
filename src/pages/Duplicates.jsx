@@ -187,8 +187,9 @@ export function Duplicates() {
       }
     }).sort((a, b) => {
       // Trier les blocs par date (plus récent en premier)
-      const dateA = a.mostRecentDate ? new Date(a.mostRecentDate) : new Date(0)
-      const dateB = b.mostRecentDate ? new Date(b.mostRecentDate) : new Date(0)
+      // Les blocs sans date sont considérés comme récents (new Date() au lieu de new Date(0))
+      const dateA = a.mostRecentDate ? new Date(a.mostRecentDate) : new Date()
+      const dateB = b.mostRecentDate ? new Date(b.mostRecentDate) : new Date()
       return dateB - dateA
     })
 
