@@ -172,8 +172,8 @@ export function Duplicates() {
     // Trier les extensions par date (plus récent en premier)
     const blockGroups = Object.entries(cardsByBlock).map(([blockName, blockData]) => {
       const sortedExtensions = Object.values(blockData.extensions).sort((a, b) => {
-        const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date(0)
-        const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date(0)
+        const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date()
+        const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date()
         return dateB - dateA
       })
 

@@ -374,8 +374,9 @@ export function CollectionProvider({ children }) {
     // Trier par extension (plus récent en premier) puis par numéro de carte
     const sortedDuplicates = uniqueDuplicates.sort((a, b) => {
       // 1. Trier par date de sortie de l'extension (plus récent en premier)
-      const dateA = a.set?.releaseDate ? new Date(a.set.releaseDate) : new Date(0)
-      const dateB = b.set?.releaseDate ? new Date(b.set.releaseDate) : new Date(0)
+      // Les extensions sans date sont considérées comme récentes (new Date() au lieu de new Date(0))
+      const dateA = a.set?.releaseDate ? new Date(a.set.releaseDate) : new Date()
+      const dateB = b.set?.releaseDate ? new Date(b.set.releaseDate) : new Date()
 
       if (dateB.getTime() !== dateA.getTime()) {
         return dateB.getTime() - dateA.getTime()

@@ -169,8 +169,8 @@ export function Collection() {
   const blockGroups = Object.entries(cardsByBlock).map(([blockName, blockData]) => {
     // Trier les extensions du bloc par date (plus récent en premier)
     const sortedExtensions = Object.values(blockData.extensions).sort((a, b) => {
-      const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date(0)
-      const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date(0)
+      const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date()
+      const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date()
       return dateB - dateA
     })
 
