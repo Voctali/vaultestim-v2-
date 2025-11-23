@@ -27,7 +27,8 @@ import {
   Edit3,
   ShoppingBag,
   Calculator,
-  Euro
+  Euro,
+  AlertCircle
 } from 'lucide-react'
 
 export function Duplicates() {
@@ -75,6 +76,8 @@ export function Duplicates() {
   const [modalSearchTerm, setModalSearchTerm] = useState('') // Recherche dans la modale d'édition
   const [viewingBatch, setViewingBatch] = useState(null) // Lot en cours de visualisation détaillée
   const [showBatchDetailModal, setShowBatchDetailModal] = useState(false)
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
+  const [pendingBatchAdd, setPendingBatchAdd] = useState(null) // { batchId, duplicateCards: [...] }
 
   // Filtrer les doublons selon la recherche (duplicates vient du Context et est déjà mémorisé)
   const duplicateCards = duplicates.filter(card => {
@@ -335,9 +338,11 @@ export function Duplicates() {
   }
 
   const toggleCardSelection = (card) => {
+    console.log('📦📦📦 [LOT-DEBUG] Carte cliquée:', card.name, 'ID:', card.id)
     setSelectedCards(prev => {
       const exists = prev.find(c => c.id === card.id)
       if (exists) {
+        console.log('📦📦📦 [LOT-DEBUG] Carte DÉSÉLECTIONNÉE')
         // Retirer la carte et supprimer sa quantité
         setCardQuantities(prevQty => {
           const newQty = { ...prevQty }
@@ -346,6 +351,7 @@ export function Duplicates() {
         })
         return prev.filter(c => c.id !== card.id)
       } else {
+        console.log('📦📦📦 [LOT-DEBUG] Carte SÉLECTIONNÉE')
         // Ajouter la carte et initialiser sa quantité à 1
         setCardQuantities(prevQty => ({
           ...prevQty,
@@ -432,36 +438,167 @@ export function Duplicates() {
 
   // Fonction pour ajouter les cartes sélectionnées à un lot existant
   const handleAddToBatch = (batchId) => {
+    console.log('📦📦📦 [LOT-DEBUG] ========== FONCTION APPELÉE ==========')
+    console.log('📦📦📦 [LOT-DEBUG] batchId reçu:', batchId)
+    console.log('📦📦📦 [LOT-DEBUG] Nombre de cartes sélectionnées:', selectedCards.length)
+    console.log('📦📦📦 [LOT-DEBUG] Cartes:', selectedCards)
+
     if (selectedCards.length === 0) {
+      console.log('📦📦📦 [LOT-DEBUG] ❌ ERREUR: Aucune carte sélectionnée')
       alert('Veuillez sélectionner au moins une carte')
       return
     }
 
     const batch = duplicateBatches.find(b => b.id === batchId)
-    if (!batch) return
+    if (!batch) {
+      console.log('📦📦📦 [LOT-DEBUG] ❌ ERREUR: Lot non trouvé')
+      return
+    }
+
+    console.log('📦📦📦 [LOT-DEBUG] ✅ Lot trouvé:', batch.name)
+    console.log('📦📦📦 [LOT-DEBUG] ✅ Traitement de', selectedCards.length, 'carte(s)')
 
     // Créer une copie des cartes avec les quantités spécifiées
-    const cardsWithQuantities = selectedCards.map(card => ({
-      ...card,
-      batchQuantity: cardQuantities[card.id] || 1
-    }))
+    const cardsWithQuantities = selectedCards.map(card => {
+      const quantity = cardQuantities[card.id] || 1
+      console.log(`🎯 [AddToBatch] Carte: ${card.name} (ID: ${card.id}, card_id: ${card.card_id}, instanceIds: ${card.instanceIds?.length || 0})`)
+      console.log(`🎯 [AddToBatch] Quantité sélectionnée: ${quantity}`)
+      return {
+        ...card,
+        batchQuantity: quantity
+      }
+    })
 
-    // Fusionner avec les cartes existantes du lot
-    const existingCardIds = batch.cards.map(c => c.id)
-    const newCards = cardsWithQuantities.filter(c => !existingCardIds.includes(c.id))
+    // Vérifier si des cartes identiques existent déjà (même nom, version, numéro, extension)
+    const duplicateCards = []
+    const newCards = []
 
+    console.log(`🔍 [AddToBatch] Lot actuel contient ${batch.cards.length} cartes:`)
+    batch.cards.forEach(c => {
+      console.log(`   - ${c.name} | Version: ${c.version || 'Normale'} | #${c.number} | Extension: ${c.set?.id || c.extension || 'N/A'}`)
+    })
+
+    cardsWithQuantities.forEach(card => {
+      const cardIdentity = {
+        name: card.name,
+        version: card.version || 'Normale',
+        number: card.number,
+        extension: card.set?.id || card.extension
+      }
+
+      console.log(`🔍 [AddToBatch] Vérification carte sélectionnée:`)
+      console.log(`   Nom: ${cardIdentity.name}`)
+      console.log(`   Version: ${cardIdentity.version}`)
+      console.log(`   Numéro: ${cardIdentity.number}`)
+      console.log(`   Extension: ${cardIdentity.extension}`)
+
+      // Chercher une carte identique dans le lot
+      const existingCard = batch.cards.find(c => {
+        const existingIdentity = {
+          name: c.name,
+          version: c.version || 'Normale',
+          number: c.number,
+          extension: c.set?.id || c.extension
+        }
+
+        const nameMatch = existingIdentity.name === cardIdentity.name
+        const versionMatch = existingIdentity.version === cardIdentity.version
+        const numberMatch = existingIdentity.number === cardIdentity.number
+        const extensionMatch = existingIdentity.extension === cardIdentity.extension
+
+        console.log(`   🔎 Comparaison avec "${c.name}":`)
+        console.log(`      Nom: ${nameMatch} (${existingIdentity.name} === ${cardIdentity.name})`)
+        console.log(`      Version: ${versionMatch} (${existingIdentity.version} === ${cardIdentity.version})`)
+        console.log(`      Numéro: ${numberMatch} (${existingIdentity.number} === ${cardIdentity.number})`)
+        console.log(`      Extension: ${extensionMatch} (${existingIdentity.extension} === ${cardIdentity.extension})`)
+
+        return nameMatch && versionMatch && numberMatch && extensionMatch
+      })
+
+      if (existingCard) {
+        console.log(`⚠️ [AddToBatch] Carte identique trouvée dans le lot: ${card.name} ${cardIdentity.version} #${cardIdentity.number}`)
+        duplicateCards.push({ card, existingCard })
+      } else {
+        console.log(`✅ [AddToBatch] Nouvelle carte: ${card.name} ${cardIdentity.version} #${cardIdentity.number}`)
+        newCards.push(card)
+      }
+    })
+
+    console.log(`📊 [AddToBatch] Résultat: ${newCards.length} nouvelles cartes, ${duplicateCards.length} doublons`)
+
+    // Si des cartes identiques sont détectées, afficher l'avertissement
+    if (duplicateCards.length > 0) {
+      console.log(`⚠️ [AddToBatch] ${duplicateCards.length} carte(s) identique(s) détectée(s), affichage avertissement`)
+      setPendingBatchAdd({
+        batchId,
+        batch,
+        duplicateCards,
+        newCards
+      })
+      setShowDuplicateWarning(true)
+      return
+    }
+
+    // Sinon, ajouter directement les nouvelles cartes
+    if (newCards.length > 0) {
+      performBatchAdd(batch, newCards)
+    } else {
+      alert('Aucune nouvelle carte à ajouter')
+    }
+  }
+
+  // Fonction pour effectuer l'ajout au lot (appelée après confirmation ou directement)
+  const performBatchAdd = (batch, cardsToAdd) => {
     const updatedBatch = {
       ...batch,
-      cards: [...batch.cards, ...newCards],
-      totalValue: calculateBatchValue([...batch.cards, ...newCards])
+      cards: [...batch.cards, ...cardsToAdd],
+      totalValue: calculateBatchValue([...batch.cards, ...cardsToAdd])
     }
 
     updateDuplicateBatch(updatedBatch)
 
+    console.log(`✅ [AddToBatch] ${cardsToAdd.length} carte(s) ajoutée(s) au lot "${batch.name}"`)
+
     // Reset sélection
     setSelectedCards([])
     setCardQuantities({})
-    alert(`${newCards.length} carte(s) ajoutée(s) au lot "${batch.name}"`)
+    alert(`${cardsToAdd.length} carte(s) ajoutée(s) au lot "${batch.name}"`)
+  }
+
+  // Confirmer l'ajout malgré les doublons
+  const handleConfirmDuplicateAdd = () => {
+    if (!pendingBatchAdd) return
+
+    const { batch, duplicateCards, newCards } = pendingBatchAdd
+
+    // Ajouter TOUTES les cartes (nouvelles + doublons)
+    const allCardsToAdd = [...newCards, ...duplicateCards.map(d => d.card)]
+
+    performBatchAdd(batch, allCardsToAdd)
+
+    // Reset
+    setPendingBatchAdd(null)
+    setShowDuplicateWarning(false)
+  }
+
+  // Annuler l'ajout
+  const handleCancelDuplicateAdd = () => {
+    if (!pendingBatchAdd) return
+
+    const { batch, newCards } = pendingBatchAdd
+
+    // Ajouter uniquement les nouvelles cartes (sans les doublons)
+    if (newCards.length > 0) {
+      performBatchAdd(batch, newCards)
+    } else {
+      // Reset sélection sans rien ajouter
+      setSelectedCards([])
+      setCardQuantities({})
+    }
+
+    // Reset
+    setPendingBatchAdd(null)
+    setShowDuplicateWarning(false)
   }
 
   // Fonction pour ouvrir la vue détaillée d'un lot
@@ -1166,6 +1303,133 @@ export function Duplicates() {
                   className="golden-border"
                 >
                   Fermer
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate Warning Modal */}
+      <Dialog open={showDuplicateWarning} onOpenChange={setShowDuplicateWarning}>
+        <DialogContent className="max-w-2xl golden-border bg-background">
+          <DialogHeader>
+            <DialogTitle className="golden-glow flex items-center gap-2">
+              <AlertCircle className="w-6 h-6 text-yellow-500" />
+              Carte(s) déjà présente(s) dans le lot
+            </DialogTitle>
+            <DialogDescription>
+              {pendingBatchAdd && pendingBatchAdd.duplicateCards.length > 0 && (
+                <>
+                  {pendingBatchAdd.duplicateCards.length === 1 ? (
+                    <>Un exemplaire de cette carte est déjà présent dans le lot "{pendingBatchAdd.batch.name}".</>
+                  ) : (
+                    <>{pendingBatchAdd.duplicateCards.length} cartes sont déjà présentes dans le lot "{pendingBatchAdd.batch.name}".</>
+                  )}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {pendingBatchAdd && (
+            <div className="space-y-4">
+              {/* Liste des cartes en double */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm">
+                  {pendingBatchAdd.duplicateCards.length === 1 ? 'Carte déjà présente :' : 'Cartes déjà présentes :'}
+                </h3>
+                <div className="max-h-64 overflow-y-auto space-y-2">
+                  {pendingBatchAdd.duplicateCards.map(({ card, existingCard }, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg"
+                    >
+                      <div className="w-16 h-20 flex-shrink-0 rounded overflow-hidden">
+                        <CardImage card={card} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm truncate golden-glow">
+                          {translateCardName(card.name)}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {card.version || 'Normale'} • #{card.number}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {card.set?.name || card.extension}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <Badge variant="outline" className="bg-yellow-500/20 text-yellow-600 border-yellow-500/40">
+                          Déjà x{existingCard.batchQuantity || 1}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nouvelles cartes (si présentes) */}
+              {pendingBatchAdd.newCards.length > 0 && (
+                <div className="space-y-3 pt-4 border-t border-border/50">
+                  <h3 className="font-semibold text-sm text-green-500">
+                    {pendingBatchAdd.newCards.length === 1 ? 'Nouvelle carte :' : `${pendingBatchAdd.newCards.length} nouvelles cartes :`}
+                  </h3>
+                  <div className="max-h-48 overflow-y-auto space-y-2">
+                    {pendingBatchAdd.newCards.map((card, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg"
+                      >
+                        <div className="w-16 h-20 flex-shrink-0 rounded overflow-hidden">
+                          <CardImage card={card} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm truncate golden-glow">
+                            {translateCardName(card.name)}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {card.version || 'Normale'} • #{card.number}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {card.set?.name || card.extension}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <Badge variant="outline" className="bg-green-500/20 text-green-600 border-green-500/40">
+                            Nouveau
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Question */}
+              <div className="pt-4 border-t border-border/50">
+                <p className="text-sm text-center font-medium">
+                  Voulez-vous quand même ajouter {pendingBatchAdd.duplicateCards.length === 1 ? 'cette carte' : 'ces cartes'} au lot ?
+                </p>
+                {pendingBatchAdd.newCards.length > 0 && (
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    Les nouvelles cartes seront ajoutées dans tous les cas.
+                  </p>
+                )}
+              </div>
+
+              {/* Boutons */}
+              <div className="flex gap-3 justify-center pt-4">
+                <Button
+                  onClick={handleCancelDuplicateAdd}
+                  className="bg-red-600 hover:bg-red-700 text-white px-8"
+                >
+                  Non, annuler
+                </Button>
+                <Button
+                  onClick={handleConfirmDuplicateAdd}
+                  className="bg-green-600 hover:bg-green-700 text-white px-8"
+                >
+                  Oui, ajouter quand même
                 </Button>
               </div>
             </div>
