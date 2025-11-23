@@ -385,10 +385,13 @@ export function Collection() {
                       <div className="space-y-2">
                         <h3 className="font-semibold text-sm golden-glow truncate" title={translateCardName(card.name)}>
                           {translateCardName(card.name)}
-                          {card.number && (
-                            <span className="text-xs text-muted-foreground ml-1">#{card.number}</span>
-                          )}
                         </h3>
+
+                        {/* Numéro de carte */}
+                        {card.number && (
+                          <p className="text-xs text-muted-foreground">#{card.number}</p>
+                        )}
+
                         <p className="text-xs text-muted-foreground">{card.set?.name || card.extension || card.series}</p>
 
                         <div className="space-y-1">
