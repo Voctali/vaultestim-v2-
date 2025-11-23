@@ -141,6 +141,34 @@ export function Duplicates() {
       return acc
     }, {})
 
+    // Trier les cartes par set.id puis par numéro dans chaque extension
+    Object.values(cardsByBlock).forEach(block => {
+      Object.values(block.extensions).forEach(ext => {
+        ext.cards.sort((a, b) => {
+          // 1. Trier par set.id
+          const setIdA = a.set?.id || a.extension || ''
+          const setIdB = b.set?.id || b.extension || ''
+          if (setIdA !== setIdB) return setIdA.localeCompare(setIdB)
+
+          // 2. Trier par numéro de carte
+          const numA = a.number || ''
+          const numB = b.number || ''
+          const matchA = numA.match(/^(\d+)/)
+          const matchB = numB.match(/^(\d+)/)
+
+          if (matchA && matchB) {
+            const intA = parseInt(matchA[1])
+            const intB = parseInt(matchB[1])
+            if (intA !== intB) return intA - intB
+            return numA.localeCompare(numB)
+          }
+          if (matchA && !matchB) return -1
+          if (!matchA && matchB) return 1
+          return numA.localeCompare(numB)
+        })
+      })
+    })
+
     // Trier les extensions par date (plus récent en premier)
     const blockGroups = Object.entries(cardsByBlock).map(([blockName, blockData]) => {
       const sortedExtensions = Object.values(blockData.extensions).sort((a, b) => {
