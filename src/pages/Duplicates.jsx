@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCollection } from '@/hooks/useCollection.jsx'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { SaleModal } from '@/components/features/collection/SaleModal'
@@ -70,6 +71,8 @@ export function Duplicates() {
   const [cardToSell, setCardToSell] = useState(null)
   const [batchToSell, setBatchToSell] = useState(null)
   const [selectedCardForDetail, setSelectedCardForDetail] = useState(null)
+  const [extensionSearchTerms, setExtensionSearchTerms] = useState({}) // Recherche par numéro pour chaque extension
+  const [modalSearchTerm, setModalSearchTerm] = useState('') // Recherche dans la modale d'édition
 
   // Filtrer les doublons selon la recherche (duplicates vient du Context et est déjà mémorisé)
   const duplicateCards = duplicates.filter(card => {
@@ -158,6 +161,19 @@ export function Duplicates() {
 
     return blockGroups
   }, [duplicateCards])
+
+  // Fonction pour filtrer les cartes d'une extension par numéro
+  const filterCardsByNumber = (cards, extensionKey) => {
+    const searchTerm = extensionSearchTerms[extensionKey]
+    if (!searchTerm || !searchTerm.trim()) return cards
+
+    const term = searchTerm.trim()
+    return cards.filter(card => {
+      if (!card.number) return false
+      // Accepte "025" ou "025/165"
+      return card.number.includes(term)
+    })
+  }
 
   // Consolider les cartes identiques pour l'affichage (grouper par carte et afficher avec badge quantité)
   const consolidatedDuplicates = useMemo(() => {
@@ -376,6 +392,76 @@ export function Duplicates() {
     alert('Vente enregistrée avec succès !')
   }
 
+  // Trier et filtrer les cartes pour la modale d'édition
+  const sortedAndFilteredModalCards = useMemo(() => {
+    let cards = [...duplicateCards]
+
+    // Filtrer par numéro si recherche active
+    if (modalSearchTerm.trim()) {
+      const term = modalSearchTerm.trim()
+      cards = cards.filter(card => {
+        if (!card.number) return false
+        return card.number.includes(term)
+      })
+    }
+
+    // Trier par extension puis par numéro
+    cards.sort((a, b) => {
+      // D'abord par extension
+      const extA = a.set?.name || a.extension || ''
+      const extB = b.set?.name || b.extension || ''
+      if (extA !== extB) return extA.localeCompare(extB)
+
+      // Ensuite par numéro
+      const numA = a.number || '999'
+      const numB = b.number || '999'
+
+      // Extraire la partie numérique (avant le /)
+      const parseNumber = (num) => {
+        const match = num.match(/^(\d+)/)
+        return match ? parseInt(match[1]) : 999
+      }
+
+      return parseNumber(numA) - parseNumber(numB)
+    })
+
+    return cards
+  }, [duplicateCards, modalSearchTerm])
+
+  // Fonction pour ajouter les cartes sélectionnées à un lot existant
+  const handleAddToBatch = (batchId) => {
+    if (selectedCards.length === 0) {
+      alert('Veuillez sélectionner au moins une carte')
+      return
+    }
+
+    const batch = duplicateBatches.find(b => b.id === batchId)
+    if (!batch) return
+
+    // Créer une copie des cartes avec les quantités spécifiées
+    const cardsWithQuantities = selectedCards.map(card => ({
+      ...card,
+      batchQuantity: cardQuantities[card.id] || 1
+    }))
+
+    // Fusionner avec les cartes existantes du lot
+    const existingCardIds = batch.cards.map(c => c.id)
+    const newCards = cardsWithQuantities.filter(c => !existingCardIds.includes(c.id))
+
+    const updatedBatch = {
+      ...batch,
+      cards: [...batch.cards, ...newCards],
+      totalValue: calculateBatchValue([...batch.cards, ...newCards])
+    }
+
+    updateDuplicateBatch(updatedBatch)
+
+    // Reset sélection
+    setSelectedCards([])
+    setCardQuantities({})
+    alert(`${newCards.length} carte(s) ajoutée(s) au lot "${batch.name}"`)
+  }
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -452,17 +538,39 @@ export function Duplicates() {
       {currentTab === 'duplicates' ? (
         /* Duplicates Tab */
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-wrap gap-3">
             <h2 className="text-xl font-semibold golden-glow">
               Cartes en double ({duplicateCards.length})
             </h2>
-            <Button
-              onClick={() => setShowCreateBatchModal(true)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Créer un lot
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => setShowCreateBatchModal(true)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Créer un lot
+              </Button>
+
+              {/* Bouton d'ajout à un lot existant (visible si cartes sélectionnées) */}
+              {selectedCards.length > 0 && duplicateBatches.length > 0 && (
+                <Select onValueChange={handleAddToBatch}>
+                  <SelectTrigger className="w-[280px] bg-blue-600 hover:bg-blue-700 text-white border-blue-700">
+                    <SelectValue placeholder={`Ajouter ${selectedCards.length} carte(s) à un lot...`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {duplicateBatches.map(batch => (
+                      <SelectItem key={batch.id} value={batch.id}>
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4" />
+                          <span>{batch.name}</span>
+                          <span className="text-xs text-muted-foreground">({batch.cards.length} cartes)</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
 
           {(() => {
@@ -487,7 +595,11 @@ export function Duplicates() {
                   </div>
 
                   {/* EXTENSIONS DU BLOC */}
-                  {block.extensions.map((extension, extIndex) => (
+                  {block.extensions.map((extension, extIndex) => {
+                    const extensionKey = `${block.name}-${extension.name}`
+                    const filteredCards = filterCardsByNumber(extension.cards, extensionKey)
+
+                    return (
                     <div key={extIndex} className="space-y-4">
                       {/* SÉPARATEUR D'EXTENSION */}
                       <div className="flex items-center gap-4">
@@ -506,9 +618,38 @@ export function Duplicates() {
                         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
                       </div>
 
+                      {/* CHAMP DE RECHERCHE PAR NUMÉRO */}
+                      <div className="flex items-center gap-2 max-w-md mx-auto">
+                        <Search className="w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Rechercher par numéro (ex: 025 ou 025/165)"
+                          value={extensionSearchTerms[extensionKey] || ''}
+                          onChange={(e) => setExtensionSearchTerms(prev => ({
+                            ...prev,
+                            [extensionKey]: e.target.value
+                          }))}
+                          className="golden-border text-sm"
+                          style={{ textTransform: 'none' }}
+                        />
+                        {extensionSearchTerms[extensionKey] && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setExtensionSearchTerms(prev => {
+                              const newTerms = { ...prev }
+                              delete newTerms[extensionKey]
+                              return newTerms
+                            })}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            Réinitialiser
+                          </Button>
+                        )}
+                      </div>
+
                       {/* GRILLE DE CARTES */}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-                        {extension.cards.map((card) => (
+                        {filteredCards.map((card) => (
                 <Card
                   key={card.id}
                   className="golden-border card-hover cursor-pointer group overflow-hidden"
@@ -568,6 +709,18 @@ export function Duplicates() {
                       <h3 className="font-semibold text-sm golden-glow truncate" title={translateCardName(card.name)}>
                         {translateCardName(card.name)}
                       </h3>
+
+                      {/* Numéro de carte */}
+                      {card.number ? (
+                        <p className="text-xs text-muted-foreground">
+                          #{card.number}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground/40 italic">
+                          Sans numéro
+                        </p>
+                      )}
+
                       <p className="text-xs text-muted-foreground truncate">{card.series}</p>
 
                       <div className="space-y-1">
@@ -586,7 +739,8 @@ export function Duplicates() {
                         ))}
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ))}
             </div>
@@ -747,6 +901,32 @@ export function Duplicates() {
               />
             </div>
 
+            {/* Champ de recherche par numéro dans la modale */}
+            <div>
+              <Label htmlFor="modal-search">Rechercher par numéro</Label>
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="modal-search"
+                  placeholder="Rechercher par numéro (ex: 025 ou 025/165)"
+                  value={modalSearchTerm}
+                  onChange={(e) => setModalSearchTerm(e.target.value)}
+                  className="golden-border"
+                  style={{ textTransform: 'none' }}
+                />
+                {modalSearchTerm && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setModalSearchTerm('')}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Réinitialiser
+                  </Button>
+                )}
+              </div>
+            </div>
+
             <div>
               <div className="flex items-center justify-between mb-4">
                 <Label>Sélectionner les cartes ({selectedCards.length})</Label>
@@ -756,7 +936,7 @@ export function Duplicates() {
               </div>
 
               <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-96 overflow-y-auto">
-                {duplicateCards.map((card) => {
+                {sortedAndFilteredModalCards.map((card) => {
                   const isSelected = selectedCards.find(c => c.id === card.id)
                   const maxQuantity = card.quantity || 2
                   const batchQuantity = cardQuantities[card.id] || 1
@@ -772,6 +952,12 @@ export function Duplicates() {
                           card={card}
                           className="w-full h-full object-cover"
                         />
+                        {/* Numéro de carte en haut à gauche */}
+                        {card.number && (
+                          <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded font-medium">
+                            #{card.number}
+                          </div>
+                        )}
                         <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-1 py-0.5 rounded font-medium">
                           x{maxQuantity}
                         </div>
