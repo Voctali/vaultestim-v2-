@@ -1132,7 +1132,37 @@ export function CardDatabaseProvider({ children }) {
 
     if (extension && extension.cards && extension.cards.length > 0) {
       console.log(`✅ ${extension.cards.length} cartes trouvées dans seriesDatabase pour ${setId} (APRÈS fusion Gallery)`)
-      return extension.cards
+      // Trier les cartes par numéro avant de les retourner
+      const sortedCards = [...extension.cards].sort((a, b) => {
+        const numA = a.number || ''
+        const numB = b.number || ''
+
+        // Extraire la partie numérique du début
+        const matchA = numA.match(/^(\d+)/)
+        const matchB = numB.match(/^(\d+)/)
+
+        // Si les deux ont un numéro, comparer numériquement
+        if (matchA && matchB) {
+          const intA = parseInt(matchA[1])
+          const intB = parseInt(matchB[1])
+
+          if (intA !== intB) {
+            return intA - intB
+          }
+          // Si les nombres sont égaux, comparer alphabétiquement le reste
+          return numA.localeCompare(numB)
+        }
+
+        // Si seul A a un numéro, A vient en premier
+        if (matchA && !matchB) return -1
+
+        // Si seul B a un numéro, B vient en premier
+        if (!matchA && matchB) return 1
+
+        // Si aucun n'a de numéro, comparer alphabétiquement
+        return numA.localeCompare(numB)
+      })
+      return sortedCards
     }
 
     // Chercher dans le cache local avec multiples critères
@@ -1168,11 +1198,41 @@ export function CardDatabaseProvider({ children }) {
 
       if (similarCards.length > 0) {
         console.log(`🔍 ${similarCards.length} cartes similaires trouvées pour ${setId}`)
-        return similarCards
+        // Trier avant de retourner
+        return similarCards.sort((a, b) => {
+          const numA = a.number || ''
+          const numB = b.number || ''
+          const matchA = numA.match(/^(\d+)/)
+          const matchB = numB.match(/^(\d+)/)
+          if (matchA && matchB) {
+            const intA = parseInt(matchA[1])
+            const intB = parseInt(matchB[1])
+            if (intA !== intB) return intA - intB
+            return numA.localeCompare(numB)
+          }
+          if (matchA && !matchB) return -1
+          if (!matchA && matchB) return 1
+          return numA.localeCompare(numB)
+        })
       }
     }
 
-    return localCards
+    // Trier les cartes locales par numéro avant de les retourner
+    return localCards.sort((a, b) => {
+      const numA = a.number || ''
+      const numB = b.number || ''
+      const matchA = numA.match(/^(\d+)/)
+      const matchB = numB.match(/^(\d+)/)
+      if (matchA && matchB) {
+        const intA = parseInt(matchA[1])
+        const intB = parseInt(matchB[1])
+        if (intA !== intB) return intA - intB
+        return numA.localeCompare(numB)
+      }
+      if (matchA && !matchB) return -1
+      if (!matchA && matchB) return 1
+      return numA.localeCompare(numB)
+    })
   }
 
   // Fonctions d'administration

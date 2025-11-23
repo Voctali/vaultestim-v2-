@@ -62,6 +62,7 @@ export function SeriesDetailView({ series }) {
         const matchA = numA.match(/^(\d+)/)
         const matchB = numB.match(/^(\d+)/)
 
+        // Si les deux ont un numéro, comparer numériquement
         if (matchA && matchB) {
           const intA = parseInt(matchA[1])
           const intB = parseInt(matchB[1])
@@ -69,9 +70,17 @@ export function SeriesDetailView({ series }) {
           if (intA !== intB) {
             return intA - intB
           }
+          // Si les nombres sont égaux, comparer alphabétiquement le reste
+          return numA.localeCompare(numB)
         }
 
-        // Si les nombres sont égaux ou absents, comparer alphabétiquement
+        // Si seul A a un numéro, A vient en premier
+        if (matchA && !matchB) return -1
+
+        // Si seul B a un numéro, B vient en premier
+        if (!matchA && matchB) return 1
+
+        // Si aucun n'a de numéro, comparer alphabétiquement
         return numA.localeCompare(numB)
       })
     })

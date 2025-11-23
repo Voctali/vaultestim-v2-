@@ -17,6 +17,7 @@ import { translateCardName } from '@/utils/cardTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
 
 export function Collection() {
+  // Tri amélioré des cartes par numéro (v1.18.3)
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     rarity: 'all',
@@ -106,10 +107,34 @@ export function Collection() {
       return dateB.getTime() - dateA.getTime()
     }
 
-    // 2. Si même extension, trier par numéro de carte
-    const numA = parseInt(a.number) || 0
-    const numB = parseInt(b.number) || 0
-    return numA - numB
+    // 2. Si même extension, trier par numéro de carte (avec extraction intelligente)
+    const numA = a.number || ''
+    const numB = b.number || ''
+
+    // Extraire la partie numérique du début
+    const matchA = numA.match(/^(\d+)/)
+    const matchB = numB.match(/^(\d+)/)
+
+    // Si les deux ont un numéro, comparer numériquement
+    if (matchA && matchB) {
+      const intA = parseInt(matchA[1])
+      const intB = parseInt(matchB[1])
+
+      if (intA !== intB) {
+        return intA - intB
+      }
+      // Si les nombres sont égaux, comparer alphabétiquement le reste
+      return numA.localeCompare(numB)
+    }
+
+    // Si seul A a un numéro, A vient en premier
+    if (matchA && !matchB) return -1
+
+    // Si seul B a un numéro, B vient en premier
+    if (!matchA && matchB) return 1
+
+    // Si aucun n'a de numéro, comparer alphabétiquement
+    return numA.localeCompare(numB)
   })
 
   // Grouper les cartes par BLOC puis EXTENSION (comme dans Explorer)
