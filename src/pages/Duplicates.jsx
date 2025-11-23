@@ -73,6 +73,8 @@ export function Duplicates() {
   const [selectedCardForDetail, setSelectedCardForDetail] = useState(null)
   const [extensionSearchTerms, setExtensionSearchTerms] = useState({}) // Recherche par numéro pour chaque extension
   const [modalSearchTerm, setModalSearchTerm] = useState('') // Recherche dans la modale d'édition
+  const [viewingBatch, setViewingBatch] = useState(null) // Lot en cours de visualisation détaillée
+  const [showBatchDetailModal, setShowBatchDetailModal] = useState(false)
 
   // Filtrer les doublons selon la recherche (duplicates vient du Context et est déjà mémorisé)
   const duplicateCards = duplicates.filter(card => {
@@ -203,7 +205,7 @@ export function Duplicates() {
         })
 
         // Log des cartes consolidées
-        Object.entries(cardGroups).forEach(([key, group]) => {
+        Object.entries(cardGroups).forEach(([, group]) => {
           if (group.instances.length > 1) {
             console.log(`🔀 [Consolidation] ${group.instances[0].name} (${group.instances[0].version || 'Normale'}):`,
               group.instances.length, 'instances →', group.totalQuantity, 'quantité totale',
@@ -460,6 +462,18 @@ export function Duplicates() {
     setSelectedCards([])
     setCardQuantities({})
     alert(`${newCards.length} carte(s) ajoutée(s) au lot "${batch.name}"`)
+  }
+
+  // Fonction pour ouvrir la vue détaillée d'un lot
+  const handleViewBatch = (batch) => {
+    setViewingBatch(batch)
+    setShowBatchDetailModal(true)
+  }
+
+  // Fonction pour fermer la vue détaillée
+  const handleCloseBatchDetail = () => {
+    setShowBatchDetailModal(false)
+    setViewingBatch(null)
   }
 
   return (
@@ -828,8 +842,12 @@ export function Duplicates() {
                         Créé le {new Date(batch.createdAt).toLocaleDateString('fr-FR')}
                       </div>
 
-                      {/* Preview des premières cartes */}
-                      <div className="grid grid-cols-4 gap-2">
+                      {/* Preview des premières cartes - Cliquable */}
+                      <div
+                        className="grid grid-cols-4 gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => handleViewBatch(batch)}
+                        title="Cliquer pour voir toutes les cartes du lot"
+                      >
                         {batch.cards.slice(0, 4).map((card, index) => (
                           <div
                             key={index}
@@ -1057,6 +1075,103 @@ export function Duplicates() {
         card={selectedCardForDetail}
         collection={collection}
       />
+
+      {/* Batch Detail Modal - Vue détaillée d'un lot */}
+      <Dialog open={showBatchDetailModal} onOpenChange={setShowBatchDetailModal}>
+        <DialogContent className="max-w-6xl golden-border bg-background max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="golden-glow flex items-center gap-2">
+              <Package className="w-6 h-6" />
+              {viewingBatch?.name}
+            </DialogTitle>
+            <DialogDescription>
+              {viewingBatch?.cards.length} carte{viewingBatch?.cards.length > 1 ? 's' : ''} dans ce lot
+              <span className="ml-4 text-green-500 font-semibold">
+                Valeur totale : {viewingBatch?.totalValue}€
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingBatch && (
+            <div className="space-y-4 mt-4">
+              {/* Grille de toutes les cartes du lot */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                {viewingBatch.cards.map((card, index) => (
+                  <Card
+                    key={index}
+                    className="golden-border card-hover cursor-pointer group overflow-hidden"
+                    onClick={() => {
+                      setSelectedCardForDetail(card)
+                      setShowDetailModal(true)
+                    }}
+                  >
+                    <CardContent className="p-3">
+                      {/* Card Image */}
+                      <div className="relative aspect-[3/4] mb-2 rounded-lg overflow-hidden group-hover:scale-105 transition-transform duration-200">
+                        <CardImage
+                          card={card}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Numéro de carte */}
+                        {card.number && (
+                          <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded font-medium">
+                            #{card.number}
+                          </div>
+                        )}
+                        {/* Quantité dans le lot */}
+                        {card.batchQuantity > 1 && (
+                          <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                            x{card.batchQuantity}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Badges des versions */}
+                      <CardVersionBadges
+                        cardId={card.card_id || card.id}
+                        collection={collection}
+                        card={card}
+                        isUserCopy={true}
+                        showOnlyDuplicateVersions={false}
+                        className="mb-2"
+                      />
+
+                      {/* Card Info */}
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-xs golden-glow truncate" title={translateCardName(card.name)}>
+                          {translateCardName(card.name)}
+                        </h4>
+
+                        <p className="text-xs text-muted-foreground truncate">{card.set?.name || card.extension}</p>
+
+                        <div className="flex items-center justify-between">
+                          <Badge variant="secondary" className="text-xs">
+                            {translateCondition(card.condition)}
+                          </Badge>
+                          <p className="text-xs font-semibold text-green-500">
+                            {card.marketPrice || card.value || '0.00'}€
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Bouton de fermeture */}
+              <div className="flex justify-end pt-4 border-t border-border/50">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseBatchDetail}
+                  className="golden-border"
+                >
+                  Fermer
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
