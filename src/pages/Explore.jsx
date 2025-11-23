@@ -35,6 +35,7 @@ export function Explore() {
   const [currentView, setCurrentView] = useState('blocks') // 'blocks', 'extensions', 'cards', 'search'
   const [selectedBlock, setSelectedBlock] = useState(null)
   const [selectedExtension, setSelectedExtension] = useState(null)
+  const [extensionCards, setExtensionCards] = useState([]) // Cartes de l'extension sélectionnée (APRÈS fusion Gallery)
   const [navigationPath, setNavigationPath] = useState([])
   const [blocksData, setBlocksData] = useState([])
   const [customBlocks, setCustomBlocks] = useState([])
@@ -76,7 +77,24 @@ export function Explore() {
     loadCustomData()
   }, [])
 
-  // Construire la hiérarchie quand les données changent
+  // Charger les cartes de l'extension sélectionnée (avec cartes fusionnées Gallery)
+  useEffect(() => {
+    const loadExtensionCards = async () => {
+      if (!selectedExtension?.id) {
+        setExtensionCards([])
+        return
+      }
+
+      console.log(`🔍 Chargement des cartes pour l'extension: ${selectedExtension.id}`)
+      const cards = await getCardsBySet(selectedExtension.id)
+      console.log(`✅ ${cards.length} cartes chargées (incluant cartes fusionnées Gallery)`)
+      setExtensionCards(cards)
+    }
+
+    loadExtensionCards()
+  }, [selectedExtension, getCardsBySet])
+
+    // Construire la hiérarchie quand les données changent
   useEffect(() => {
     const buildAndEnrichBlocks = async () => {
       if (!discoveredCards || !seriesDatabase) return
@@ -154,9 +172,7 @@ export function Explore() {
           ext.name.toLowerCase().includes(searchLower)
         ) || []
       case 'cards':
-        const filteredCards = discoveredCards.filter(card => {
-          if (card.set?.id !== selectedExtension?.id) return false
-
+        const filteredCards = extensionCards.filter(card => {
           // Si pas de recherche active, afficher toutes les cartes de l'extension
           if (!searchLower || searchLower.trim() === '') return true
 
@@ -662,7 +678,7 @@ export function Explore() {
                         {extension.name}
                       </h3>
                       <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                        <span>{extension.cardsCount || 0} carte{(extension.cardsCount || 0) > 1 ? 's' : ''}</span>
+                        <span>{extension.cards?.length || extension.cardsCount || 0} carte{(extension.cards?.length || extension.cardsCount || 0) > 1 ? 's' : ''}</span>
                         {extension.releaseDate && (
                           <span>{new Date(extension.releaseDate).getFullYear()}</span>
                         )}

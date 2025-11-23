@@ -82,24 +82,31 @@ const organizeCardsBySet = (cards) => {
   // - swsh9tg (Trainer Gallery) → swsh9 ✅
   // - sv8pt5 et sv8 → NE PAS fusionner ❌ (extensions indépendantes)
   console.log('🔗 Fusion des extensions Gallery avec leurs extensions parent...')
+  console.log(`📊 Extensions disponibles AVANT fusion:`, Object.keys(extensionGroups).filter(id => id.startsWith('swsh')).sort())
 
   const galleryExtensions = Object.keys(extensionGroups).filter(id => {
     // UNIQUEMENT les extensions Gallery : suffixe 'gg' (Galarian) ou 'tg' (Trainer)
     if (id.endsWith('gg')) {
       // Le parent est l'ID sans 'gg' (ex: swsh12pt5gg → swsh12pt5)
       const parentId = id.slice(0, -2)
-      return extensionGroups[parentId] !== undefined
+      const found = extensionGroups[parentId] !== undefined
+      console.log(`🔍 GG: ${id} → parent: ${parentId} (${found ? 'TROUVÉ ✅' : 'INTROUVABLE ❌'})`)
+      return found
     }
 
     if (id.endsWith('tg')) {
       // Le parent est l'ID sans 'tg' (ex: swsh9tg → swsh9)
       const parentId = id.slice(0, -2)
-      return extensionGroups[parentId] !== undefined
+      const found = extensionGroups[parentId] !== undefined
+      console.log(`🔍 TG: ${id} → parent: ${parentId} (${found ? 'TROUVÉ ✅' : 'INTROUVABLE ❌'})`)
+      return found
     }
 
     // NE PAS fusionner les extensions pt5 - ce sont des extensions indépendantes !
     return false
   })
+
+  console.log(`📋 ${galleryExtensions.length} extensions Gallery à fusionner:`, galleryExtensions)
 
   galleryExtensions.forEach(galleryId => {
     // Déterminer l'ID parent selon le suffixe
@@ -1118,6 +1125,16 @@ export function CardDatabaseProvider({ children }) {
   }
 
   const getCardsBySet = async (setId) => {
+    console.log(`🔍 getCardsBySet appelé pour: ${setId}`)
+
+    // PRIORITÉ 1 : Chercher dans seriesDatabase (contient les cartes APRÈS fusion Gallery)
+    const extension = seriesDatabase.find(ext => ext.id === setId)
+
+    if (extension && extension.cards && extension.cards.length > 0) {
+      console.log(`✅ ${extension.cards.length} cartes trouvées dans seriesDatabase pour ${setId} (APRÈS fusion Gallery)`)
+      return extension.cards
+    }
+
     // Chercher dans le cache local avec multiples critères
     const localCards = discoveredCards.filter(card => {
       // Recherche directe par ID

@@ -32,7 +32,8 @@ export function buildBlocksHierarchy(discoveredCards = [], seriesDatabase = [], 
     // Vérifier si cette extension a été déplacée manuellement
     const customExtension = customExtensions.find(ext => ext.id === extension.id)
     const blockName = customExtension ? customExtension.series : (extension.series || 'Other')
-    const cardsCount = cardsPerSet[extension.id] || 0
+    // Utiliser le nombre de cartes APRÈS fusion Gallery (depuis seriesDatabase) au lieu de discoveredCards
+    const cardsCount = extension.cards?.length || cardsPerSet[extension.id] || 0
 
     // Créer le bloc s'il n'existe pas
     if (!blocksMap.has(blockName)) {
@@ -91,7 +92,8 @@ export function buildBlocksHierarchy(discoveredCards = [], seriesDatabase = [], 
       })
       .map(ext => {
         const customExt = customExtensions.find(ce => ce.id === ext.id)
-        const cardsCount = cardsPerSet[ext.id] || 0
+        // Utiliser le nombre de cartes APRÈS fusion Gallery (depuis seriesDatabase) au lieu de discoveredCards
+        const cardsCount = ext.cards?.length || cardsPerSet[ext.id] || 0
 
         // Marquer cette extension comme assignée
         assignedExtensions.add(ext.id)
