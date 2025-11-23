@@ -735,7 +735,7 @@ export function Duplicates() {
                         </p>
                       )}
 
-                      <p className="text-xs text-muted-foreground truncate">{card.series}</p>
+                      <p className="text-xs text-muted-foreground truncate">{card.set?.name || card.extension || card.series}</p>
 
                       <div className="space-y-1">
                         <Badge variant="secondary" className="text-xs">

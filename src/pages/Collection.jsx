@@ -359,7 +359,7 @@ export function Collection() {
                       {/* Card Info */}
                       <div className="space-y-2">
                         <h3 className="font-semibold text-sm golden-glow">{translateCardName(card.name)}</h3>
-                        <p className="text-xs text-muted-foreground">{card.series}</p>
+                        <p className="text-xs text-muted-foreground">{card.set?.name || card.extension || card.series}</p>
 
                         <div className="space-y-1">
                           <Badge variant="secondary" className="text-xs">
