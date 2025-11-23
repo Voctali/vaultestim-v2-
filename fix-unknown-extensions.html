@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Correction Extensions "Unknown"</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .container {
+      background: #2a2a2a;
+      padding: 30px;
+      border-radius: 8px;
+      border: 2px solid #d4af37;
+    }
+    h1 {
+      color: #d4af37;
+      text-align: center;
+    }
+    button {
+      background: #d4af37;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 5px;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #f0c14b;
+    }
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+    .log {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+    .log div {
+      margin: 5px 0;
+      padding: 3px 0;
+    }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+    .info { color: #60a5fa; }
+    .warning { color: #fbbf24; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 5px;
+      border-left: 4px solid #d4af37;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #d4af37;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Correction Extensions "Unknown"</h1>
+
+    <div class="stats" id="stats"></div>
+
+    <div style="text-align: center; margin: 20px 0;">
+      <button onclick="analyzeDatabase()">📊 Analyser la base</button>
+      <button onclick="fixUnknownExtensions()" id="fixBtn" disabled>✅ Corriger les extensions</button>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script type="module">
+    // Configuration Supabase
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAwMDIsImV4cCI6MjA3NTUxNjAwMn0.7d0303MNw__AVC9wkS7BodK2WG8Rvb2IY2V-0wv0l7Q'
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    // Mapping des set_id vers les noms réels
+    const SET_NAME_MAPPING = {
+      'sv8': 'White Flare',
+      'sv8a': 'Black Bolt',
+      'sv9': 'Journey Together',
+      'sv7': 'Prismatic Evolution',
+      'sv6': 'Twilight Masquerade',
+      'sv5': 'Temporal Forces',
+      'sv4': 'Paradox Rift',
+      'sv3': 'Obsidian Flames',
+      'sv2': 'Paldea Evolved',
+      'sv1': 'Scarlet & Violet',
+      'me1': 'Mega Evolution',
+      'me2': 'Mega Evolution',
+    }
+
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log')
+      const div = document.createElement('div')
+      div.className = type
+      div.textContent = `${new Date().toLocaleTimeString()} - ${message}`
+      logDiv.appendChild(div)
+      logDiv.scrollTop = logDiv.scrollHeight
+    }
+
+    function updateStats(stats) {
+      const statsDiv = document.getElementById('stats')
+      statsDiv.innerHTML = `
+        <div class="stat-card">
+          <div>Extensions avec "Unknown"</div>
+          <div class="stat-value">${stats.unknownCount || 0}</div>
+        </div>
+        <div class="stat-card">
+          <div>Cartes affectées</div>
+          <div class="stat-value">${stats.affectedCards || 0}</div>
+        </div>
+        <div class="stat-card">
+          <div>Cartes corrigées</div>
+          <div class="stat-value">${stats.fixedCards || 0}</div>
+        </div>
+      `
+    }
+
+    window.analyzeDatabase = async function() {
+      log('🔍 Analyse de la base de données...', 'info')
+
+      try {
+        // Compter les cartes avec "Unknown Set"
+        const { data: cards, error } = await supabase
+          .from('discovered_cards')
+          .select('id, set')
+          .ilike('set->>name', '%Unknown%')
+
+        if (error) throw error
+
+        log(`✅ ${cards.length} cartes trouvées avec "Unknown" dans le nom d'extension`, 'success')
+
+        // Grouper par set_id
+        const bySet = {}
+        cards.forEach(card => {
+          const setId = card.set?.id || 'inconnu'
+          if (!bySet[setId]) {
+            bySet[setId] = {
+              setId: setId,
+              setName: card.set?.name || 'Unknown',
+              count: 0,
+              canFix: !!SET_NAME_MAPPING[setId]
+            }
+          }
+          bySet[setId].count++
+        })
+
+        // Afficher les résultats
+        Object.values(bySet).forEach(set => {
+          const status = set.canFix ? '✅' : '❌'
+          const newName = SET_NAME_MAPPING[set.setId] || 'Mapping manquant'
+          log(`${status} ${set.setId}: ${set.count} cartes → "${newName}"`, set.canFix ? 'success' : 'warning')
+        })
+
+        updateStats({
+          unknownCount: Object.keys(bySet).length,
+          affectedCards: cards.length,
+          fixedCards: 0
+        })
+
+        document.getElementById('fixBtn').disabled = cards.length === 0
+
+      } catch (error) {
+        log(`❌ Erreur: ${error.message}`, 'error')
+      }
+    }
+
+    window.fixUnknownExtensions = async function() {
+      log('🔧 Début de la correction...', 'info')
+
+      let totalFixed = 0
+
+      try {
+        for (const [setId, newName] of Object.entries(SET_NAME_MAPPING)) {
+          log(`🔄 Traitement ${setId} → "${newName}"...`, 'info')
+
+          // Récupérer toutes les cartes avec ce set_id et "Unknown" dans le nom
+          const { data: cardsToFix, error: fetchError } = await supabase
+            .from('discovered_cards')
+            .select('id, set')
+            .eq('set->>id', setId)
+            .ilike('set->>name', '%Unknown%')
+
+          if (fetchError) throw fetchError
+
+          if (cardsToFix.length === 0) {
+            log(`ℹ️ ${setId}: Aucune carte à corriger`, 'info')
+            continue
+          }
+
+          log(`📝 ${setId}: ${cardsToFix.length} cartes à corriger`, 'info')
+
+          // Mettre à jour chaque carte
+          for (const card of cardsToFix) {
+            const updatedSet = {
+              ...card.set,
+              name: newName
+            }
+
+            const { error: updateError } = await supabase
+              .from('discovered_cards')
+              .update({ set: updatedSet })
+              .eq('id', card.id)
+
+            if (updateError) {
+              log(`❌ Erreur mise à jour ${card.id}: ${updateError.message}`, 'error')
+            } else {
+              totalFixed++
+            }
+          }
+
+          log(`✅ ${setId}: ${cardsToFix.length} cartes corrigées`, 'success')
+        }
+
+        log(`🎉 Correction terminée ! ${totalFixed} cartes mises à jour`, 'success')
+
+        updateStats({
+          unknownCount: 0,
+          affectedCards: 0,
+          fixedCards: totalFixed
+        })
+
+        document.getElementById('fixBtn').disabled = true
+
+      } catch (error) {
+        log(`❌ Erreur globale: ${error.message}`, 'error')
+      }
+    }
+
+    // Auto-analyse au chargement
+    window.addEventListener('load', () => {
+      analyzeDatabase()
+    })
+  </script>
+</body>
+</html>

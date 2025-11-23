@@ -9,7 +9,7 @@ const STORE_NAME = 'cards'
 const METADATA_STORE = 'metadata'
 
 // Version du cache - INCREMENTER CETTE VALEUR pour forcer un rechargement complet sur tous les appareils
-const CACHE_VERSION = '2.5.0' // Fix pagination Supabase avec ORDER BY pour stabilité (2025-01-22)
+const CACHE_VERSION = '2.5.1' // Fix pagination Supabase avec ORDER BY pour stabilité (2025-01-22)
 
 export class CardCacheService {
   static db = null
