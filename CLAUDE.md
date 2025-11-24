@@ -659,6 +659,56 @@ const uniqueCards = collection.length
 
 **État** : ✅ Résolu (v1.19.4)
 
+### Tri des Cartes dans Doublons (RÉSOLU - v1.19.10)
+**Problème** : Tri incorrect des cartes dans la page Doublons et dates d'extensions incorrectes.
+
+**Symptômes** :
+- Cartes avec numéros élevés (47, 79, 80, 86) apparaissaient avant la carte #1
+- White Flare et Black Bolt affichaient novembre 2025 au lieu de juillet 2025
+- Mega Evolution (septembre 2025) apparaissait en bas au lieu d'en haut
+- Incohérence entre "Ma Collection" (tri correct, dates correctes) et "Doublons" (tri incorrect, dates incorrectes)
+
+**Causes identifiées** :
+1. **Tri des cartes** : Pas de tri par `set.id` puis par numéro dans `groupedDuplicates`
+2. **Tri des blocs** : Extensions sans date utilisaient `new Date(0)` (1970) au lieu de `new Date()` (actuel)
+3. **Dates d'extensions** : La date affichée était celle de la première carte rencontrée, pas la date majoritaire
+
+**Correctifs appliqués** :
+- ✅ v1.19.6 : Ajout tri par `set.id` puis numéro dans `groupedDuplicates` (Duplicates.jsx:144-170)
+- ✅ v1.19.7 : Tri par `set.id` puis numéro dans `groupedModalCards` (modale d'édition)
+- ✅ v1.19.8 : Utilisation `new Date()` pour blocs/extensions sans date (Duplicates.jsx, Collection.jsx, useCollection.jsx)
+- ✅ v1.19.10 : **Calcul date majoritaire** au lieu de prendre la première carte (Duplicates.jsx:153-163)
+
+**Solution finale (date majoritaire)** :
+```javascript
+// Compter toutes les dates présentes dans chaque extension
+if (releaseDate) {
+  if (!acc[blockName].extensions[extensionKey].releaseDates[releaseDate]) {
+    acc[blockName].extensions[extensionKey].releaseDates[releaseDate] = 0
+  }
+  acc[blockName].extensions[extensionKey].releaseDates[releaseDate]++
+}
+
+// Après le groupement, utiliser la date la plus fréquente
+Object.values(cardsByBlock).forEach(block => {
+  Object.values(block.extensions).forEach(ext => {
+    const dates = Object.entries(ext.releaseDates)
+    if (dates.length > 0) {
+      const mostFrequentDate = dates.sort((a, b) => b[1] - a[1])[0][0]
+      ext.releaseDate = mostFrequentDate
+    }
+  })
+})
+```
+
+**Résultat** :
+- Cartes triées correctement par numéro (#1, #2, #3... #47, #79, #80, #86)
+- White Flare et Black Bolt affichent juillet 2025 (date correcte)
+- Mega Evolution apparaît en haut (septembre > juillet > mai > mars)
+- Cohérence totale entre Ma Collection et Doublons
+
+**État** : ✅ Résolu (v1.19.10)
+
 ---
 
-**Dernière mise à jour** : 2025-11-24 (v1.19.4)
+**Dernière mise à jour** : 2025-01-24 (v1.19.10)
