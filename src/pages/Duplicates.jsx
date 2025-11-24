@@ -133,13 +133,34 @@ export function Duplicates() {
         acc[blockName].extensions[extensionKey] = {
           name: extensionName,
           releaseDate: releaseDate,
+          releaseDates: {}, // Pour compter les dates
           cards: []
         }
+      }
+
+      // Compter chaque date rencontrée
+      if (releaseDate) {
+        if (!acc[blockName].extensions[extensionKey].releaseDates[releaseDate]) {
+          acc[blockName].extensions[extensionKey].releaseDates[releaseDate] = 0
+        }
+        acc[blockName].extensions[extensionKey].releaseDates[releaseDate]++
       }
 
       acc[blockName].extensions[extensionKey].cards.push(card)
       return acc
     }, {})
+
+    // Calculer la date majoritaire pour chaque extension
+    Object.values(cardsByBlock).forEach(block => {
+      Object.values(block.extensions).forEach(ext => {
+        // Trouver la date la plus fréquente
+        const dates = Object.entries(ext.releaseDates)
+        if (dates.length > 0) {
+          const mostFrequentDate = dates.sort((a, b) => b[1] - a[1])[0][0]
+          ext.releaseDate = mostFrequentDate
+        }
+      })
+    })
 
     // Trier les cartes par set.id puis par numéro dans chaque extension
     Object.values(cardsByBlock).forEach(block => {
