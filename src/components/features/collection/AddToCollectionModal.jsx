@@ -107,8 +107,9 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
     )
 
     if (matchingCards.length > 0) {
-      const newQuantity = (matchingCards[0].quantity || 1) - 1
-      if (newQuantity > 0) {
+      // Cas 1: Une seule entrée avec quantity > 1 → diminuer la quantité
+      if (matchingCards[0].quantity > 1) {
+        const newQuantity = matchingCards[0].quantity - 1
         updateCardInCollection(matchingCards[0].id, { ...matchingCards[0], quantity: newQuantity })
         toast({
           title: 'Quantité diminuée',
@@ -116,6 +117,17 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
           variant: 'success'
         })
       }
+      // Cas 2: Plusieurs entrées séparées (chacune avec quantity=1) → supprimer la première
+      else if (matchingCards.length > 1) {
+        removeFromCollection(matchingCards[0].id)
+        toast({
+          title: 'Exemplaire supprimé',
+          description: `${translateCardName(card.name)} (${version}, ${translateCondition(condition)})`,
+          variant: 'success'
+        })
+      }
+      // Cas 3: Une seule entrée avec quantity=1 → ne rien faire (utiliser le bouton poubelle)
+      // Ce cas est géré par le bouton Trash2 dans l'UI
     }
   }
 
