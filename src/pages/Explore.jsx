@@ -20,7 +20,10 @@ import { translateCardName } from '@/utils/cardTranslations'
 import { translateCardType } from '@/utils/typeTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
+import { SetProgressBar } from '@/components/features/collection/SetProgressBar'
+import { RarityProgressIcons } from '@/components/features/collection/RarityProgressIcons'
 import { PriceSourceBadge } from '@/components/ui/PriceSourceBadge'
+import { useSettings } from '@/hooks/useSettings'
 import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
 export function Explore() {
@@ -43,6 +46,7 @@ export function Explore() {
   const [isSearching, setIsSearching] = useState(false) // État local pour afficher le bouton d'annulation
   const { addToCollection, toggleFavorite, toggleWishlist, favorites, wishlist, collection } = useCollection()
   const { searchCards, seriesDatabase, discoveredCards, isLoading, totalDiscoveredCards, getCardsBySet } = useCardDatabase()
+  const { settings } = useSettings()
   const { toast } = useToast()
 
   // AbortController pour annuler la recherche
@@ -677,12 +681,20 @@ export function Explore() {
                       <h3 className="text-lg font-semibold golden-glow mb-1">
                         {extension.name}
                       </h3>
-                      <div className="flex items-center space-x-6 text-sm text-muted-foreground">
+                      <div className="flex items-center space-x-6 text-sm text-muted-foreground mb-2">
                         <span>{extension.cards?.length || extension.cardsCount || 0} carte{(extension.cards?.length || extension.cardsCount || 0) > 1 ? 's' : ''}</span>
                         {extension.releaseDate && (
                           <span>{new Date(extension.releaseDate).getFullYear()}</span>
                         )}
                       </div>
+                      {/* Barre de progression */}
+                      <SetProgressBar
+                        setId={extension.id}
+                        collection={collection}
+                        discoveredCards={discoveredCards}
+                        mastersetMode={settings.mastersetMode}
+                        size="small"
+                      />
                     </div>
                   </div>
 
@@ -693,9 +705,55 @@ export function Explore() {
           ))}
         </div>
       ) : currentView === 'cards' ? (
-        /* Cards List */
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-          {getFilteredData().map((card, cardIndex) => {
+        /* Cards List with Extension Header */
+        <div className="space-y-6">
+          {/* Extension Header with Progress */}
+          {selectedExtension && (
+            <Card className="golden-border">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {/* Extension Info */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold golden-glow mb-2">
+                        {selectedExtension.name}
+                      </h2>
+                      <div className="flex items-center space-x-6 text-sm text-muted-foreground">
+                        {selectedExtension.releaseDate && (
+                          <span>{new Date(selectedExtension.releaseDate).getFullYear()}</span>
+                        )}
+                        <span>{extensionCards.length} carte{extensionCards.length > 1 ? 's' : ''}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {selectedExtension.id}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <SetProgressBar
+                    setId={selectedExtension.id}
+                    collection={collection}
+                    discoveredCards={discoveredCards}
+                    mastersetMode={settings.mastersetMode}
+                    size="medium"
+                  />
+
+                  {/* Rarity Icons */}
+                  <RarityProgressIcons
+                    setId={selectedExtension.id}
+                    collection={collection}
+                    discoveredCards={discoveredCards}
+                    mastersetMode={settings.mastersetMode}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Cards Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+            {getFilteredData().map((card, cardIndex) => {
             const isInCollection = collection.some(c => c.card_id === card.id)
 
             return (
@@ -891,6 +949,7 @@ export function Explore() {
             </Card>
             )
           })}
+          </div>
         </div>
       ) : null}
 

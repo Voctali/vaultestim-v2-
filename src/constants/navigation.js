@@ -1,4 +1,4 @@
-import { Home, BookOpen, Heart, List, Copy, Search, Camera, BarChart3, Users, Settings, Crown, LogOut, Database, Shield, UserCog, Package } from "lucide-react"
+import { Home, BookOpen, Heart, List, Copy, Search, Camera, BarChart3, Users, Settings, Crown, LogOut, Database, Shield, UserCog, Package, Palette } from "lucide-react"
 
 export const NAVIGATION_ITEMS = [
   {
@@ -74,6 +74,7 @@ export const NAVIGATION_ITEMS = [
     color: '#8B5CF6',
     subItems: [
       { id: 'database', label: 'Éditeur de Base de Données', path: '/admin/editeur-base-donnees', icon: Database },
+      { id: 'interface', label: 'Gestion de l\'Interface', path: '/admin/interface', icon: Palette },
       { id: 'users', label: 'Gestion Utilisateurs', path: '/admin/utilisateurs', icon: UserCog },
       { id: 'roles', label: 'Gestion des Rôles', path: '/admin/roles', icon: Shield },
       { id: 'system', label: 'Système', path: '/admin/systeme', icon: Settings }

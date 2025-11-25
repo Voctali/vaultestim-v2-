@@ -711,4 +711,41 @@ Object.values(cardsByBlock).forEach(block => {
 
 ---
 
-**Dernière mise à jour** : 2025-01-24 (v1.19.10)
+## 🔄 Correction Batch URLs CardMarket (25/11/2025)
+
+### Commande de lancement
+```bash
+cd "F:\Logiciels\Appli Vaultestim\vaultestim-v2" && node fix-cardmarket-urls-batch.cjs
+```
+
+### Description
+Script automatisé pour corriger les URLs CardMarket de toutes les cartes en utilisant RapidAPI.
+
+**Configuration** :
+- **Quota** : 3000 requêtes par exécution
+- **Délai** : 200ms entre chaque requête
+- **Batch** : 100 cartes par lot
+
+**Priorité de traitement** :
+1. Scarlet & Violet (`sv*`, `svp*`)
+2. Mega Evolution (`me1`, `me2`, `mep`)
+3. Sword & Shield (`swsh*`)
+4. Autres extensions
+
+### Progression actuelle
+- **Cartes avec URL** : ~3700 (20%)
+- **Cartes sans URL** : ~14800 (80%)
+- **Total** : ~18500 cartes
+
+### Fonctionnement
+- Le script filtre automatiquement `.is('cardmarket_url', null)`
+- **Aucune requête API n'est consommée** pour les cartes déjà corrigées
+- Peut être relancé plusieurs fois jusqu'à correction complète
+- Sauvegarde les URLs format `tcggo.com/external/cm/{id}?language=2` (FR)
+
+### Prochaine exécution
+Relancer la commande ci-dessus pour traiter les ~14800 cartes restantes (environ 5 exécutions nécessaires).
+
+---
+
+**Dernière mise à jour** : 2025-11-25 (Correction batch URLs CardMarket)

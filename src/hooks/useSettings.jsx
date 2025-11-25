@@ -9,7 +9,8 @@ export function SettingsProvider({ children }) {
     shareCollection: false,
     shareStats: false,
     shareWishlist: false,
-    shareFavorites: false
+    shareFavorites: false,
+    mastersetMode: false // Mode Masterset pour progression (toutes les versions)
   })
 
   // Charger les paramètres depuis localStorage

@@ -9,7 +9,10 @@ import { Search, Filter, BookOpen, Heart, List } from 'lucide-react'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { CardDetailsModal } from '@/components/features/collection/CardDetailsModal'
 import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
+import { SetProgressBar } from '@/components/features/collection/SetProgressBar'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
+import { useSettings } from '@/hooks/useSettings'
+import { useCardDatabase } from '@/hooks/useCardDatabase'
 import { translateCondition } from '@/utils/cardConditions'
 import { translatePokemonName } from '@/utils/pokemonTranslations'
 import { translateTrainerName } from '@/utils/trainerTranslations'
@@ -29,6 +32,8 @@ export function Collection() {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
 
   const { collection, favorites, wishlist, toggleFavorite, toggleWishlist } = useCollection()
+  const { settings } = useSettings()
+  const { discoveredCards } = useCardDatabase()
 
   // Utiliser la vraie collection
   const collectionCards = collection
@@ -320,20 +325,32 @@ export function Collection() {
               {block.extensions.map((extension, extIndex) => (
                 <div key={extIndex} className="space-y-4">
                   {/* Extension Header */}
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-semibold golden-glow">{extension.name}</h2>
-                      {extension.releaseDate && (
-                        <span className="text-sm text-muted-foreground">
-                          ({new Date(extension.releaseDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })})
-                        </span>
-                      )}
-                      <Badge variant="outline" className="ml-2">
-                        {extension.cards.length} carte{extension.cards.length > 1 ? 's' : ''}
-                      </Badge>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-semibold golden-glow">{extension.name}</h2>
+                        {extension.releaseDate && (
+                          <span className="text-sm text-muted-foreground">
+                            ({new Date(extension.releaseDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })})
+                          </span>
+                        )}
+                        <Badge variant="outline" className="ml-2">
+                          {extension.cards.length} carte{extension.cards.length > 1 ? 's' : ''}
+                        </Badge>
+                      </div>
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
                     </div>
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                    {/* Barre de progression */}
+                    <div className="max-w-md mx-auto">
+                      <SetProgressBar
+                        setId={extension.cards[0]?.set?.id || extension.cards[0]?.extension}
+                        collection={collection}
+                        discoveredCards={discoveredCards}
+                        mastersetMode={settings.mastersetMode}
+                        size="small"
+                      />
+                    </div>
                   </div>
 
                   {/* Cards Grid */}

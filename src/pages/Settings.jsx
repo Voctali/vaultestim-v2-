@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Settings as SettingsIcon, Users, BarChart, Heart, Star, Package, RefreshCw, Database, Zap, Info } from 'lucide-react'
+import { Settings as SettingsIcon, Users, BarChart, Heart, Star, Package, RefreshCw, Database, Zap, Info, Eye, Target } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { CardCacheService } from '@/services/CardCacheService'
 import { SupabaseService } from '@/services/SupabaseService'
@@ -160,6 +160,49 @@ export function Settings() {
               id="share-wishlist"
               checked={settings.shareWishlist}
               onCheckedChange={(checked) => updateSetting('shareWishlist', checked)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Affichage Collection */}
+      <Card className="golden-border">
+        <CardHeader>
+          <CardTitle className="golden-glow flex items-center">
+            <Eye className="w-5 h-5 mr-2" />
+            Affichage Collection
+          </CardTitle>
+          <CardDescription>
+            Personnalisez l'affichage de votre progression
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Mode Masterset */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-start gap-3">
+              <Target className="w-5 h-5 text-amber-500 mt-1" />
+              <div>
+                <Label htmlFor="masterset-mode" className="text-base font-medium cursor-pointer">
+                  Mode Masterset
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Comptabiliser toutes les versions (Normale, Holo, Reverse, etc.) dans la progression.
+                  Désactivé = 1 exemplaire suffit peu importe la version.
+                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-green-400">✓ Mode Base (désactivé)</span> : Pikachu Normale OU Holo = 1/1 carte
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-amber-400">★ Mode Masterset (activé)</span> : Pikachu = 5 versions → besoin de toutes pour 5/5
+                  </p>
+                </div>
+              </div>
+            </div>
+            <Switch
+              id="masterset-mode"
+              checked={settings.mastersetMode}
+              onCheckedChange={(checked) => updateSetting('mastersetMode', checked)}
             />
           </div>
         </CardContent>

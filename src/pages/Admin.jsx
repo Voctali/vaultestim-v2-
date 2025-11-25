@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Settings, Users, Crown, Calendar, Clock, Database, Shield, UserCog } from 'lucide-react'
+import { Settings, Users, Crown, Calendar, Clock, Database, Shield, UserCog, Palette } from 'lucide-react'
 
 export function Admin() {
   const navigate = useNavigate()
@@ -25,6 +25,15 @@ export function Admin() {
       iconColor: 'text-purple-500'
     },
     {
+      id: 'interface',
+      title: 'Gestion de l\'Interface',
+      description: 'Personnalisez l\'affichage et les options visuelles',
+      icon: Palette,
+      path: '/admin/interface',
+      color: 'border-amber-500/20 hover:bg-amber-500/5',
+      iconColor: 'text-amber-500'
+    },
+    {
       id: 'users',
       title: 'Gestion Utilisateurs',
       description: 'Administrez les comptes utilisateurs et permissions',
@@ -43,6 +52,8 @@ export function Admin() {
       iconColor: 'text-gray-500'
     }
   ]
+
+  console.log('🔍 Admin Modules:', adminModules.length, adminModules.map(m => m.title))
 
   return (
     <div className="space-y-6">
@@ -64,7 +75,7 @@ export function Admin() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {adminModules.map((module) => (
               <Card
                 key={module.id}

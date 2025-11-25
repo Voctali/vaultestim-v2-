@@ -16,9 +16,9 @@
  *   - Authentification Supabase
  */
 
-export const APP_VERSION = '1.19.11'
+export const APP_VERSION = '1.19.12'
 export const APP_NAME = 'VaultEstim'
-export const BUILD_DATE = '2025-11-24'
+export const BUILD_DATE = '2025-11-25'
 
 // Pour affichage complet
 export const getFullVersion = () => `${APP_NAME} v${APP_VERSION}`

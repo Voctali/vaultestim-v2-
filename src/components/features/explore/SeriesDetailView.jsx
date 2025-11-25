@@ -3,15 +3,21 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CardSearchResults } from '@/components/features/explore/CardSearchResults'
+import { SetProgressBar } from '@/components/features/collection/SetProgressBar'
+import { RarityProgressIcons } from '@/components/features/collection/RarityProgressIcons'
 import { TCGdxService } from '@/services/TCGdxService'
 import { useCardDatabase } from '@/hooks/useCardDatabase'
+import { useCollection } from '@/hooks/useCollection'
+import { useSettings } from '@/hooks/useSettings'
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
 
 export function SeriesDetailView({ series }) {
   const [expandedSets, setExpandedSets] = useState(new Set())
   const [seriesCards, setSeriesCards] = useState([])
   const [loading, setLoading] = useState(true)
-  const { getCardsBySet } = useCardDatabase()
+  const { getCardsBySet, discoveredCards } = useCardDatabase()
+  const { collection } = useCollection()
+  const { settings } = useSettings()
 
   // Charger les cartes de la série
   useEffect(() => {
@@ -206,17 +212,34 @@ export function SeriesDetailView({ series }) {
                           <ChevronRight className="w-5 h-5" />
                         )}
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <h3 className="text-lg font-semibold golden-glow">
                           {set.name}
                         </h3>
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                        <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
                           <span>{releaseYear}</span>
                           <span>{set.cards.length} cartes</span>
                           <Badge variant="secondary" className="text-xs">
                             {set.id}
                           </Badge>
                         </div>
+                        {/* Barre de progression */}
+                        <div className="mb-2">
+                          <SetProgressBar
+                            setId={set.id}
+                            collection={collection}
+                            discoveredCards={discoveredCards}
+                            mastersetMode={settings.mastersetMode}
+                            size="medium"
+                          />
+                        </div>
+                        {/* Icônes de rareté */}
+                        <RarityProgressIcons
+                          setId={set.id}
+                          collection={collection}
+                          discoveredCards={discoveredCards}
+                          mastersetMode={settings.mastersetMode}
+                        />
                       </div>
                     </div>
                     <div className="text-right">

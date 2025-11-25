@@ -14,6 +14,7 @@ import { AdminDatabaseEditor } from '@/pages/AdminDatabaseEditor'
 import { AdminUserManagement } from '@/pages/AdminUserManagement'
 import { AdminSetup } from '@/pages/AdminSetup'
 import { AdminSystem } from '@/pages/AdminSystem'
+import { AdminInterface } from '@/pages/AdminInterface'
 import { Login } from '@/pages/Login'
 import { Register } from '@/pages/Register'
 import { ResetPassword } from '@/pages/ResetPassword'
@@ -74,10 +75,12 @@ function AppContent() {
                     <Route path="amis" element={<Friends />} />
                     <Route path="parametres" element={<Settings />} />
                     <Route path="admin" element={<Admin />} />
+                    <Route path="admin/base-donnees" element={<AdminDatabaseEditor />} />
                     <Route path="admin/editeur-base-donnees" element={<AdminDatabaseEditor />} />
                     <Route path="admin/utilisateurs" element={<AdminUserManagement />} />
                     <Route path="admin/roles" element={<AdminSetup />} />
                     <Route path="admin/systeme" element={<AdminSystem />} />
+                    <Route path="admin/interface" element={<AdminInterface />} />
                   </Route>
                 </Routes>
                 </div>
