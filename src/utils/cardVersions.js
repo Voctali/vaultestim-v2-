@@ -36,6 +36,39 @@ export function getAvailableVersions(card) {
   // Détection des raretés spéciales
   // ORDRE IMPORTANT: Du plus spécifique au plus général
 
+  // 0. Cas spécial PRIORITAIRE : Évolitions EX de Prismatic Evolution avec Tampon
+  // Évoli EX 75, Noctali EX 60, Nymphali EX 41, Mentali EX 34, Voltali EX 30,
+  // Givrali EX 26, Aquali EX 23, Pyroli EX 14, Phyllali EX 6
+  const isPrismaticEvolution = setId.includes('sv8pt5') ||
+    setName.includes('prismatic evolution') ||
+    setName.includes('evolutions prismatiques') ||
+    setName.includes('évolutions prismatiques')
+
+  const eeveelutionsWithStamp = [
+    { names: ['eevee', 'evoli', 'évoli'], number: '75' },
+    { names: ['umbreon', 'noctali'], number: '60' },
+    { names: ['sylveon', 'nymphali'], number: '41' },
+    { names: ['espeon', 'mentali'], number: '34' },
+    { names: ['jolteon', 'voltali'], number: '30' },
+    { names: ['glaceon', 'givrali'], number: '26' },
+    { names: ['vaporeon', 'aquali'], number: '23' },
+    { names: ['flareon', 'pyroli'], number: '14' },
+    { names: ['leafeon', 'phyllali'], number: '6' }
+  ]
+
+  if (isPrismaticEvolution && (name.includes(' ex') || name.includes('-ex'))) {
+    const isEeveelutionWithStamp = eeveelutionsWithStamp.some(eeveelution =>
+      eeveelution.names.some(n => name.includes(n)) && number === eeveelution.number
+    )
+
+    if (isEeveelutionWithStamp) {
+      return [
+        { value: 'EX', label: 'EX (★★ noires)' },
+        { value: 'Tampon (logo extension)', label: 'Tampon (logo extension)' }
+      ]
+    }
+  }
+
   // 0a. PRIORITÉ ABSOLUE : Cartes EX et Double Rare - Version unique
   // Doit être vérifié AVANT les extensions spéciales
   if (
