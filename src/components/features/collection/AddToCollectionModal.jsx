@@ -95,7 +95,6 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
     if (matchingCards.length > 0) {
       // Augmenter la quantité de la première carte trouvée
       const newQuantity = (matchingCards[0].quantity || 1) + 1
-      console.log('➕ [handleIncreaseQuantity] Augmentation:', matchingCards[0].quantity || 1, '→', newQuantity)
       updateCardInCollection(matchingCards[0].id, { ...matchingCards[0], quantity: newQuantity })
       toast({
         title: 'Quantité augmentée',
@@ -120,21 +119,12 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
         cardCondition === normalizedCondition
     })
 
-    console.log('🔍 [handleDecreaseQuantity] Recherche:', {
-      card_id: card.id,
-      version: normalizedVersion,
-      condition: normalizedCondition,
-      matchingCards: matchingCards.length,
-      firstMatch: matchingCards[0] ? { id: matchingCards[0].id, quantity: matchingCards[0].quantity } : null
-    })
-
     if (matchingCards.length > 0) {
       const currentQuantity = matchingCards[0].quantity || 1
 
       // Cas 1: quantity > 1 → diminuer la quantité
       if (currentQuantity > 1) {
         const newQuantity = currentQuantity - 1
-        console.log('✅ [handleDecreaseQuantity] Diminution:', currentQuantity, '→', newQuantity)
         updateCardInCollection(matchingCards[0].id, { ...matchingCards[0], quantity: newQuantity })
         toast({
           title: 'Quantité diminuée',
@@ -144,7 +134,6 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
       }
       // Cas 2: Plusieurs entrées séparées (chacune avec quantity=1) → supprimer la première
       else if (matchingCards.length > 1) {
-        console.log('🗑️ [handleDecreaseQuantity] Suppression entrée séparée:', matchingCards[0].id)
         removeFromCollection(matchingCards[0].id)
         toast({
           title: 'Exemplaire supprimé',
@@ -153,11 +142,6 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
         })
       }
       // Cas 3: Une seule entrée avec quantity=1 → ne rien faire (utiliser le bouton poubelle)
-      else {
-        console.log('⚠️ [handleDecreaseQuantity] Cas 3: quantity=1, utiliser poubelle')
-      }
-    } else {
-      console.log('❌ [handleDecreaseQuantity] Aucune carte trouvée!')
     }
   }
 
