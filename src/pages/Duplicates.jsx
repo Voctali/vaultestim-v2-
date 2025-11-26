@@ -149,12 +149,15 @@ export function Duplicates() {
       return []
     }
 
-    // DEBUG: Afficher les Bulbasaur reçus
+    // DEBUG: Afficher les Bulbasaur reçus avec leurs clés
     const bulbasaurInDuplicates = duplicateCards.filter(c => c.name?.toLowerCase().includes('bulbasaur'))
     if (bulbasaurInDuplicates.length > 0) {
       console.log('🐸 [BULBASAUR] Reçus dans duplicateCards:', bulbasaurInDuplicates.length)
       bulbasaurInDuplicates.forEach(c => {
-        console.log(`   ID: ${c.id} | card_id: ${c.card_id} | version: ${c.version}`)
+        const version = (c.version && String(c.version).trim()) ? String(c.version).trim() : 'Normale'
+        const cardId = c.card_id || c.id
+        const key = `${cardId}-${version}`
+        console.log(`   ID: ${c.id} | card_id: ${c.card_id} | version brute: "${c.version}" | version normalisée: "${version}" | CLÉ: ${key}`)
       })
     }
 
