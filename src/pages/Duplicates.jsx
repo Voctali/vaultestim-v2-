@@ -131,123 +131,6 @@ export function Duplicates() {
     return 'Autres'
   }
 
-  // Grouper les doublons par bloc et extension (comme dans Collection.jsx)
-  const groupedDuplicates = useMemo(() => {
-    // Grouper par bloc (series) - utiliser card_id comme source de vérité
-    const cardsByBlock = duplicateCards.reduce((acc, card) => {
-      // Extraire le préfixe d'extension depuis card_id (source de vérité)
-      const extensionPrefix = getExtensionFromCardId(card.card_id)
-
-      // Déterminer le bloc : priorité au card_id, sinon fallback sur set.series
-      let blockName = card.set?.series || card.series || 'Sans bloc'
-      if (extensionPrefix) {
-        blockName = getBlockFromExtensionPrefix(extensionPrefix)
-      }
-
-      if (!acc[blockName]) {
-        acc[blockName] = {
-          name: blockName,
-          extensions: {}
-        }
-      }
-
-      // Grouper par extension au sein du bloc - utiliser card_id comme source de vérité
-      // Priorité : préfixe card_id > set.id > extension
-      const extensionKey = extensionPrefix || card.set?.id || card.extension || 'Sans extension'
-      const extensionName = card.set?.name || card.extension || extensionKey
-      const releaseDate = card.set?.releaseDate || null
-
-      if (!acc[blockName].extensions[extensionKey]) {
-        acc[blockName].extensions[extensionKey] = {
-          name: extensionName,
-          releaseDate: releaseDate,
-          releaseDates: {}, // Pour compter les dates
-          cards: []
-        }
-      }
-
-      // Compter chaque date rencontrée
-      if (releaseDate) {
-        if (!acc[blockName].extensions[extensionKey].releaseDates[releaseDate]) {
-          acc[blockName].extensions[extensionKey].releaseDates[releaseDate] = 0
-        }
-        acc[blockName].extensions[extensionKey].releaseDates[releaseDate]++
-      }
-
-      acc[blockName].extensions[extensionKey].cards.push(card)
-      return acc
-    }, {})
-
-    // Calculer la date majoritaire pour chaque extension
-    Object.values(cardsByBlock).forEach(block => {
-      Object.values(block.extensions).forEach(ext => {
-        // Trouver la date la plus fréquente
-        const dates = Object.entries(ext.releaseDates)
-        if (dates.length > 0) {
-          const mostFrequentDate = dates.sort((a, b) => b[1] - a[1])[0][0]
-          ext.releaseDate = mostFrequentDate
-        }
-      })
-    })
-
-    // Trier les cartes par numéro dans chaque extension
-    // (plus besoin de trier par set.id car le groupement est déjà correct via card_id)
-    Object.values(cardsByBlock).forEach(block => {
-      Object.values(block.extensions).forEach(ext => {
-        ext.cards.sort((a, b) => {
-          // Extraire le numéro depuis card_id si number est manquant
-          // card_id format: me1-96, sv3pt5-34, etc.
-          const getNumber = (card) => {
-            if (card.number) return card.number
-            const match = card.card_id?.match(/-(\d+)$/)
-            return match ? match[1] : ''
-          }
-
-          const numA = getNumber(a)
-          const numB = getNumber(b)
-          const matchA = numA.match(/^(\d+)/)
-          const matchB = numB.match(/^(\d+)/)
-
-          if (matchA && matchB) {
-            const intA = parseInt(matchA[1])
-            const intB = parseInt(matchB[1])
-            if (intA !== intB) return intA - intB
-            return numA.localeCompare(numB)
-          }
-          if (matchA && !matchB) return -1
-          if (!matchA && matchB) return 1
-          return numA.localeCompare(numB)
-        })
-      })
-    })
-
-    // Trier les extensions par date (plus récent en premier)
-    const blockGroups = Object.entries(cardsByBlock).map(([blockName, blockData]) => {
-      const sortedExtensions = Object.values(blockData.extensions).sort((a, b) => {
-        const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date()
-        const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date()
-        return dateB - dateA
-      })
-
-      // Trouver la date la plus récente du bloc pour le tri final
-      const blockMostRecentDate = sortedExtensions[0]?.releaseDate || null
-
-      return {
-        name: blockName,
-        mostRecentDate: blockMostRecentDate,
-        extensions: sortedExtensions
-      }
-    }).sort((a, b) => {
-      // Trier les blocs par date (plus récent en premier)
-      // Les blocs sans date sont considérés comme récents (new Date() au lieu de new Date(0))
-      const dateA = a.mostRecentDate ? new Date(a.mostRecentDate) : new Date()
-      const dateB = b.mostRecentDate ? new Date(b.mostRecentDate) : new Date()
-      return dateB - dateA
-    })
-
-    return blockGroups
-  }, [duplicateCards])
-
   // Fonction pour filtrer les cartes d'une extension par numéro
   const filterCardsByNumber = (cards, extensionKey) => {
     const searchTerm = extensionSearchTerms[extensionKey]
@@ -256,79 +139,118 @@ export function Duplicates() {
     const term = searchTerm.trim()
     return cards.filter(card => {
       if (!card.number) return false
-      // Accepte "025" ou "025/165"
       return card.number.includes(term)
     })
   }
 
-  // Consolider les cartes identiques pour l'affichage (grouper par carte et afficher avec badge quantité)
+  // Grouper ET consolider les doublons en un seul useMemo
   const consolidatedDuplicates = useMemo(() => {
-    if (!groupedDuplicates || groupedDuplicates.length === 0) {
+    if (!duplicateCards || duplicateCards.length === 0) {
       return []
     }
 
-    const result = groupedDuplicates.map(block => ({
-      ...block,
-      extensions: block.extensions.map(extension => {
-        // Grouper les cartes par identité (card_id + version normalisée)
-        const cardGroups = {}
+    // ÉTAPE 1: Consolider d'abord par card_id + version
+    const consolidationMap = {}
+    duplicateCards.forEach(card => {
+      const version = (card.version && String(card.version).trim()) ? String(card.version).trim() : 'Normale'
+      const cardId = card.card_id || card.id
+      const key = `${cardId}-${version}`
 
-        extension.cards.forEach(card => {
-          // Normaliser la version : undefined, null, '' → 'Normale'
-          const version = (card.version && String(card.version).trim()) ? String(card.version).trim() : 'Normale'
-          const cardId = card.card_id || card.id
-          const key = `${cardId}-${version}`
-
-          if (!cardGroups[key]) {
-            cardGroups[key] = {
-              instances: [],
-              totalQuantity: 0
-            }
-          }
-
-          cardGroups[key].instances.push(card)
-          cardGroups[key].totalQuantity += (card.quantity || 1)
-        })
-
-        // Convertir en tableau et garder la meilleure condition comme représentant
-        const consolidatedCards = Object.values(cardGroups).map(group => {
-          const conditionOrder = {
-            'Neuf': 5, 'Proche du neuf': 4, 'Excellent': 3,
-            'Bon': 2, 'Acceptable': 1, 'Endommagé': 0
-          }
-
-          // Trouver la carte avec la meilleure condition
-          const bestCard = group.instances.reduce((best, current) => {
-            const bestScore = conditionOrder[best.condition] || 0
-            const currentScore = conditionOrder[current.condition] || 0
-            return currentScore > bestScore ? current : best
-          }, group.instances[0])
-
-          return {
-            ...bestCard,
-            consolidatedQuantity: group.totalQuantity,
-            instanceIds: group.instances.map(c => c.id)
-          }
-        })
-
-        return {
-          ...extension,
-          cards: consolidatedCards
+      if (!consolidationMap[key]) {
+        consolidationMap[key] = {
+          instances: [],
+          totalQuantity: 0
         }
-      })
-    }))
+      }
+      consolidationMap[key].instances.push(card)
+      consolidationMap[key].totalQuantity += (card.quantity || 1)
+    })
 
-    // Log résumé une seule fois
-    const totalRegroupements = result.reduce((acc, block) =>
-      acc + block.extensions.reduce((extAcc, ext) =>
-        extAcc + ext.cards.filter(c => c.consolidatedQuantity > 1).length, 0), 0)
-
-    if (totalRegroupements > 0) {
-      console.log(`🔀 [Consolidation] ${totalRegroupements} carte(s) consolidée(s)`)
+    // Créer les cartes consolidées
+    const conditionOrder = {
+      'Neuf': 5, 'Proche du neuf': 4, 'Excellent': 3,
+      'Bon': 2, 'Acceptable': 1, 'Endommagé': 0
     }
 
-    return result
-  }, [groupedDuplicates])
+    const consolidatedCards = Object.values(consolidationMap).map(group => {
+      const bestCard = group.instances.reduce((best, current) => {
+        const bestScore = conditionOrder[best.condition] || 0
+        const currentScore = conditionOrder[current.condition] || 0
+        return currentScore > bestScore ? current : best
+      }, group.instances[0])
+
+      return {
+        ...bestCard,
+        consolidatedQuantity: group.totalQuantity,
+        instanceIds: group.instances.map(c => c.id)
+      }
+    })
+
+    // ÉTAPE 2: Grouper par bloc et extension
+    const cardsByBlock = consolidatedCards.reduce((acc, card) => {
+      const extensionPrefix = getExtensionFromCardId(card.card_id)
+      let blockName = card.set?.series || card.series || 'Sans bloc'
+      if (extensionPrefix) {
+        blockName = getBlockFromExtensionPrefix(extensionPrefix)
+      }
+
+      if (!acc[blockName]) {
+        acc[blockName] = { name: blockName, extensions: {} }
+      }
+
+      const extensionKey = extensionPrefix || card.set?.id || card.extension || 'Sans extension'
+      const extensionName = card.set?.name || card.extension || extensionKey
+      const releaseDate = card.set?.releaseDate || null
+
+      if (!acc[blockName].extensions[extensionKey]) {
+        acc[blockName].extensions[extensionKey] = {
+          name: extensionName,
+          releaseDate: releaseDate,
+          cards: []
+        }
+      }
+
+      acc[blockName].extensions[extensionKey].cards.push(card)
+      return acc
+    }, {})
+
+    // ÉTAPE 3: Trier les cartes par numéro
+    Object.values(cardsByBlock).forEach(block => {
+      Object.values(block.extensions).forEach(ext => {
+        ext.cards.sort((a, b) => {
+          const getNum = (c) => {
+            if (c.number) return c.number
+            const match = c.card_id?.match(/-(\d+)$/)
+            return match ? match[1] : ''
+          }
+          const numA = parseInt(getNum(a)) || 0
+          const numB = parseInt(getNum(b)) || 0
+          return numA - numB
+        })
+      })
+    })
+
+    // ÉTAPE 4: Convertir en tableau trié
+    const blockGroups = Object.entries(cardsByBlock).map(([, blockData]) => {
+      const sortedExtensions = Object.values(blockData.extensions).sort((a, b) => {
+        const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date()
+        const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date()
+        return dateB - dateA
+      })
+
+      return {
+        name: blockData.name,
+        mostRecentDate: sortedExtensions[0]?.releaseDate || null,
+        extensions: sortedExtensions
+      }
+    }).sort((a, b) => {
+      const dateA = a.mostRecentDate ? new Date(a.mostRecentDate) : new Date()
+      const dateB = b.mostRecentDate ? new Date(b.mostRecentDate) : new Date()
+      return dateB - dateA
+    })
+
+    return blockGroups
+  }, [duplicateCards])
 
   // Calculer la valeur totale d'un lot
   const calculateBatchValue = (cards) => {
@@ -883,15 +805,6 @@ export function Duplicates() {
                   {block.extensions.map((extension, extIndex) => {
                     const extensionKey = `${block.name}-${extension.name}`
                     const filteredCards = filterCardsByNumber(extension.cards, extensionKey)
-
-                    // DEBUG: Log pour Mega Evolution - première carte Bulbasaur
-                    const bulbasaurCards = filteredCards.filter(c => c.name?.toLowerCase().includes('bulbasaur'))
-                    if (bulbasaurCards.length > 0) {
-                      console.log(`🎯 [DEBUG] Bulbasaur dans ${extension.name}: ${bulbasaurCards.length} carte(s)`)
-                      bulbasaurCards.forEach(c => {
-                        console.log(`   - ${c.name} | card_id: ${c.card_id} | version: ${c.version} | consolidatedQuantity: ${c.consolidatedQuantity} | instanceIds: ${c.instanceIds?.length}`)
-                      })
-                    }
 
                     return (
                     <div key={extIndex} className="space-y-4">
