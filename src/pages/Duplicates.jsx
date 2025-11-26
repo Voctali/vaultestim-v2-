@@ -884,12 +884,12 @@ export function Duplicates() {
                     const extensionKey = `${block.name}-${extension.name}`
                     const filteredCards = filterCardsByNumber(extension.cards, extensionKey)
 
-                    // DEBUG: Log pour Mega Evolution
-                    if (extension.name?.includes('Mega') || extension.name?.includes('ME1')) {
-                      console.log(`🎯 [DEBUG RENDU] Extension: ${extension.name}`)
-                      console.log(`🎯 [DEBUG RENDU] Cartes à afficher: ${filteredCards.length}`)
-                      filteredCards.slice(0, 5).forEach(c => {
-                        console.log(`   - ${c.name} | consolidatedQuantity: ${c.consolidatedQuantity} | card_id: ${c.card_id}`)
+                    // DEBUG: Log pour Mega Evolution - première carte Bulbasaur
+                    const bulbasaurCards = filteredCards.filter(c => c.name?.toLowerCase().includes('bulbasaur'))
+                    if (bulbasaurCards.length > 0) {
+                      console.log(`🎯 [DEBUG] Bulbasaur dans ${extension.name}: ${bulbasaurCards.length} carte(s)`)
+                      bulbasaurCards.forEach(c => {
+                        console.log(`   - ${c.name} | card_id: ${c.card_id} | version: ${c.version} | consolidatedQuantity: ${c.consolidatedQuantity} | instanceIds: ${c.instanceIds?.length}`)
                       })
                     }
 
