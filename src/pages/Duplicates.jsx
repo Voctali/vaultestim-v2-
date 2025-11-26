@@ -917,6 +917,13 @@ export function Duplicates() {
                     const extensionKey = `${block.name}-${extension.name}`
                     const filteredCards = filterCardsByNumber(extension.cards, extensionKey)
 
+                    // DEBUG: Vérifier si les cartes sont consolidées
+                    if (extIndex === 0 && extension.cards.length > 0) {
+                      console.log(`🎨 [Rendu] Extension: ${extension.name}`)
+                      console.log(`🎨 [Rendu] Nombre de cartes à afficher: ${extension.cards.length}`)
+                      console.log(`🎨 [Rendu] Première carte:`, extension.cards[0]?.name, 'consolidatedQuantity:', extension.cards[0]?.consolidatedQuantity)
+                    }
+
                     return (
                     <div key={extIndex} className="space-y-4">
                       {/* SÉPARATEUR D'EXTENSION */}
