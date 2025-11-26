@@ -622,42 +622,104 @@ const sortedCards = [...filteredCards].sort((a, b) => {
 
 **État** : ✅ Résolu (v1.19.2)
 
-### Limite Supabase 1000 lignes (RÉSOLU - v1.19.4)
+### Limite Supabase 1000 lignes (RÉSOLU - v1.19.11)
 **Problème** : La collection était limitée à 1000 exemplaires maximum.
 
 **Symptômes** :
 - Impossible de voir plus de 1000 cartes dans "Ma Collection"
 - Statistiques bloquées à 1000 dans le Dashboard
 - Les cartes au-delà de la 1000ème n'apparaissaient pas
+- Extensions entières (White Flare, Black Bolt, Mega Evolution) montraient 0 cartes
 
 **Cause identifiée** :
 - Supabase limite par défaut les requêtes `.select()` à 1000 lignes
-- Aucune limite explicite n'était spécifiée dans `getUserCollection()`
-- Les statistiques comptaient seulement les lignes au lieu des quantités
+- `.limit(10000)` ne fonctionne PAS pour contourner la limite par défaut
+- Seule la pagination avec `.range()` permet de récupérer toutes les données
 
 **Correctifs appliqués** :
-- ✅ v1.19.4 : Ajout `.limit(10000)` dans `SupabaseCollectionService.js:37`
-- ✅ v1.19.4 : Modification calcul `totalCards` pour sommer les quantités
-- ✅ v1.19.4 : Ajout `uniqueCards` pour afficher le nombre de cartes distinctes
-- ✅ v1.19.4 : Mise à jour Dashboard et Statistics pour afficher les deux valeurs
+- ✅ v1.19.11 : Implémentation pagination avec `.range()` dans `SupabaseCollectionService.getUserCollection()`
+- ✅ v1.19.11 : Détection bloc par préfixe `card_id` (me1-, sv-, swsh-, etc.)
+- ✅ v1.19.11 : Détection extension par préfixe `card_id` (sv3pt5-, sv8pt5-, etc.)
+- ✅ v1.19.11 : Dates de repli (fallback) pour extensions sans `releaseDate`
+- ✅ v1.19.11 : Matching flexible dans `SetProgressBar` (set.id, extension, préfixe card_id)
 
-**Solution finale** :
+**Solution finale (pagination)** :
 ```javascript
-// SupabaseCollectionService.js - Ligne 37
-.limit(10000) // Limite augmentée pour collections volumineuses
+// SupabaseCollectionService.js - getUserCollection()
+static async getUserCollection() {
+  let allCollectionData = []
+  let page = 0
+  const pageSize = 1000
+  let hasMore = true
 
-// useCollection.jsx - Lignes 252-258
-const totalCards = collection.reduce((sum, card) => {
-  return sum + parseInt(card.quantity || 1)
-}, 0)
-const uniqueCards = collection.length
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('user_collection')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date_added', { ascending: false })
+      .range(page * pageSize, (page + 1) * pageSize - 1)
+
+    if (error) throw error
+
+    if (data.length === 0) {
+      hasMore = false
+    } else {
+      allCollectionData = allCollectionData.concat(data)
+      page++
+      if (data.length < pageSize) hasMore = false
+    }
+  }
+  return allCollectionData
+}
 ```
 
-**Affichage** :
-- **Dashboard** : "CARTES TOTAL: 1250" + "850 cartes uniques"
-- **Statistics** : "Total d'exemplaires · 850 cartes uniques"
+**Détection bloc/extension par card_id** :
+```javascript
+// Collection.jsx - Détection par préfixe card_id
+const cardIdLower = card.card_id?.toLowerCase() || ''
 
-**État** : ✅ Résolu (v1.19.4)
+// Bloc
+if (cardIdLower.startsWith('me1-') || cardIdLower.startsWith('me2-')) {
+  blockName = 'Mega Evolution'
+} else if (cardIdLower.startsWith('sv') || cardIdLower.startsWith('zsv')) {
+  blockName = 'Scarlet & Violet'
+}
+
+// Extension
+if (cardIdLower.startsWith('sv3pt5-') || cardIdLower.startsWith('mew-')) {
+  extensionName = '151'
+}
+```
+
+**Matching SetProgressBar** :
+```javascript
+// SetProgressBar.jsx - cardBelongsToSet()
+const cardBelongsToSet = (card, targetSetId) => {
+  const setIdLower = targetSetId.toLowerCase()
+  const cardIdLower = (card.card_id || card.id || '').toLowerCase()
+
+  // Match direct
+  if (card.set?.id?.toLowerCase() === setIdLower) return true
+  if (card.extension?.toLowerCase() === setIdLower) return true
+
+  // Match par préfixe card_id
+  if (cardIdLower.startsWith(setIdLower + '-')) return true
+
+  // Match spéciaux (aliases)
+  if (setIdLower === 'sv3pt5' && cardIdLower.startsWith('mew-')) return true
+
+  return false
+}
+```
+
+**Résultat** :
+- Collection complète visible (2972+ cartes)
+- Mega Evolution en haut (septembre 2025)
+- 151 correctement positionné et nommé
+- Barres de progression fonctionnelles
+
+**État** : ✅ Résolu (v1.19.11)
 
 ### Tri des Cartes dans Doublons (RÉSOLU - v1.19.10)
 **Problème** : Tri incorrect des cartes dans la page Doublons et dates d'extensions incorrectes.
@@ -732,20 +794,47 @@ Script automatisé pour corriger les URLs CardMarket de toutes les cartes en uti
 3. Sword & Shield (`swsh*`)
 4. Autres extensions
 
-### Progression actuelle
-- **Cartes avec URL** : ~3700 (20%)
-- **Cartes sans URL** : ~14800 (80%)
+### Progression actuelle (26/11/2025)
+- **Cartes avec URL** : ~7100 (38%)
+- **Cartes sans URL** : ~11400 (62%)
 - **Total** : ~18500 cartes
+
+**Exécutions effectuées** :
+1. Session 1 (25/11) : ~800 cartes (SV, SVP, ME1, ME2, MEP, SWSH1 partiel)
+2. Session 2 (26/11) : ~3000 cartes (quota complet)
 
 ### Fonctionnement
 - Le script filtre automatiquement `.is('cardmarket_url', null)`
 - **Aucune requête API n'est consommée** pour les cartes déjà corrigées
 - Peut être relancé plusieurs fois jusqu'à correction complète
 - Sauvegarde les URLs format `tcggo.com/external/cm/{id}?language=2` (FR)
+- **Fonction `addLanguageParam()`** : Ajoute automatiquement `?language=2` à toutes les URLs
+
+### Corrections manuelles (promos récentes non indexées)
+Certaines cartes promo récentes ne sont pas encore dans l'API RapidAPI/TCGGO. Elles doivent être corrigées manuellement avec des URLs directes CardMarket :
+
+| Carte | ID | URL correcte |
+|-------|----|----|
+| Wobbuffet | svp-203 | `https://www.cardmarket.com/fr/Pokemon/Products/Singles/SV-Black-Star-Promos/Team-Rockets-Wobbuffet-V1-SVP203?language=2` |
+| Eevee | svp-173 | `https://www.cardmarket.com/fr/Pokemon/Products/Singles/SV-Black-Star-Promos/Eevee-V1-SVP173?language=2` |
+| Magneton | svp-159 | `https://www.cardmarket.com/fr/Pokemon/Products/Singles/SV-Black-Star-Promos/Magneton-V1-SVP159?language=2` |
+
+**Commande de correction manuelle** :
+```javascript
+const { error } = await supabase
+  .from('discovered_cards')
+  .update({ cardmarket_url: 'URL_CORRECTE' })
+  .eq('id', 'CARD_ID');
+```
+
+### Paramètre langue française
+Toutes les URLs incluent `?language=2` pour afficher CardMarket en français.
+
+**Mise à jour rétroactive (26/11/2025)** : 903 URLs existantes sans le paramètre ont été mises à jour.
 
 ### Prochaine exécution
-Relancer la commande ci-dessus pour traiter les ~14800 cartes restantes (environ 5 exécutions nécessaires).
+Relancer la commande ci-dessus pour traiter les ~11400 cartes restantes (environ 4 exécutions nécessaires).
 
 ---
 
-**Dernière mise à jour** : 2025-11-25 (Correction batch URLs CardMarket)
+**Dernière mise à jour** : 2025-11-26 (Ajout ?language=2 sur toutes les URLs + corrections manuelles promos)

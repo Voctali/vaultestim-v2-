@@ -28,17 +28,37 @@ export class SupabaseCollectionService {
     try {
       const userId = await this.getCurrentUserId()
 
-      // Récupérer les cartes de la collection (sans limite pour avoir toutes les cartes)
-      const { data: collectionData, error: collectionError } = await supabase
-        .from('user_collection')
-        .select('*')
-        .eq('user_id', userId)
-        .order('date_added', { ascending: false })
-        .limit(10000) // Limite augmentée pour collections volumineuses
+      // Récupérer TOUTES les cartes avec pagination (Supabase limite à 1000 par défaut)
+      let allCollectionData = []
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
 
-      if (collectionError) throw collectionError
+      console.log('🔄 [getUserCollection] Chargement de toutes les cartes avec pagination...')
 
-      console.log(`✅ ${collectionData.length} cartes dans la collection`)
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('user_collection')
+          .select('*')
+          .eq('user_id', userId)
+          .order('date_added', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+
+        if (error) throw error
+
+        if (data.length === 0) {
+          hasMore = false
+        } else {
+          allCollectionData = allCollectionData.concat(data)
+          console.log(`📦 [getUserCollection] Page ${page + 1}: ${data.length} cartes (total: ${allCollectionData.length})`)
+          page++
+          if (data.length < pageSize) hasMore = false
+        }
+      }
+
+      const collectionData = allCollectionData
+
+      console.log(`✅ ${collectionData.length} cartes dans la collection (${page} pages)`)
 
       // Si pas de cartes, retourner directement
       if (!collectionData || collectionData.length === 0) {
@@ -47,6 +67,7 @@ export class SupabaseCollectionService {
 
       // Récupérer les IDs des cartes
       const cardIds = [...new Set(collectionData.map(card => card.card_id))]
+      console.log(`🔍 [getUserCollection] ${cardIds.length} card_id uniques à enrichir`)
 
       // Récupérer les données complètes depuis discovered_cards (avec prix ET infos extension)
       const { data: discoveredData, error: discoveredError } = await supabase
@@ -69,6 +90,15 @@ export class SupabaseCollectionService {
             number: card.number
           }
         })
+      }
+
+      console.log(`📦 [getUserCollection] ${Object.keys(dataMap).length} cartes trouvées dans discovered_cards`)
+
+      // Compter les cartes NON trouvées dans discovered_cards
+      const notFound = cardIds.filter(id => !dataMap[id])
+      if (notFound.length > 0) {
+        console.warn(`⚠️ [getUserCollection] ${notFound.length} card_id NON trouvés dans discovered_cards:`)
+        console.warn('   Exemples:', notFound.slice(0, 10))
       }
 
       // Enrichir les cartes de la collection avec les données complètes
@@ -106,13 +136,18 @@ export class SupabaseCollectionService {
       const userId = await this.getCurrentUserId()
       console.log('🔵 [Supabase Service] User ID:', userId)
 
+      // IMPORTANT: series doit contenir le nom de l'EXTENSION (ex: "Journey Together")
+      // et non pas la série (ex: "Scarlet & Violet")
+      // Priorité: card.set.name > card.extension > card.series
+      const extensionName = card.set?.name || card.extension || card.series
+
       const insertData = {
         user_id: userId,
         card_id: card.id,
         name: card.name,
         number: card.number || null, // Numéro de carte (ex: "97") - REQUIS pour liens CardMarket
-        series: card.series,
-        extension: card.extension,
+        series: extensionName, // Nom de l'extension (pas de la série!)
+        extension: extensionName, // Redondance pour compatibilité
         set: card.set || null, // Infos de l'extension (set.name, set.id) - REQUIS pour liens CardMarket
         rarity: card.rarity,
         image: card.image,

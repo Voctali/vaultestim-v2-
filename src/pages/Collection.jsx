@@ -144,10 +144,69 @@ export function Collection() {
 
   // Grouper les cartes par BLOC puis EXTENSION (comme dans Explorer)
   const cardsByBlock = sortedCards.reduce((acc, card) => {
-    const blockName = card.set?.series || card.series || 'Sans bloc'
-    const extensionKey = card.set?.id || card.extension || 'Sans extension'
-    const extensionName = card.set?.name || (card.set?.id && card.set.id !== 'unknown' ? card.set.id : 'Extension inconnue')
-    const releaseDate = card.set?.releaseDate || null
+    const cardIdLower = card.card_id?.toLowerCase() || ''
+
+    // Déterminer le bloc en fonction du card_id ou set.series
+    let blockName = card.set?.series
+    if (!blockName) {
+      // Détecter le bloc par le préfixe du card_id
+      if (cardIdLower.startsWith('me1-') || cardIdLower.startsWith('me2-') || cardIdLower.startsWith('mep-')) {
+        blockName = 'Mega Evolution'
+      } else if (cardIdLower.startsWith('sv') || cardIdLower.startsWith('zsv')) {
+        blockName = 'Scarlet & Violet'
+      } else if (cardIdLower.startsWith('swsh')) {
+        blockName = 'Sword & Shield'
+      } else {
+        blockName = card.series || 'Autre'
+      }
+    }
+
+    const extensionKey = card.set?.id || card.card_id?.split('-')[0] || 'Sans extension'
+
+    // Pour le nom de l'extension: card.set?.name (enrichi) ou détection par card_id ou card.series
+    // IMPORTANT: Certaines cartes n'ont pas été corrigées, on détecte par card_id
+    let extensionName = card.set?.name
+    if (!extensionName || extensionName === 'Scarlet & Violet') {
+      // Détection par préfixe card_id pour les extensions mal nommées
+      if (cardIdLower.startsWith('sv3pt5-') || cardIdLower.startsWith('mew-')) {
+        extensionName = '151'
+      } else if (cardIdLower.startsWith('sv8pt5-')) {
+        extensionName = 'Prismatic Evolutions'
+      } else if (cardIdLower.startsWith('zsv10pt5-')) {
+        // Distinguer White Flare et Black Bolt par le nom de la carte ou card.series
+        if (card.series?.toLowerCase().includes('white') || card.series?.toLowerCase().includes('flamme blanche')) {
+          extensionName = 'White Flare'
+        } else if (card.series?.toLowerCase().includes('black') || card.series?.toLowerCase().includes('foudre noire')) {
+          extensionName = 'Black Bolt'
+        } else {
+          extensionName = card.series || 'White Flare / Black Bolt'
+        }
+      } else if (cardIdLower.startsWith('me1-')) {
+        extensionName = 'Mega Evolution'
+      } else {
+        extensionName = card.series || card.extension || 'Extension inconnue'
+      }
+    }
+
+    // Date de sortie - définir des dates par défaut pour les extensions sans date dans discovered_cards
+    let releaseDate = card.set?.releaseDate
+    if (!releaseDate) {
+      // Dates de sortie officielles pour les extensions connues
+      if (cardIdLower.startsWith('me1-')) releaseDate = '2025-09-05' // Mega Evolution
+      else if (cardIdLower.startsWith('zsv10pt5-')) releaseDate = '2025-07-11' // White Flare / Black Bolt
+      else if (cardIdLower.startsWith('sv3pt5-') || cardIdLower.startsWith('mew-')) releaseDate = '2023-09-22' // 151
+      else if (cardIdLower.startsWith('sv8pt5-')) releaseDate = '2025-01-17' // Prismatic Evolutions
+      else if (cardIdLower.startsWith('sv1-')) releaseDate = '2023-03-31' // Scarlet & Violet base
+      else if (cardIdLower.startsWith('sv2-')) releaseDate = '2023-06-16' // Paldea Evolved
+      else if (cardIdLower.startsWith('sv3-')) releaseDate = '2023-08-11' // Obsidian Flames
+      else if (cardIdLower.startsWith('sv4-')) releaseDate = '2023-11-03' // Paradox Rift
+      else if (cardIdLower.startsWith('sv5-')) releaseDate = '2024-01-26' // Temporal Forces
+      else if (cardIdLower.startsWith('sv6-')) releaseDate = '2024-05-24' // Twilight Masquerade
+      else if (cardIdLower.startsWith('sv7-')) releaseDate = '2024-08-02' // Stellar Crown
+      else if (cardIdLower.startsWith('sv8-') || cardIdLower.startsWith('sv08-')) releaseDate = '2024-11-08' // Surging Sparks
+      else if (cardIdLower.startsWith('sv9-')) releaseDate = '2025-03-28' // Journey Together
+      else if (cardIdLower.startsWith('sv10-')) releaseDate = '2025-06-13' // Destined Rivals
+    }
 
     // Créer le bloc s'il n'existe pas
     if (!acc[blockName]) {
@@ -160,6 +219,7 @@ export function Collection() {
     // Créer l'extension dans le bloc s'il n'existe pas
     if (!acc[blockName].extensions[extensionKey]) {
       acc[blockName].extensions[extensionKey] = {
+        key: extensionKey, // Stocker la clé pour SetProgressBar
         name: extensionName,
         releaseDate: releaseDate,
         cards: []
@@ -189,6 +249,10 @@ export function Collection() {
     }
   }).sort((a, b) => {
     // Trier les blocs par date (plus récent en premier)
+    // Mega Evolution doit toujours être en premier (bloc le plus récent)
+    if (a.name === 'Mega Evolution') return -1
+    if (b.name === 'Mega Evolution') return 1
+
     // Les blocs sans date sont considérés comme récents (new Date() au lieu de new Date(0))
     const dateA = a.mostRecentDate ? new Date(a.mostRecentDate) : new Date()
     const dateB = b.mostRecentDate ? new Date(b.mostRecentDate) : new Date()
@@ -344,7 +408,7 @@ export function Collection() {
                     {/* Barre de progression */}
                     <div className="max-w-md mx-auto">
                       <SetProgressBar
-                        setId={extension.cards[0]?.set?.id || extension.cards[0]?.extension}
+                        setId={extension.key}
                         collection={collection}
                         discoveredCards={discoveredCards}
                         mastersetMode={settings.mastersetMode}

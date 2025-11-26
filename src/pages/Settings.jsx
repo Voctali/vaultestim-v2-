@@ -3,12 +3,13 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Settings as SettingsIcon, Users, BarChart, Heart, Star, Package, RefreshCw, Database, Zap, Info, Eye, Target } from 'lucide-react'
+import { Settings as SettingsIcon, Users, BarChart, Heart, Star, Package, RefreshCw, Database, Zap, Info, Eye, Target, Search } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { CardCacheService } from '@/services/CardCacheService'
 import { SupabaseService } from '@/services/SupabaseService'
 import { HybridPriceService } from '@/services/HybridPriceService'
 import { QuotaTracker } from '@/services/QuotaTracker'
+import { supabase } from '@/lib/supabaseClient'
 import { APP_VERSION, BUILD_DATE } from '@/version'
 import { useState, useEffect } from 'react'
 
@@ -17,6 +18,10 @@ export function Settings() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncStatus, setSyncStatus] = useState(null)
   const [quotaStats, setQuotaStats] = useState(null)
+  const [diagResult, setDiagResult] = useState(null)
+  const [isDiagnosing, setIsDiagnosing] = useState(false)
+  const [isFixing, setIsFixing] = useState(false)
+  const [fixResult, setFixResult] = useState(null)
 
   // Charger les stats RapidAPI au montage
   useEffect(() => {
@@ -54,6 +59,259 @@ export function Settings() {
       setSyncStatus('error')
       setTimeout(() => setSyncStatus(null), 5000)
       setIsSyncing(false)
+    }
+  }
+
+  // Diagnostic de la collection Supabase
+  const handleDiagnostic = async () => {
+    try {
+      setIsDiagnosing(true)
+      setDiagResult(null)
+
+      // Récupérer l'utilisateur
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) {
+        setDiagResult({ error: 'Non connecté' })
+        return
+      }
+
+      const userId = session.user.id
+      console.log('🔍 [Diagnostic] User ID:', userId)
+
+      // Compter toutes les cartes avec pagination - récupérer TOUTES les colonnes pertinentes
+      let allCards = []
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('user_collection')
+          .select('id, card_id, name, series, extension, set, quantity')
+          .eq('user_id', userId)
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+
+        if (error) {
+          console.error('❌ [Diagnostic] Erreur:', error)
+          setDiagResult({ error: error.message })
+          return
+        }
+
+        if (data.length === 0 || data.length < pageSize) {
+          allCards = allCards.concat(data)
+          hasMore = false
+        } else {
+          allCards = allCards.concat(data)
+          page++
+        }
+      }
+
+      // Grouper par extension (series corrigé)
+      const byExtension = {}
+      allCards.forEach(card => {
+        const ext = card.series || card.set?.name || card.extension || 'Inconnue'
+        byExtension[ext] = (byExtension[ext] || 0) + 1
+      })
+
+      // Grouper par set.name (plus précis - distingue White Flare de Black Bolt)
+      const bySetName = {}
+      allCards.forEach(card => {
+        const setName = card.set?.name || card.series || 'Inconnue'
+        bySetName[setName] = (bySetName[setName] || 0) + 1
+      })
+
+      // Compter les cartes UNIQUES (groupées par card_id)
+      const uniqueCardIds = new Set(allCards.map(c => c.card_id))
+      const totalUniqueCards = uniqueCardIds.size
+
+      // Compter les exemplaires totaux (somme des quantités)
+      const totalExemplaires = allCards.reduce((sum, card) => sum + (card.quantity || 1), 0)
+
+      // Trier par nombre
+      const sorted = Object.entries(byExtension)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 25) // Top 25
+
+      const sortedBySetName = Object.entries(bySetName)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 25)
+
+      // Chercher les cartes par set ID dans card_id
+      const sv9Cards = allCards.filter(c => c.card_id?.toLowerCase().startsWith('sv9-'))
+      const sv8pt5Cards = allCards.filter(c => c.card_id?.toLowerCase().startsWith('sv8pt5-')) // Prismatic
+      const sv10Cards = allCards.filter(c => c.card_id?.toLowerCase().startsWith('sv10-'))
+      const me1Cards = allCards.filter(c => c.card_id?.toLowerCase().startsWith('me1-')) // Mega Evolution
+      const me2Cards = allCards.filter(c => c.card_id?.toLowerCase().startsWith('me2-')) // Mega Evolution 2
+      const mepCards = allCards.filter(c => c.card_id?.toLowerCase().startsWith('mep-')) // Mega Evolution Promos
+      const zsv10pt5Cards = allCards.filter(c => c.card_id?.toLowerCase().startsWith('zsv10pt5-')) // White Flare / Black Bolt
+      const sv08Cards = allCards.filter(c => c.card_id?.toLowerCase().startsWith('sv08-') || c.card_id?.toLowerCase().startsWith('sv8-')) // Surging Sparks
+      const sv1Cards = allCards.filter(c => c.card_id?.toLowerCase().startsWith('sv1-')) // SV base
+      const sv3pt5Cards = allCards.filter(c => c.card_id?.toLowerCase().startsWith('sv3pt5-')) // 151
+
+      // Séparer White Flare et Black Bolt par set.name
+      const whiteFlareCards = allCards.filter(c =>
+        c.set?.name?.toLowerCase().includes('white flare') ||
+        c.set?.name?.toLowerCase().includes('flamme blanche')
+      )
+      const blackBoltCards = allCards.filter(c =>
+        c.set?.name?.toLowerCase().includes('black bolt') ||
+        c.set?.name?.toLowerCase().includes('foudre noire')
+      )
+
+      // Compter les card_id UNIQUES par extension
+      const uniqueMe1 = new Set(me1Cards.map(c => c.card_id)).size
+      const uniqueMe2 = new Set(me2Cards.map(c => c.card_id)).size
+      const uniqueMep = new Set(mepCards.map(c => c.card_id)).size
+      const uniqueWhiteFlare = new Set(whiteFlareCards.map(c => c.card_id)).size
+      const uniqueBlackBolt = new Set(blackBoltCards.map(c => c.card_id)).size
+      const uniqueSv08 = new Set(sv08Cards.map(c => c.card_id)).size
+      const uniqueSv1 = new Set(sv1Cards.map(c => c.card_id)).size
+      const uniqueSv3pt5 = new Set(sv3pt5Cards.map(c => c.card_id)).size
+
+      console.log('📊 [Diagnostic] Total lignes DB:', allCards.length)
+      console.log('📊 [Diagnostic] Total cartes uniques:', totalUniqueCards)
+      console.log('📊 [Diagnostic] Total exemplaires:', totalExemplaires)
+      console.log('📦 [Diagnostic] Par extension (series):', byExtension)
+      console.log('📦 [Diagnostic] Par set.name:', bySetName)
+      console.log('🎯 [Diagnostic] ME1 (Mega Evolution):', me1Cards.length, 'lignes,', uniqueMe1, 'uniques')
+      console.log('🎯 [Diagnostic] ME2 (Mega Evolution 2):', me2Cards.length, 'lignes,', uniqueMe2, 'uniques')
+      console.log('🎯 [Diagnostic] MEP (Mega Promos):', mepCards.length, 'lignes,', uniqueMep, 'uniques')
+      console.log('🎯 [Diagnostic] White Flare:', whiteFlareCards.length, 'lignes,', uniqueWhiteFlare, 'uniques')
+      console.log('🎯 [Diagnostic] Black Bolt:', blackBoltCards.length, 'lignes,', uniqueBlackBolt, 'uniques')
+      console.log('🎯 [Diagnostic] SV08 (Surging Sparks):', sv08Cards.length, 'lignes,', uniqueSv08, 'uniques')
+      console.log('🎯 [Diagnostic] SV1 (Base):', sv1Cards.length, 'lignes,', uniqueSv1, 'uniques')
+      console.log('🎯 [Diagnostic] SV3pt5 (151):', sv3pt5Cards.length, 'lignes,', uniqueSv3pt5, 'uniques')
+
+      // Exemples de cartes par extension problématique
+      console.log('📝 [Diagnostic] Exemples White Flare:', whiteFlareCards.slice(0, 5).map(c => ({ card_id: c.card_id, name: c.name, series: c.series })))
+      console.log('📝 [Diagnostic] Exemples Black Bolt:', blackBoltCards.slice(0, 5).map(c => ({ card_id: c.card_id, name: c.name, series: c.series })))
+
+      setDiagResult({
+        total: allCards.length,
+        totalUniqueCards,
+        totalExemplaires,
+        extensions: sorted,
+        extensionsBySetName: sortedBySetName,
+        me1Cards: me1Cards.length,
+        me2Cards: me2Cards.length,
+        mepCards: mepCards.length,
+        uniqueMe1,
+        uniqueMe2,
+        uniqueMep,
+        whiteFlareCards: whiteFlareCards.length,
+        blackBoltCards: blackBoltCards.length,
+        uniqueWhiteFlare,
+        uniqueBlackBolt,
+        sv08Cards: sv08Cards.length,
+        uniqueSv08,
+        sv1Cards: sv1Cards.length,
+        uniqueSv1,
+        sv3pt5Cards: sv3pt5Cards.length,
+        uniqueSv3pt5,
+        sv9Cards: sv9Cards.length,
+        sv8pt5Cards: sv8pt5Cards.length,
+        sv10Cards: sv10Cards.length,
+        zsv10pt5Cards: zsv10pt5Cards.length,
+        sampleWhiteFlare: whiteFlareCards.slice(0, 3),
+        sampleBlackBolt: blackBoltCards.slice(0, 3),
+        sampleMe1: me1Cards.slice(0, 3)
+      })
+    } catch (error) {
+      console.error('❌ [Diagnostic] Erreur:', error)
+      setDiagResult({ error: error.message })
+    } finally {
+      setIsDiagnosing(false)
+    }
+  }
+
+  // Corriger les noms d'extensions dans la collection
+  const handleFixExtensions = async () => {
+    if (!confirm('Corriger les noms d\'extensions pour toutes vos cartes ?\n\nCette opération va mettre à jour le champ "series" avec le nom correct de l\'extension (ex: "Journey Together" au lieu de "Scarlet & Violet").')) {
+      return
+    }
+
+    try {
+      setIsFixing(true)
+      setFixResult(null)
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) {
+        setFixResult({ error: 'Non connecté' })
+        return
+      }
+
+      const userId = session.user.id
+
+      // Récupérer toutes les cartes avec le champ set (qui contient le bon nom)
+      let allCards = []
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('user_collection')
+          .select('id, card_id, series, set')
+          .eq('user_id', userId)
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+
+        if (error) throw error
+
+        if (data.length === 0 || data.length < pageSize) {
+          allCards = allCards.concat(data)
+          hasMore = false
+        } else {
+          allCards = allCards.concat(data)
+          page++
+        }
+      }
+
+      console.log(`🔧 [Fix] ${allCards.length} cartes à vérifier`)
+
+      // Filtrer les cartes qui ont besoin d'être corrigées
+      const cardsToFix = allCards.filter(card => {
+        const setName = card.set?.name
+        return setName && card.series !== setName
+      })
+
+      console.log(`🔧 [Fix] ${cardsToFix.length} cartes à corriger`)
+
+      if (cardsToFix.length === 0) {
+        setFixResult({ fixed: 0, message: 'Toutes les cartes sont déjà correctement catégorisées !' })
+        return
+      }
+
+      // Corriger par lots de 100
+      let fixedCount = 0
+      const batchSize = 100
+
+      for (let i = 0; i < cardsToFix.length; i += batchSize) {
+        const batch = cardsToFix.slice(i, i + batchSize)
+
+        for (const card of batch) {
+          const { error } = await supabase
+            .from('user_collection')
+            .update({ series: card.set.name, extension: card.set.name })
+            .eq('id', card.id)
+
+          if (!error) {
+            fixedCount++
+          } else {
+            console.error(`❌ Erreur correction ${card.id}:`, error)
+          }
+        }
+
+        console.log(`🔧 [Fix] Progression: ${Math.min(i + batchSize, cardsToFix.length)}/${cardsToFix.length}`)
+      }
+
+      setFixResult({ fixed: fixedCount, total: cardsToFix.length })
+      console.log(`✅ [Fix] ${fixedCount} cartes corrigées`)
+
+    } catch (error) {
+      console.error('❌ [Fix] Erreur:', error)
+      setFixResult({ error: error.message })
+    } finally {
+      setIsFixing(false)
     }
   }
 
@@ -240,6 +498,158 @@ export function Settings() {
                  'Forcer la synchronisation'}
               </Button>
             </div>
+          </div>
+
+          {/* Diagnostic Collection */}
+          <div className="border-t border-border/50 pt-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="text-base font-medium mb-1">Diagnostic Collection</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Vérifier le nombre de cartes stockées dans Supabase (indépendamment du cache local).
+                </p>
+                <Button
+                  onClick={handleDiagnostic}
+                  disabled={isDiagnosing}
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
+                  <Search className={`w-4 h-4 mr-2 ${isDiagnosing ? 'animate-pulse' : ''}`} />
+                  {isDiagnosing ? 'Analyse en cours...' : 'Lancer le diagnostic'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Résultats du diagnostic */}
+            {diagResult && (
+              <div className="mt-4 p-4 bg-secondary/50 rounded-lg space-y-3">
+                {diagResult.error ? (
+                  <p className="text-red-500">❌ Erreur: {diagResult.error}</p>
+                ) : (
+                  <>
+                    {/* Résumé global */}
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <Badge variant="default" className="text-lg px-4 py-1">
+                        {diagResult.total} lignes DB
+                      </Badge>
+                      <Badge variant="outline" className="text-lg px-4 py-1">
+                        {diagResult.totalUniqueCards} cartes uniques
+                      </Badge>
+                      <Badge variant="secondary" className="text-lg px-4 py-1">
+                        {diagResult.totalExemplaires} exemplaires
+                      </Badge>
+                    </div>
+
+                    {/* Extensions problématiques - détaillées */}
+                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <p className="text-sm font-medium text-red-400 mb-2">⚠️ Extensions critiques (lignes / uniques):</p>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="flex justify-between bg-background/50 px-2 py-1 rounded">
+                          <span>ME1 (Mega Evolution)</span>
+                          <span className="font-mono">{diagResult.me1Cards || 0} / <span className="text-green-400">{diagResult.uniqueMe1 || 0}</span></span>
+                        </div>
+                        <div className="flex justify-between bg-background/50 px-2 py-1 rounded">
+                          <span>ME2 (Mega Evolution 2)</span>
+                          <span className="font-mono">{diagResult.me2Cards || 0} / <span className="text-green-400">{diagResult.uniqueMe2 || 0}</span></span>
+                        </div>
+                        <div className="flex justify-between bg-background/50 px-2 py-1 rounded">
+                          <span>White Flare</span>
+                          <span className="font-mono">{diagResult.whiteFlareCards || 0} / <span className="text-green-400">{diagResult.uniqueWhiteFlare || 0}</span></span>
+                        </div>
+                        <div className="flex justify-between bg-background/50 px-2 py-1 rounded">
+                          <span>Black Bolt</span>
+                          <span className="font-mono">{diagResult.blackBoltCards || 0} / <span className="text-green-400">{diagResult.uniqueBlackBolt || 0}</span></span>
+                        </div>
+                        <div className="flex justify-between bg-background/50 px-2 py-1 rounded">
+                          <span>SV08 (Surging Sparks)</span>
+                          <span className="font-mono">{diagResult.sv08Cards || 0} / <span className="text-green-400">{diagResult.uniqueSv08 || 0}</span></span>
+                        </div>
+                        <div className="flex justify-between bg-background/50 px-2 py-1 rounded">
+                          <span>SV1 (Base)</span>
+                          <span className="font-mono">{diagResult.sv1Cards || 0} / <span className="text-green-400">{diagResult.uniqueSv1 || 0}</span></span>
+                        </div>
+                        <div className="flex justify-between bg-background/50 px-2 py-1 rounded">
+                          <span>SV3pt5 (151)</span>
+                          <span className="font-mono">{diagResult.sv3pt5Cards || 0} / <span className="text-green-400">{diagResult.uniqueSv3pt5 || 0}</span></span>
+                        </div>
+                        <div className="flex justify-between bg-background/50 px-2 py-1 rounded">
+                          <span>ZSV10pt5 (WF+BB total)</span>
+                          <span className="font-mono">{diagResult.zsv10pt5Cards || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Exemples de cartes */}
+                    {(diagResult.sampleWhiteFlare?.length > 0 || diagResult.sampleBlackBolt?.length > 0) && (
+                      <div className="text-xs text-muted-foreground mt-2 p-2 bg-background/30 rounded">
+                        {diagResult.sampleWhiteFlare?.length > 0 && (
+                          <>
+                            <p className="font-medium text-blue-400">Exemples White Flare:</p>
+                            {diagResult.sampleWhiteFlare.map((c, i) => (
+                              <p key={i}>{c.card_id} - {c.name} (series: {c.series})</p>
+                            ))}
+                          </>
+                        )}
+                        {diagResult.sampleBlackBolt?.length > 0 && (
+                          <>
+                            <p className="font-medium text-purple-400 mt-2">Exemples Black Bolt:</p>
+                            {diagResult.sampleBlackBolt.map((c, i) => (
+                              <p key={i}>{c.card_id} - {c.name} (series: {c.series})</p>
+                            ))}
+                          </>
+                        )}
+                        {diagResult.sampleMe1?.length > 0 && (
+                          <>
+                            <p className="font-medium text-orange-400 mt-2">Exemples ME1:</p>
+                            {diagResult.sampleMe1.map((c, i) => (
+                              <p key={i}>{c.card_id} - {c.name} (series: {c.series})</p>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Bouton de correction */}
+                    <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                      <p className="text-sm text-yellow-400 mb-3">
+                        ⚠️ Si vos extensions apparaissent sous "Scarlet & Violet" au lieu de leur vrai nom,
+                        cliquez sur le bouton ci-dessous pour corriger.
+                      </p>
+                      <Button
+                        onClick={handleFixExtensions}
+                        disabled={isFixing}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        {isFixing ? '🔧 Correction en cours...' : '🔧 Corriger les noms d\'extensions'}
+                      </Button>
+                      {fixResult && (
+                        <p className={`text-sm mt-2 ${fixResult.error ? 'text-red-500' : 'text-green-500'}`}>
+                          {fixResult.error ? `❌ ${fixResult.error}` :
+                           fixResult.message ? `✅ ${fixResult.message}` :
+                           `✅ ${fixResult.fixed}/${fixResult.total} cartes corrigées !`}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Top extensions par set.name */}
+                    {diagResult.extensionsBySetName && (
+                      <div className="text-sm mt-4">
+                        <p className="font-medium mb-2">Top 25 extensions (par set.name):</p>
+                        <div className="grid grid-cols-2 gap-1 text-xs max-h-60 overflow-y-auto">
+                          {diagResult.extensionsBySetName.map(([ext, count]) => (
+                            <div key={ext} className="flex justify-between bg-background/50 px-2 py-1 rounded">
+                              <span className="truncate">{ext}</span>
+                              <span className="font-mono ml-2">{count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

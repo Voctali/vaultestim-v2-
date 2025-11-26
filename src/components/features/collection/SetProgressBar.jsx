@@ -19,10 +19,29 @@ export function SetProgressBar({
   size = 'medium'
 }) {
   const progress = useMemo(() => {
+    // Fonction pour vérifier si une carte appartient à l'extension
+    // Utilise set.id, extension, OU préfixe du card_id
+    const cardBelongsToSet = (card, targetSetId) => {
+      if (!targetSetId) return false
+      const setIdLower = targetSetId.toLowerCase()
+      const cardIdLower = (card.card_id || card.id || '').toLowerCase()
+
+      // Match direct par set.id ou extension
+      if (card.set?.id?.toLowerCase() === setIdLower) return true
+      if (card.extension?.toLowerCase() === setIdLower) return true
+
+      // Match par préfixe de card_id (ex: sv3pt5-001 pour setId sv3pt5)
+      if (cardIdLower.startsWith(setIdLower + '-')) return true
+
+      // Match spéciaux pour les extensions avec IDs alternatifs
+      if (setIdLower === 'sv3pt5' && cardIdLower.startsWith('mew-')) return true
+      if (setIdLower === 'mew' && cardIdLower.startsWith('sv3pt5-')) return true
+
+      return false
+    }
+
     // Filtrer les cartes de l'extension dans discovered_cards (total disponible)
-    const totalCardsInSet = discoveredCards.filter(card =>
-      (card.set?.id === setId || card.extension === setId)
-    )
+    const totalCardsInSet = discoveredCards.filter(card => cardBelongsToSet(card, setId))
 
     if (totalCardsInSet.length === 0) {
       return {
@@ -40,8 +59,7 @@ export function SetProgressBar({
       totalCardsInSet.forEach(card => {
         // Filtrer les cartes de la collection pour cette carte spécifique
         const userCopies = collection.filter(c =>
-          c.card_id === card.id &&
-          (c.set?.id === setId || c.extension === setId)
+          c.card_id === card.id || c.card_id === (card.card_id || card.id)
         )
 
         // Obtenir les versions disponibles pour cette carte
@@ -66,7 +84,7 @@ export function SetProgressBar({
       // MODE BASE : Compter 1 exemplaire par carte unique (peu importe les versions)
       const ownedCardIds = new Set(
         collection
-          .filter(c => c.set?.id === setId || c.extension === setId)
+          .filter(c => cardBelongsToSet(c, setId))
           .map(c => c.card_id)
       )
 
