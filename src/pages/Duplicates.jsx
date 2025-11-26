@@ -884,6 +884,15 @@ export function Duplicates() {
                     const extensionKey = `${block.name}-${extension.name}`
                     const filteredCards = filterCardsByNumber(extension.cards, extensionKey)
 
+                    // DEBUG: Log pour Mega Evolution
+                    if (extension.name?.includes('Mega') || extension.name?.includes('ME1')) {
+                      console.log(`🎯 [DEBUG RENDU] Extension: ${extension.name}`)
+                      console.log(`🎯 [DEBUG RENDU] Cartes à afficher: ${filteredCards.length}`)
+                      filteredCards.slice(0, 5).forEach(c => {
+                        console.log(`   - ${c.name} | consolidatedQuantity: ${c.consolidatedQuantity} | card_id: ${c.card_id}`)
+                      })
+                    }
+
                     return (
                     <div key={extIndex} className="space-y-4">
                       {/* SÉPARATEUR D'EXTENSION */}
