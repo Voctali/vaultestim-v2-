@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCollection } from '@/hooks/useCollection.jsx'
-import { Search, Filter, BookOpen, Heart, List } from 'lucide-react'
+import { Search, Filter, BookOpen, Heart, List, ChevronDown, ChevronRight } from 'lucide-react'
 import { CardImage } from '@/components/features/explore/CardImage'
 import { CardDetailsModal } from '@/components/features/collection/CardDetailsModal'
 import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
@@ -30,6 +30,10 @@ export function Collection() {
   })
   const [selectedCard, setSelectedCard] = useState(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
+  // État pour les extensions réduites (clé = extensionKey)
+  const [collapsedExtensions, setCollapsedExtensions] = useState({})
+  // État pour la recherche par extension (clé = extensionKey, valeur = terme de recherche)
+  const [extensionSearchTerms, setExtensionSearchTerms] = useState({})
 
   const { collection, favorites, wishlist, toggleFavorite, toggleWishlist } = useCollection()
   const { settings } = useSettings()
@@ -259,6 +263,42 @@ export function Collection() {
     return dateB - dateA
   })
 
+  // Fonction pour toggle l'état réduit/agrandi d'une extension
+  const toggleExtensionCollapse = (extensionKey) => {
+    setCollapsedExtensions(prev => ({
+      ...prev,
+      [extensionKey]: !prev[extensionKey]
+    }))
+  }
+
+  // Fonction pour mettre à jour le terme de recherche d'une extension
+  const updateExtensionSearch = (extensionKey, value) => {
+    setExtensionSearchTerms(prev => ({
+      ...prev,
+      [extensionKey]: value
+    }))
+  }
+
+  // Fonction pour filtrer les cartes d'une extension par numéro ou nom
+  const filterExtensionCards = (cards, extensionKey) => {
+    const searchTerm = extensionSearchTerms[extensionKey]?.toLowerCase().trim() || ''
+    if (!searchTerm) return cards
+
+    return cards.filter(card => {
+      // Recherche par numéro
+      const cardNumber = card.number?.toString().toLowerCase() || ''
+      if (cardNumber.includes(searchTerm) || cardNumber === searchTerm) {
+        return true
+      }
+
+      // Recherche par nom (anglais ou traduit)
+      const cardName = card.name?.toLowerCase() || ''
+      const translatedName = translateCardName(card.name)?.toLowerCase() || ''
+
+      return cardName.includes(searchTerm) || translatedName.includes(searchTerm)
+    })
+  }
+
   return (
     <div className="space-y-6 p-6">
       {/* Header with Search */}
@@ -386,13 +426,28 @@ export function Collection() {
               </div>
 
               {/* Extensions in this Block */}
-              {block.extensions.map((extension, extIndex) => (
+              {block.extensions.map((extension, extIndex) => {
+                const isCollapsed = collapsedExtensions[extension.key]
+                const filteredExtensionCards = filterExtensionCards(extension.cards, extension.key)
+                const extensionSearch = extensionSearchTerms[extension.key] || ''
+
+                return (
                 <div key={extIndex} className="space-y-4">
-                  {/* Extension Header */}
+                  {/* Extension Header - Cliquable pour réduire/agrandir */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-4">
                       <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
-                      <div className="flex items-center gap-2">
+                      <div
+                        className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity select-none"
+                        onClick={() => toggleExtensionCollapse(extension.key)}
+                        title={isCollapsed ? "Cliquer pour agrandir" : "Cliquer pour réduire"}
+                      >
+                        {/* Icône chevron */}
+                        {isCollapsed ? (
+                          <ChevronRight className="w-5 h-5 text-primary transition-transform" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-primary transition-transform" />
+                        )}
                         <h2 className="text-lg font-semibold golden-glow">{extension.name}</h2>
                         {extension.releaseDate && (
                           <span className="text-sm text-muted-foreground">
@@ -405,21 +460,40 @@ export function Collection() {
                       </div>
                       <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
                     </div>
-                    {/* Barre de progression */}
-                    <div className="max-w-md mx-auto">
-                      <SetProgressBar
-                        setId={extension.key}
-                        collection={collection}
-                        discoveredCards={discoveredCards}
-                        mastersetMode={settings.mastersetMode}
-                        size="small"
-                      />
-                    </div>
+
+                    {/* Barre de progression + Recherche (visible uniquement si non réduit) */}
+                    {!isCollapsed && (
+                      <div className="flex flex-col md:flex-row items-center gap-4 max-w-2xl mx-auto">
+                        {/* Barre de progression */}
+                        <div className="flex-1 w-full md:w-auto">
+                          <SetProgressBar
+                            setId={extension.key}
+                            collection={collection}
+                            discoveredCards={discoveredCards}
+                            mastersetMode={settings.mastersetMode}
+                            size="small"
+                          />
+                        </div>
+                        {/* Champ de recherche par extension */}
+                        <div className="relative w-full md:w-48">
+                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                          <Input
+                            placeholder="N° ou nom..."
+                            value={extensionSearch}
+                            onChange={(e) => updateExtensionSearch(extension.key, e.target.value)}
+                            className="pl-7 h-8 text-xs golden-border"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Cards Grid */}
+                  {/* Cards Grid - Visible uniquement si non réduit */}
+                  {!isCollapsed && (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-                    {extension.cards.map((card) => (
+                    {filteredExtensionCards.length > 0 ? (
+                      filteredExtensionCards.map((card) => (
                   <Card
                     key={card.id}
                     className="golden-border card-hover cursor-pointer group overflow-hidden"
@@ -489,10 +563,17 @@ export function Collection() {
                       </div>
                     </CardContent>
                   </Card>
-                    ))}
+                    ))
+                    ) : (
+                      <div className="col-span-full text-center py-8 text-muted-foreground">
+                        <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p>Aucune carte trouvée pour "{extensionSearchTerms[extension.key]}"</p>
+                      </div>
+                    )}
                   </div>
+                  )}
                 </div>
-              ))}
+              )})}
             </div>
           ))}
         </div>
