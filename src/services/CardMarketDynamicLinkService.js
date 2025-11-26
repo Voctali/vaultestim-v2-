@@ -19,7 +19,9 @@ export class CardMarketDynamicLinkService {
    * @returns {Promise<string>} URL CardMarket
    */
   static async getCardLink(card) {
-    if (!card?.id) {
+    // Supporter à la fois card.id (API) et card.card_id (collection)
+    const cardId = card?.card_id || card?.id
+    if (!cardId) {
       throw new Error('Carte invalide')
     }
 
@@ -28,16 +30,21 @@ export class CardMarketDynamicLinkService {
       const { data: existingCard, error: fetchError } = await supabase
         .from('discovered_cards')
         .select('cardmarket_url')
-        .eq('id', card.id)
+        .eq('id', cardId)
         .single()
 
       if (!fetchError && existingCard?.cardmarket_url) {
-        console.log(`✅ Lien CardMarket trouvé en cache: ${existingCard.cardmarket_url}`)
-        return existingCard.cardmarket_url
+        // S'assurer que le paramètre language=2 est présent
+        let cachedUrl = existingCard.cardmarket_url
+        if (!cachedUrl.includes('language=2')) {
+          cachedUrl += cachedUrl.includes('?') ? '&language=2' : '?language=2'
+        }
+        console.log(`✅ Lien CardMarket trouvé en cache: ${cachedUrl}`)
+        return cachedUrl
       }
 
       // 2. Récupérer depuis RapidAPI
-      console.log(`🔍 Récupération lien CardMarket depuis RapidAPI pour carte ${card.id}...`)
+      console.log(`🔍 Récupération lien CardMarket depuis RapidAPI pour carte ${cardId}...`)
 
       // Rechercher la carte par nom + numéro + extension
       const searchQuery = `${card.name} ${card.number || ''} ${card.set?.name || ''}`.trim()
@@ -61,12 +68,18 @@ export class CardMarketDynamicLinkService {
         return this._buildFallbackSearchUrl(card)
       }
 
-      console.log(`✅ Lien CardMarket récupéré: ${cardMarketUrl}`)
+      // Ajouter ?language=2 si pas déjà présent
+      let finalUrl = cardMarketUrl
+      if (!finalUrl.includes('language=2')) {
+        finalUrl += finalUrl.includes('?') ? '&language=2' : '?language=2'
+      }
+
+      console.log(`✅ Lien CardMarket récupéré: ${finalUrl}`)
 
       // 3. Sauvegarder en arrière-plan (fire-and-forget)
-      this._saveCardLinkInBackground(card.id, cardMarketUrl)
+      this._saveCardLinkInBackground(cardId, finalUrl)
 
-      return cardMarketUrl
+      return finalUrl
 
     } catch (error) {
       console.error(`❌ Erreur récupération lien CardMarket:`, error)
