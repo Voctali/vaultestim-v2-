@@ -264,10 +264,16 @@ export function Duplicates() {
   // Consolider les cartes identiques pour l'affichage (grouper par carte et afficher avec badge quantité)
   const consolidatedDuplicates = useMemo(() => {
     console.log('🔄 [Consolidation] Début de la consolidation des doublons')
+    console.log('🔄 [Consolidation] Nombre de blocs:', groupedDuplicates.length)
 
-    return groupedDuplicates.map(block => ({
+    return groupedDuplicates.map(block => {
+      console.log(`🔄 [Consolidation] Bloc: ${block.name}, Extensions: ${block.extensions.length}`)
+
+      return {
       ...block,
       extensions: block.extensions.map(extension => {
+        console.log(`🔄 [Consolidation] Extension: ${extension.name}, Cartes: ${extension.cards.length}`)
+
         // Grouper les cartes par identité (card_id + version normalisée)
         // Utiliser card_id comme clé principale (plus fiable que nom)
         const cardGroups = {}
@@ -278,6 +284,8 @@ export function Duplicates() {
           const cardId = card.card_id || card.id
           // Clé basée sur card_id + version (card_id contient déjà l'extension)
           const key = `${cardId}-${version}`
+
+          console.log(`   📝 Carte: ${card.name} | card_id: ${cardId} | version: "${version}" | clé: ${key}`)
 
           if (!cardGroups[key]) {
             cardGroups[key] = {
@@ -291,10 +299,16 @@ export function Duplicates() {
           cardGroups[key].totalQuantity += (card.quantity || 1)
         })
 
-        // Log des cartes consolidées
-        Object.entries(cardGroups).forEach(([, group]) => {
+        // Log de tous les groupes
+        console.log(`🔄 [Consolidation] Groupes créés pour ${extension.name}:`, Object.keys(cardGroups).length)
+        Object.entries(cardGroups).forEach(([key, group]) => {
+          console.log(`   🔑 ${key}: ${group.instances.length} instance(s), quantité totale: ${group.totalQuantity}`)
+        })
+
+        // Log des cartes consolidées (groupes avec plusieurs instances)
+        Object.entries(cardGroups).forEach(([key, group]) => {
           if (group.instances.length > 1) {
-            console.log(`🔀 [Consolidation] ${group.instances[0].name} (${group.instances[0].version || 'Normale'}):`,
+            console.log(`🔀 [Consolidation] REGROUPEMENT: ${group.instances[0].name} (${group.instances[0].version || 'Normale'}):`,
               group.instances.length, 'instances →', group.totalQuantity, 'quantité totale',
               'IDs:', group.instances.map(c => c.id).join(', '))
           }
@@ -330,7 +344,8 @@ export function Duplicates() {
           cards: consolidatedCards
         }
       })
-    }))
+    }
+    })
   }, [groupedDuplicates])
 
   // Calculer la valeur totale d'un lot
