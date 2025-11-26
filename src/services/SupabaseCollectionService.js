@@ -70,10 +70,36 @@ export class SupabaseCollectionService {
       console.log(`🔍 [getUserCollection] ${cardIds.length} card_id uniques à enrichir`)
 
       // Récupérer les données complètes depuis discovered_cards (avec prix ET infos extension)
-      const { data: discoveredData, error: discoveredError } = await supabase
-        .from('discovered_cards')
-        .select('id, cardmarket, tcgplayer, set, number')
-        .in('id', cardIds)
+      // IMPORTANT: Supabase limite à 1000 résultats par défaut, on doit paginer si > 1000 cardIds
+      let discoveredData = []
+      let discoveredError = null
+
+      if (cardIds.length <= 1000) {
+        // Requête simple si moins de 1000 IDs
+        const { data, error } = await supabase
+          .from('discovered_cards')
+          .select('id, cardmarket, tcgplayer, set, number')
+          .in('id', cardIds)
+        discoveredData = data || []
+        discoveredError = error
+      } else {
+        // Pagination par batches de 500 IDs (pour éviter les limites URL)
+        console.log(`⚠️ [getUserCollection] ${cardIds.length} cardIds > 1000, pagination nécessaire`)
+        for (let i = 0; i < cardIds.length; i += 500) {
+          const batch = cardIds.slice(i, i + 500)
+          const { data, error } = await supabase
+            .from('discovered_cards')
+            .select('id, cardmarket, tcgplayer, set, number')
+            .in('id', batch)
+          if (error) {
+            discoveredError = error
+            break
+          }
+          if (data) discoveredData = discoveredData.concat(data)
+        }
+      }
+
+      console.log(`📦 [getUserCollection] discoveredData reçu: ${discoveredData?.length || 0} cartes`)
 
       if (discoveredError) {
         console.warn('⚠️ Impossible de récupérer les prix depuis discovered_cards:', discoveredError)
@@ -98,7 +124,8 @@ export class SupabaseCollectionService {
       const notFound = cardIds.filter(id => !dataMap[id])
       if (notFound.length > 0) {
         console.warn(`⚠️ [getUserCollection] ${notFound.length} card_id NON trouvés dans discovered_cards:`)
-        console.warn('   Exemples:', notFound.slice(0, 10))
+        console.warn('   Exemples:', notFound.slice(0, 20))
+
       }
 
       // Enrichir les cartes de la collection avec les données complètes

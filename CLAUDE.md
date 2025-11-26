@@ -810,6 +810,54 @@ const key = cardKey  // PAS ${cardKey}-${version}
 
 **État** : ✅ Résolu (v1.22.8)
 
+### Enrichissement Collection Limité à 1000 (RÉSOLU - v1.22.9)
+**Problème** : Les cartes de la collection n'avaient pas leur numéro enrichi depuis `discovered_cards` quand la collection dépassait 1000 cartes uniques.
+
+**Symptômes** :
+- Cartes Forgerette (me1-96) et Échange (me1-130) affichées à la fin de l'extension
+- Le numéro de carte était `null` malgré son existence dans `discovered_cards`
+- Log `me1-130 dans dataMap? undefined` alors que la carte existe
+
+**Cause identifiée** :
+- La requête `.in('id', cardIds)` vers `discovered_cards` était limitée à 1000 résultats par défaut
+- Avec > 1000 cartes uniques dans la collection, certains `card_id` n'étaient pas enrichis
+- Les cartes ME1 (Mega Evolution) ajoutées récemment étaient en fin de liste et donc ignorées
+
+**Correctif appliqué** :
+- ✅ v1.22.9 : Pagination par batches de 500 IDs pour la requête d'enrichissement
+
+**Solution finale** :
+```javascript
+// SupabaseCollectionService.js - getUserCollection()
+let discoveredData = []
+
+if (cardIds.length <= 1000) {
+  // Requête simple si moins de 1000 IDs
+  const { data } = await supabase
+    .from('discovered_cards')
+    .select('id, cardmarket, tcgplayer, set, number')
+    .in('id', cardIds)
+  discoveredData = data || []
+} else {
+  // Pagination par batches de 500 IDs
+  for (let i = 0; i < cardIds.length; i += 500) {
+    const batch = cardIds.slice(i, i + 500)
+    const { data } = await supabase
+      .from('discovered_cards')
+      .select('id, cardmarket, tcgplayer, set, number')
+      .in('id', batch)
+    if (data) discoveredData = discoveredData.concat(data)
+  }
+}
+```
+
+**Résultat** :
+- Toutes les cartes sont enrichies avec leur numéro
+- Tri correct par numéro dans toutes les extensions
+- Forgerette #96 et Échange #130 affichés à leur bonne position
+
+**État** : ✅ Résolu (v1.22.9)
+
 ---
 
 ## 🔄 Correction Batch URLs CardMarket (25/11/2025)
