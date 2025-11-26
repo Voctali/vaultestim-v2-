@@ -268,13 +268,16 @@ export function Duplicates() {
     return groupedDuplicates.map(block => ({
       ...block,
       extensions: block.extensions.map(extension => {
-        // Grouper les cartes par identité (nom + version + card_id)
+        // Grouper les cartes par identité (card_id + version normalisée)
+        // Utiliser card_id comme clé principale (plus fiable que nom)
         const cardGroups = {}
 
         extension.cards.forEach(card => {
-          const version = card.version || 'Normale'
+          // Normaliser la version : undefined, null, '' → 'Normale'
+          const version = (card.version && card.version.trim()) ? card.version.trim() : 'Normale'
           const cardId = card.card_id || card.id
-          const key = `${card.name}-${version}-${cardId}`
+          // Clé basée sur card_id + version (card_id contient déjà l'extension)
+          const key = `${cardId}-${version}`
 
           if (!cardGroups[key]) {
             cardGroups[key] = {
