@@ -34,30 +34,8 @@ import {
 export function Duplicates() {
   const { duplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale, collection } = useCollection()
 
-  // 🔍 Fonction de debug pour vérifier les doublons d'une carte - disponible globalement
-  useEffect(() => {
-    window.debugCardInstances = (cardName) => {
-      console.log(`🔎 [DEBUG] Recherche de toutes les instances de "${cardName}" dans la collection complète`)
-      const instances = collection.filter(card => card.name.toLowerCase().includes(cardName.toLowerCase()))
-      console.log(`📦 [DEBUG] ${instances.length} instance(s) trouvée(s):`)
-      instances.forEach((card, idx) => {
-        console.log(`  ${idx + 1}. ID: ${card.id}`)
-        console.log(`     Nom: ${card.name}`)
-        console.log(`     Version: ${card.version || 'Normale'}`)
-        console.log(`     Quantité: ${card.quantity || 1}`)
-        console.log(`     Extension: ${card.extension || card.series}`)
-        console.log(`     Condition: ${card.condition}`)
-        console.log(`     card_id (API): ${card.card_id || 'N/A'}`)
-        console.log(`  ---`)
-      })
-      return instances
-    }
-    console.log('🔧 [DEBUG] Fonction window.debugCardInstances() disponible. Utilisez: window.debugCardInstances("nom de carte")')
-
-    return () => {
-      delete window.debugCardInstances
-    }
-  }, [collection])
+  // LOG IMMÉDIAT AU RENDU
+  console.log('🚀 [Duplicates] RENDU - duplicates du hook:', duplicates.length, '| collection:', collection.length)
 
   const [currentTab, setCurrentTab] = useState('duplicates') // 'duplicates' ou 'batches'
   const [searchTerm, setSearchTerm] = useState('')
@@ -149,24 +127,39 @@ export function Duplicates() {
       return []
     }
 
-    // DEBUG: Afficher les Bulbasaur reçus avec leurs clés
-    const bulbasaurInDuplicates = duplicateCards.filter(c => c.name?.toLowerCase().includes('bulbasaur'))
-    if (bulbasaurInDuplicates.length > 0) {
-      console.log('🐸 [BULBASAUR] Reçus dans duplicateCards:', bulbasaurInDuplicates.length)
-      bulbasaurInDuplicates.forEach(c => {
-        const version = (c.version && String(c.version).trim()) ? String(c.version).trim() : 'Normale'
-        const cardId = c.card_id || c.id
-        const key = `${cardId}-${version}`
-        console.log(`   ID: ${c.id} | card_id: ${c.card_id} | version brute: "${c.version}" | version normalisée: "${version}" | CLÉ: ${key}`)
+    // DEBUG CONSOLIDATION
+    console.log('🔄 [CONSOLIDATION] Début avec', duplicateCards.length, 'cartes')
+
+    // DEBUG: Vérifier les card_id des premières cartes
+    const withoutCardId = duplicateCards.filter(c => !c.card_id)
+    console.log('🔄 [CONSOLIDATION] Cartes SANS card_id:', withoutCardId.length)
+    if (withoutCardId.length > 0) {
+      withoutCardId.slice(0, 5).forEach(c => {
+        console.log(`   SANS card_id: ${c.name} | id: ${c.id} | version: ${c.version}`)
       })
     }
 
-    // ÉTAPE 1: Consolider d'abord par card_id + version
+    // ÉTAPE 1: Consolider d'abord par card_id UNIQUEMENT (pas par version)
+    // Les différentes versions (Normale, Reverse, etc.) de la MÊME carte doivent être affichées
+    // sur UNE SEULE carte avec les badges des versions
     const consolidationMap = {}
     duplicateCards.forEach(card => {
-      const version = (card.version && String(card.version).trim()) ? String(card.version).trim() : 'Normale'
-      const cardId = card.card_id || card.id
-      const key = `${cardId}-${version}`
+      // Construire une clé de consolidation basée UNIQUEMENT sur card_id
+      // PAS sur la version - les versions seront affichées comme badges
+      let cardKey
+      if (card.card_id) {
+        // Cas idéal: on a un card_id
+        cardKey = card.card_id.toLowerCase()
+      } else {
+        // Fallback: construire une clé à partir de name + set + number
+        const setId = card.set?.id || card.extension || 'unknown'
+        const number = card.number || ''
+        const name = card.name || 'unknown'
+        cardKey = `${name.toLowerCase()}-${setId.toLowerCase()}-${number}`
+      }
+
+      // Clé basée UNIQUEMENT sur card_id (sans version)
+      const key = cardKey
 
       if (!consolidationMap[key]) {
         consolidationMap[key] = {
@@ -176,6 +169,13 @@ export function Duplicates() {
       }
       consolidationMap[key].instances.push(card)
       consolidationMap[key].totalQuantity += (card.quantity || 1)
+    })
+
+    // DEBUG: Afficher les groupes avec plus d'une instance
+    const multiInstanceGroups = Object.entries(consolidationMap).filter(([, g]) => g.instances.length > 1)
+    console.log('🔄 [CONSOLIDATION] Groupes avec >1 instance:', multiInstanceGroups.length)
+    multiInstanceGroups.slice(0, 5).forEach(([key, group]) => {
+      console.log(`   ${key}: ${group.instances.length} instances, total: ${group.totalQuantity}`)
     })
 
     // Créer les cartes consolidées
@@ -198,14 +198,10 @@ export function Duplicates() {
       }
     })
 
-    // DEBUG: Vérifier les Bulbasaur après consolidation
-    const bulbasaurConsolidated = consolidatedCards.filter(c => c.name?.toLowerCase().includes('bulbasaur'))
-    if (bulbasaurConsolidated.length > 0) {
-      console.log('🐸 [BULBASAUR] Après consolidation:', bulbasaurConsolidated.length)
-      bulbasaurConsolidated.forEach(c => {
-        console.log(`   card_id: ${c.card_id} | version: ${c.version} | consolidatedQuantity: ${c.consolidatedQuantity}`)
-      })
-    }
+    // DEBUG: Compter les cartes avec consolidation > 1
+    const consolidatedWithMulti = consolidatedCards.filter(c => c.consolidatedQuantity > 1)
+    console.log('🔄 [CONSOLIDATION] Cartes consolidées:', consolidatedCards.length)
+    console.log('🔄 [CONSOLIDATION] Avec consolidatedQuantity > 1:', consolidatedWithMulti.length)
 
     // ÉTAPE 2: Grouper par bloc et extension
     const cardsByBlock = consolidatedCards.reduce((acc, card) => {
@@ -269,6 +265,12 @@ export function Duplicates() {
       const dateB = b.mostRecentDate ? new Date(b.mostRecentDate) : new Date()
       return dateB - dateA
     })
+
+    // DEBUG: Compter le total de cartes dans le résultat final
+    const totalCardsInResult = blockGroups.reduce((total, block) => {
+      return total + block.extensions.reduce((extTotal, ext) => extTotal + ext.cards.length, 0)
+    }, 0)
+    console.log('🔄 [CONSOLIDATION] Total cartes dans blockGroups:', totalCardsInResult)
 
     return blockGroups
   }, [duplicateCards])
@@ -809,6 +811,12 @@ export function Duplicates() {
 
           {duplicateCards.length > 0 ? (
             <div className="space-y-12">
+              {(() => {
+                // DEBUG AU MOMENT DU RENDU
+                const totalCards = consolidatedDuplicates.reduce((t, b) => t + b.extensions.reduce((e, ext) => e + ext.cards.length, 0), 0)
+                console.log('🎨 [RENDER] consolidatedDuplicates contient', totalCards, 'cartes au total')
+                return null
+              })()}
               {consolidatedDuplicates.map((block, blockIndex) => (
                 <div key={blockIndex} className="space-y-8">
                   {/* SÉPARATEUR DE BLOC */}

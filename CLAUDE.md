@@ -771,6 +771,45 @@ Object.values(cardsByBlock).forEach(block => {
 
 **État** : ✅ Résolu (v1.19.10)
 
+### Consolidation Doublons Dupliquée (RÉSOLU - v1.22.8)
+**Problème** : Les cartes identiques avec différentes versions (Normale, Reverse, etc.) s'affichaient en double dans la page Doublons.
+
+**Symptômes** :
+- Bulbizarre #1 apparaissait 2 fois (une pour chaque version)
+- Saquedeneu #6 apparaissait 2 fois
+- Méganium #10 apparaissait 2 fois
+- Chaque version de la même carte créait une entrée séparée au lieu d'être consolidée
+
+**Cause identifiée** :
+- La clé de consolidation utilisait `card_id + version` au lieu de `card_id` seul
+- Résultat : `me1-1-Normale` et `me1-1-Reverse` créaient 2 entrées distinctes
+
+**Correctif appliqué** :
+- ✅ v1.22.8 : Consolidation par `card_id` uniquement (sans version)
+- ✅ v1.22.8 : Normalisation en minuscules pour éviter les doublons `ME1-1` vs `me1-1`
+- ✅ Les versions sont affichées comme badges sous la carte consolidée
+
+**Solution finale** :
+```javascript
+// Duplicates.jsx - consolidatedDuplicates useMemo
+// Clé basée UNIQUEMENT sur card_id (sans version)
+let cardKey
+if (card.card_id) {
+  cardKey = card.card_id.toLowerCase()  // Normalisation
+} else {
+  // Fallback
+  cardKey = `${name.toLowerCase()}-${setId.toLowerCase()}-${number}`
+}
+const key = cardKey  // PAS ${cardKey}-${version}
+```
+
+**Résultat** :
+- Une seule entrée par carte physique
+- Toutes les versions affichées comme badges (N, R, H, etc.)
+- Quantité totale correcte (somme de toutes les versions)
+
+**État** : ✅ Résolu (v1.22.8)
+
 ---
 
 ## 🔄 Correction Batch URLs CardMarket (25/11/2025)
