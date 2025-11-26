@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nettoyage des doublons - VaultEstim</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #ffd700; }
+    h2 { color: #ffcc00; margin-top: 30px; }
+    button {
+      background: #ffd700;
+      color: #1a1a2e;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin: 5px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    button:hover { background: #ffcc00; }
+    button.danger { background: #e74c3c; color: white; }
+    button.danger:hover { background: #c0392b; }
+    pre {
+      background: #2a2a4e;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .card-group {
+      background: #2a2a4e;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border-left: 4px solid #ffd700;
+    }
+    .card-group.duplicate {
+      border-left-color: #e74c3c;
+    }
+    .card-instance {
+      background: #1a1a2e;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-box {
+      background: #2a2a4e;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2em;
+      color: #ffd700;
+      font-weight: bold;
+    }
+    .loading {
+      color: #ffd700;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Nettoyage des Doublons - VaultEstim</h1>
+
+  <div class="stats" id="stats">
+    <div class="stat-box">
+      <div class="stat-value" id="total-cards">-</div>
+      <div>Total cartes</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="unique-cardids">-</div>
+      <div>card_id uniques</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="true-duplicates">-</div>
+      <div>Vrais doublons</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="missing-cardid">-</div>
+      <div>Sans card_id</div>
+    </div>
+  </div>
+
+  <div>
+    <button onclick="loadCollection()">1. Charger la collection</button>
+    <button onclick="analyzeByName()">2. Analyser par nom</button>
+    <button onclick="findTrueDuplicates()">3. Trouver vrais doublons</button>
+  </div>
+
+  <h2>Résultats</h2>
+  <pre id="output">Cliquez sur "Charger la collection" pour commencer...</pre>
+
+  <h2 id="duplicates-title" style="display:none">Groupes de doublons détectés</h2>
+  <div id="duplicates-list"></div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyMjQ0MTUsImV4cCI6MjA2MjgwMDQxNX0.DQ3bHb1K0EqH7k3ejNr33_MHG0NusDYVCqJh6BW2Yjc'
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    let collection = []
+    let session = null
+
+    window.loadCollection = async function() {
+      const output = document.getElementById('output')
+      output.textContent = 'Vérification de la session...'
+
+      // Vérifier la session
+      const { data: { session: s } } = await supabase.auth.getSession()
+      if (!s) {
+        output.textContent = 'Non connecté. Veuillez vous connecter sur l\'application principale puis revenir ici.'
+        return
+      }
+      session = s
+      output.textContent = `Connecté en tant que: ${session.user.email}\n\nChargement de la collection...`
+
+      // Charger toute la collection avec pagination
+      collection = []
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('user_collection')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+
+        if (error) {
+          output.textContent += `\n\nErreur: ${error.message}`
+          return
+        }
+
+        if (data.length === 0) {
+          hasMore = false
+        } else {
+          collection = collection.concat(data)
+          page++
+          output.textContent = `Connecté: ${session.user.email}\n\nChargement... ${collection.length} cartes`
+          if (data.length < pageSize) hasMore = false
+        }
+      }
+
+      // Mettre à jour les stats
+      document.getElementById('total-cards').textContent = collection.length
+
+      const uniqueCardIds = new Set(collection.filter(c => c.card_id).map(c => c.card_id))
+      document.getElementById('unique-cardids').textContent = uniqueCardIds.size
+
+      const missingCardId = collection.filter(c => !c.card_id)
+      document.getElementById('missing-cardid').textContent = missingCardId.length
+
+      output.textContent = `Connecté: ${session.user.email}\n\nCollection chargée: ${collection.length} cartes\n`
+      output.textContent += `\ncard_id uniques: ${uniqueCardIds.size}`
+      output.textContent += `\nCartes sans card_id: ${missingCardId.length}`
+
+      if (missingCardId.length > 0) {
+        output.textContent += `\n\nCartes sans card_id:\n`
+        missingCardId.slice(0, 10).forEach(c => {
+          output.textContent += `  - ${c.name} | ${c.version || 'Normale'} | Extension: ${c.set?.name || c.extension || 'N/A'}\n`
+        })
+        if (missingCardId.length > 10) {
+          output.textContent += `  ... et ${missingCardId.length - 10} autres\n`
+        }
+      }
+    }
+
+    window.analyzeByName = function() {
+      if (collection.length === 0) {
+        document.getElementById('output').textContent = 'Veuillez d\'abord charger la collection.'
+        return
+      }
+
+      const output = document.getElementById('output')
+      output.textContent = 'Analyse par nom en cours...\n\n'
+
+      // Grouper par nom + version
+      const groups = {}
+      collection.forEach(card => {
+        const name = card.name || 'Sans nom'
+        const version = (card.version && card.version.trim()) || 'Normale'
+        const key = `${name}|||${version}`
+
+        if (!groups[key]) {
+          groups[key] = []
+        }
+        groups[key].push(card)
+      })
+
+      // Trouver les groupes avec plusieurs instances
+      const multipleInstances = Object.entries(groups)
+        .filter(([, cards]) => cards.length > 1)
+        .sort((a, b) => b[1].length - a[1].length)
+
+      output.textContent += `Groupes avec plusieurs instances: ${multipleInstances.length}\n\n`
+
+      // Afficher les 20 premiers
+      multipleInstances.slice(0, 20).forEach(([key, cards]) => {
+        const [name, version] = key.split('|||')
+        output.textContent += `\n${name} (${version}): ${cards.length} instance(s)\n`
+
+        // Vérifier si les card_id sont différents
+        const cardIds = cards.map(c => c.card_id || 'NULL')
+        const uniqueCardIds = [...new Set(cardIds)]
+
+        if (uniqueCardIds.length > 1) {
+          output.textContent += `  ⚠️ DIFFÉRENTS card_id détectés:\n`
+          uniqueCardIds.forEach(cid => {
+            const count = cardIds.filter(id => id === cid).length
+            output.textContent += `    - ${cid}: ${count}x\n`
+          })
+        } else {
+          output.textContent += `  ✅ Même card_id: ${uniqueCardIds[0]}\n`
+        }
+      })
+    }
+
+    window.findTrueDuplicates = function() {
+      if (collection.length === 0) {
+        document.getElementById('output').textContent = 'Veuillez d\'abord charger la collection.'
+        return
+      }
+
+      const output = document.getElementById('output')
+      const duplicatesList = document.getElementById('duplicates-list')
+      const duplicatesTitle = document.getElementById('duplicates-title')
+
+      output.textContent = 'Recherche des vrais doublons...\n\n'
+      duplicatesList.innerHTML = ''
+
+      // Grouper par card_id + version (la vraie clé d'unicité)
+      const groups = {}
+      collection.forEach(card => {
+        const cardId = card.card_id || `no-cardid-${card.id}`
+        const version = (card.version && card.version.trim()) || 'Normale'
+        const key = `${cardId}|||${version}`
+
+        if (!groups[key]) {
+          groups[key] = []
+        }
+        groups[key].push(card)
+      })
+
+      // Trouver les groupes avec plusieurs entrées dans la DB (vrais doublons)
+      const trueDuplicates = Object.entries(groups)
+        .filter(([, cards]) => cards.length > 1)
+        .sort((a, b) => b[1].length - a[1].length)
+
+      document.getElementById('true-duplicates').textContent = trueDuplicates.length
+
+      output.textContent += `Vrais doublons trouvés: ${trueDuplicates.length}\n\n`
+      output.textContent += `Ce sont des cartes avec le même card_id ET la même version,\n`
+      output.textContent += `mais qui ont plusieurs entrées distinctes dans la base de données.\n\n`
+
+      if (trueDuplicates.length === 0) {
+        output.textContent += 'Aucun vrai doublon détecté. Les cartes affichées 2 fois dans l\'interface\n'
+        output.textContent += 'sont probablement dues à un bug d\'affichage et non à des données dupliquées.'
+        return
+      }
+
+      duplicatesTitle.style.display = 'block'
+
+      // Afficher les doublons
+      trueDuplicates.forEach(([key, cards]) => {
+        const [cardId, version] = key.split('|||')
+        const cardName = cards[0].name
+
+        const groupDiv = document.createElement('div')
+        groupDiv.className = 'card-group duplicate'
+
+        let html = `<strong>${cardName}</strong> (${version}) - card_id: ${cardId}<br>`
+        html += `<small>${cards.length} entrées dans la DB</small><br><br>`
+
+        cards.forEach((card, idx) => {
+          html += `<div class="card-instance">`
+          html += `<div>`
+          html += `<strong>#${idx + 1}</strong> ID DB: ${card.id}<br>`
+          html += `Condition: ${card.condition || 'N/A'} | Quantité: ${card.quantity || 1}<br>`
+          html += `Extension: ${card.set?.name || card.extension || 'N/A'}`
+          html += `</div>`
+          html += `<button class="danger" onclick="deleteCard('${card.id}', '${cardName}')">Supprimer</button>`
+          html += `</div>`
+        })
+
+        groupDiv.innerHTML = html
+        duplicatesList.appendChild(groupDiv)
+      })
+
+      output.textContent += `\nVous pouvez supprimer les entrées en trop ci-dessous.\n`
+      output.textContent += `Gardez généralement celle avec la meilleure condition.`
+    }
+
+    window.deleteCard = async function(cardId, cardName) {
+      if (!confirm(`Êtes-vous sûr de vouloir supprimer l'entrée "${cardName}" (ID: ${cardId}) ?`)) {
+        return
+      }
+
+      const { error } = await supabase
+        .from('user_collection')
+        .delete()
+        .eq('id', cardId)
+        .eq('user_id', session.user.id)
+
+      if (error) {
+        alert(`Erreur: ${error.message}`)
+        return
+      }
+
+      alert('Entrée supprimée avec succès!')
+      // Recharger
+      await loadCollection()
+      findTrueDuplicates()
+    }
+  </script>
+</body>
+</html>
