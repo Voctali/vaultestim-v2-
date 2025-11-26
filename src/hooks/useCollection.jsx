@@ -321,11 +321,13 @@ export function CollectionProvider({ children }) {
 
     console.log('📊 [useMemo duplicates] Cartes avec quantity > 1:', duplicatesList.length)
 
-    // Cartes identiques multiples (même nom + extension + version + card_id)
+    // Cartes identiques multiples - utiliser card_id + version comme clé unique
+    // Le card_id contient déjà l'extension (ex: me1-1, sv3pt5-34)
     collection.forEach(card => {
       const version = card.version || 'Normale'
       const cardId = card.card_id || 'no-id'
-      const key = `${card.name}-${card.series || card.extension}-${version}-${cardId}`
+      // Clé basée sur card_id + version (plus fiable que series/extension qui peuvent varier)
+      const key = `${cardId}-${version}`
       if (cardCounts[key]) {
         cardCounts[key].push(card)
       } else {
