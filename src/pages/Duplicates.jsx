@@ -111,11 +111,38 @@ export function Duplicates() {
     return matchesEnglish || matchesTranslated
   })
 
+  // Fonction pour extraire le préfixe d'extension depuis card_id (source de vérité)
+  const getExtensionFromCardId = (cardId) => {
+    if (!cardId) return null
+    // Exemples: me1-96, sv3pt5-34, swsh1-123, svp-203
+    const match = cardId.match(/^([a-z]+\d*(?:pt\d+)?)/i)
+    return match ? match[1].toLowerCase() : null
+  }
+
+  // Fonction pour obtenir le bloc depuis le préfixe d'extension
+  const getBlockFromExtensionPrefix = (prefix) => {
+    if (!prefix) return 'Sans bloc'
+    if (prefix.startsWith('me') || prefix === 'mep') return 'Mega Evolution'
+    if (prefix.startsWith('sv') || prefix.startsWith('zsv')) return 'Scarlet & Violet'
+    if (prefix.startsWith('swsh')) return 'Sword & Shield'
+    if (prefix.startsWith('sm')) return 'Sun & Moon'
+    if (prefix.startsWith('xy')) return 'XY'
+    if (prefix.startsWith('bw')) return 'Black & White'
+    return 'Autres'
+  }
+
   // Grouper les doublons par bloc et extension (comme dans Collection.jsx)
   const groupedDuplicates = useMemo(() => {
-    // Grouper par bloc (series)
+    // Grouper par bloc (series) - utiliser card_id comme source de vérité
     const cardsByBlock = duplicateCards.reduce((acc, card) => {
-      const blockName = card.set?.series || card.series || 'Sans bloc'
+      // Extraire le préfixe d'extension depuis card_id (source de vérité)
+      const extensionPrefix = getExtensionFromCardId(card.card_id)
+
+      // Déterminer le bloc : priorité au card_id, sinon fallback sur set.series
+      let blockName = card.set?.series || card.series || 'Sans bloc'
+      if (extensionPrefix) {
+        blockName = getBlockFromExtensionPrefix(extensionPrefix)
+      }
 
       if (!acc[blockName]) {
         acc[blockName] = {
@@ -124,9 +151,10 @@ export function Duplicates() {
         }
       }
 
-      // Grouper par extension au sein du bloc
-      const extensionKey = card.set?.id || card.extension || 'Sans extension'
-      const extensionName = card.set?.name || card.extension || 'Sans extension'
+      // Grouper par extension au sein du bloc - utiliser card_id comme source de vérité
+      // Priorité : préfixe card_id > set.id > extension
+      const extensionKey = extensionPrefix || card.set?.id || card.extension || 'Sans extension'
+      const extensionName = card.set?.name || card.extension || extensionKey
       const releaseDate = card.set?.releaseDate || null
 
       if (!acc[blockName].extensions[extensionKey]) {
@@ -162,18 +190,21 @@ export function Duplicates() {
       })
     })
 
-    // Trier les cartes par set.id puis par numéro dans chaque extension
+    // Trier les cartes par numéro dans chaque extension
+    // (plus besoin de trier par set.id car le groupement est déjà correct via card_id)
     Object.values(cardsByBlock).forEach(block => {
       Object.values(block.extensions).forEach(ext => {
         ext.cards.sort((a, b) => {
-          // 1. Trier par set.id
-          const setIdA = a.set?.id || a.extension || ''
-          const setIdB = b.set?.id || b.extension || ''
-          if (setIdA !== setIdB) return setIdA.localeCompare(setIdB)
+          // Extraire le numéro depuis card_id si number est manquant
+          // card_id format: me1-96, sv3pt5-34, etc.
+          const getNumber = (card) => {
+            if (card.number) return card.number
+            const match = card.card_id?.match(/-(\d+)$/)
+            return match ? match[1] : ''
+          }
 
-          // 2. Trier par numéro de carte
-          const numA = a.number || ''
-          const numB = b.number || ''
+          const numA = getNumber(a)
+          const numB = getNumber(b)
           const matchA = numA.match(/^(\d+)/)
           const matchB = numB.match(/^(\d+)/)
 
@@ -452,13 +483,21 @@ export function Duplicates() {
 
   // Grouper et trier les cartes pour la modale d'édition par extension
   const groupedModalCards = useMemo(() => {
-    // Grouper par bloc puis par extension
+    // Grouper par bloc puis par extension - utiliser card_id comme source de vérité
     const groups = {}
 
     duplicateCards.forEach(card => {
-      const blockName = card.set?.series || card.series || 'Sans bloc'
-      const extensionKey = card.set?.id || card.extension || 'Sans extension'
-      const extensionName = card.set?.name || card.extension || 'Sans extension'
+      // Extraire le préfixe d'extension depuis card_id (source de vérité)
+      const extensionPrefix = getExtensionFromCardId(card.card_id)
+
+      // Déterminer le bloc : priorité au card_id, sinon fallback sur set.series
+      let blockName = card.set?.series || card.series || 'Sans bloc'
+      if (extensionPrefix) {
+        blockName = getBlockFromExtensionPrefix(extensionPrefix)
+      }
+
+      const extensionKey = extensionPrefix || card.set?.id || card.extension || 'Sans extension'
+      const extensionName = card.set?.name || card.extension || extensionKey
       const releaseDate = card.set?.releaseDate || null
 
       if (!groups[blockName]) {
@@ -480,18 +519,19 @@ export function Duplicates() {
       groups[blockName].extensions[extensionKey].cards.push(card)
     })
 
-    // Trier les cartes par set.id puis par numéro dans chaque extension
+    // Trier les cartes par numéro dans chaque extension
     Object.values(groups).forEach(block => {
       Object.values(block.extensions).forEach(ext => {
         ext.cards.sort((a, b) => {
-          // 1. Trier par set.id
-          const setIdA = a.set?.id || a.extension || ''
-          const setIdB = b.set?.id || b.extension || ''
-          if (setIdA !== setIdB) return setIdA.localeCompare(setIdB)
+          // Extraire le numéro depuis card_id si number est manquant
+          const getNumber = (card) => {
+            if (card.number) return card.number
+            const match = card.card_id?.match(/-(\d+)$/)
+            return match ? match[1] : ''
+          }
 
-          // 2. Trier par numéro de carte
-          const numA = a.number || ''
-          const numB = b.number || ''
+          const numA = getNumber(a)
+          const numB = getNumber(b)
           const matchA = numA.match(/^(\d+)/)
           const matchB = numB.match(/^(\d+)/)
 
@@ -961,16 +1001,19 @@ export function Duplicates() {
                         {translateCardName(card.name)}
                       </h3>
 
-                      {/* Numéro de carte */}
-                      {card.number ? (
-                        <p className="text-xs text-muted-foreground">
-                          #{card.number}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground/40 italic">
-                          Sans numéro
-                        </p>
-                      )}
+                      {/* Numéro de carte - extrait depuis card_id si manquant */}
+                      {(() => {
+                        const displayNumber = card.number || (card.card_id?.match(/-(\d+)$/)?.[1])
+                        return displayNumber ? (
+                          <p className="text-xs text-muted-foreground">
+                            #{displayNumber}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground/40 italic">
+                            Sans numéro
+                          </p>
+                        )
+                      })()}
 
                       <p className="text-xs text-muted-foreground truncate">{card.set?.name || card.extension || card.series}</p>
 
