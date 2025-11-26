@@ -32,6 +32,8 @@ export function Collection() {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   // État pour les extensions réduites (clé = extensionKey)
   const [collapsedExtensions, setCollapsedExtensions] = useState({})
+  // État pour les blocs réduits (clé = blockName)
+  const [collapsedBlocks, setCollapsedBlocks] = useState({})
   // État pour la recherche par extension (clé = extensionKey, valeur = terme de recherche)
   const [extensionSearchTerms, setExtensionSearchTerms] = useState({})
 
@@ -271,6 +273,14 @@ export function Collection() {
     }))
   }
 
+  // Fonction pour toggle l'état réduit/agrandi d'un bloc
+  const toggleBlockCollapse = (blockName) => {
+    setCollapsedBlocks(prev => ({
+      ...prev,
+      [blockName]: !prev[blockName]
+    }))
+  }
+
   // Fonction pour mettre à jour le terme de recherche d'une extension
   const updateExtensionSearch = (extensionKey, value) => {
     setExtensionSearchTerms(prev => ({
@@ -412,21 +422,34 @@ export function Collection() {
       {/* Cards Grid with Block and Extension Hierarchy */}
       {blockGroups.length > 0 ? (
         <div className="space-y-12">
-          {blockGroups.map((block, blockIndex) => (
+          {blockGroups.map((block, blockIndex) => {
+            const isBlockCollapsed = collapsedBlocks[block.name]
+
+            return (
             <div key={blockIndex} className="space-y-8">
-              {/* Block Header */}
-              <div className="flex items-center gap-4">
+              {/* Block Header - Cliquable pour réduire/agrandir */}
+              <div
+                className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity select-none"
+                onClick={() => toggleBlockCollapse(block.name)}
+                title={isBlockCollapsed ? "Cliquer pour agrandir le bloc" : "Cliquer pour réduire le bloc"}
+              >
                 <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                  {isBlockCollapsed ? (
+                    <ChevronRight className="w-6 h-6 text-primary" />
+                  ) : (
+                    <ChevronDown className="w-6 h-6 text-primary" />
+                  )}
                   <h1 className="text-2xl font-bold golden-glow uppercase tracking-wide">{block.name}</h1>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                  <Badge variant="outline" className="text-sm">
+                    {block.extensions.reduce((sum, ext) => sum + ext.cards.length, 0)} cartes
+                  </Badge>
                 </div>
                 <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
               </div>
 
-              {/* Extensions in this Block */}
-              {block.extensions.map((extension, extIndex) => {
+              {/* Extensions in this Block - Visible uniquement si le bloc n'est pas réduit */}
+              {!isBlockCollapsed && block.extensions.map((extension, extIndex) => {
                 const isCollapsed = collapsedExtensions[extension.key]
                 const filteredExtensionCards = filterExtensionCards(extension.cards, extension.key)
                 const extensionSearch = extensionSearchTerms[extension.key] || ''
@@ -575,7 +598,7 @@ export function Collection() {
                 </div>
               )})}
             </div>
-          ))}
+          )})}
         </div>
       ) : (
         <Card className="golden-border card-hover text-center py-12">

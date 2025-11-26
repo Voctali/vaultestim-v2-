@@ -30,7 +30,9 @@ import {
   Calculator,
   Euro,
   AlertCircle,
-  X
+  X,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 
 export function Duplicates() {
@@ -54,6 +56,7 @@ export function Duplicates() {
   const [batchToSell, setBatchToSell] = useState(null)
   const [selectedCardForDetail, setSelectedCardForDetail] = useState(null)
   const [extensionSearchTerms, setExtensionSearchTerms] = useState({}) // Recherche par numéro pour chaque extension
+  const [collapsedExtensions, setCollapsedExtensions] = useState({}) // Extensions réduites
   const [modalSearchTerm, setModalSearchTerm] = useState('') // Recherche dans la modale d'édition
   const [viewingBatch, setViewingBatch] = useState(null) // Lot en cours de visualisation détaillée
   const [showBatchDetailModal, setShowBatchDetailModal] = useState(false)
@@ -161,6 +164,25 @@ export function Duplicates() {
       if (!card.number) return false
       return card.number.includes(term)
     })
+  }
+
+  // Fonction pour toggle l'état réduit/agrandi d'une extension
+  const toggleExtensionCollapse = (extensionKey) => {
+    setCollapsedExtensions(prev => ({
+      ...prev,
+      [extensionKey]: !prev[extensionKey]
+    }))
+  }
+
+  // État pour les blocs réduits
+  const [collapsedBlocks, setCollapsedBlocks] = useState({})
+
+  // Fonction pour toggle l'état réduit/agrandi d'un bloc
+  const toggleBlockCollapse = (blockName) => {
+    setCollapsedBlocks(prev => ({
+      ...prev,
+      [blockName]: !prev[blockName]
+    }))
   }
 
   // Grouper ET consolider les doublons en un seul useMemo
@@ -914,30 +936,53 @@ export function Duplicates() {
                 console.log('🎨 [RENDER] consolidatedDuplicates contient', totalCards, 'cartes au total')
                 return null
               })()}
-              {consolidatedDuplicates.map((block, blockIndex) => (
+              {consolidatedDuplicates.map((block, blockIndex) => {
+                const isBlockCollapsed = collapsedBlocks[block.name]
+
+                return (
                 <div key={blockIndex} className="space-y-8">
-                  {/* SÉPARATEUR DE BLOC */}
-                  <div className="flex items-center gap-4">
+                  {/* SÉPARATEUR DE BLOC - Cliquable pour réduire/agrandir */}
+                  <div
+                    className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity select-none"
+                    onClick={() => toggleBlockCollapse(block.name)}
+                    title={isBlockCollapsed ? "Cliquer pour agrandir le bloc" : "Cliquer pour réduire le bloc"}
+                  >
                     <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                      {isBlockCollapsed ? (
+                        <ChevronRight className="w-6 h-6 text-primary" />
+                      ) : (
+                        <ChevronDown className="w-6 h-6 text-primary" />
+                      )}
                       <h1 className="text-2xl font-bold golden-glow uppercase tracking-wide">{block.name}</h1>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                      <Badge variant="outline" className="text-sm">
+                        {block.extensions.reduce((sum, ext) => sum + ext.cards.length, 0)} cartes
+                      </Badge>
                     </div>
                     <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
                   </div>
 
-                  {/* EXTENSIONS DU BLOC */}
-                  {block.extensions.map((extension, extIndex) => {
+                  {/* EXTENSIONS DU BLOC - Visible uniquement si le bloc n'est pas réduit */}
+                  {!isBlockCollapsed && block.extensions.map((extension, extIndex) => {
                     const extensionKey = `${block.name}-${extension.name}`
+                    const isExtensionCollapsed = collapsedExtensions[extensionKey]
                     const filteredCards = filterCardsByNumber(extension.cards, extensionKey)
 
                     return (
                     <div key={extIndex} className="space-y-4">
-                      {/* SÉPARATEUR D'EXTENSION */}
+                      {/* SÉPARATEUR D'EXTENSION - Cliquable pour réduire/agrandir */}
                       <div className="flex items-center gap-4">
                         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
-                        <div className="flex items-center gap-2">
+                        <div
+                          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity select-none"
+                          onClick={() => toggleExtensionCollapse(extensionKey)}
+                          title={isExtensionCollapsed ? "Cliquer pour agrandir" : "Cliquer pour réduire"}
+                        >
+                          {isExtensionCollapsed ? (
+                            <ChevronRight className="w-5 h-5 text-primary" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-primary" />
+                          )}
                           <h2 className="text-lg font-semibold golden-glow">{extension.name}</h2>
                           {extension.releaseDate && (
                             <span className="text-sm text-muted-foreground">
@@ -951,38 +996,41 @@ export function Duplicates() {
                         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
                       </div>
 
-                      {/* CHAMP DE RECHERCHE PAR NUMÉRO */}
-                      <div className="flex items-center gap-2 max-w-md mx-auto">
-                        <Search className="w-4 h-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Rechercher par numéro (ex: 025 ou 025/165)"
-                          value={extensionSearchTerms[extensionKey] || ''}
-                          onChange={(e) => setExtensionSearchTerms(prev => ({
-                            ...prev,
-                            [extensionKey]: e.target.value
-                          }))}
-                          className="golden-border text-sm"
-                          style={{ textTransform: 'none' }}
-                        />
-                        {extensionSearchTerms[extensionKey] && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setExtensionSearchTerms(prev => {
-                              const newTerms = { ...prev }
-                              delete newTerms[extensionKey]
-                              return newTerms
-                            })}
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            Réinitialiser
-                          </Button>
-                        )}
-                      </div>
+                      {/* CONTENU DE L'EXTENSION - Visible uniquement si non réduit */}
+                      {!isExtensionCollapsed && (
+                        <>
+                          {/* CHAMP DE RECHERCHE PAR NUMÉRO */}
+                          <div className="flex items-center gap-2 max-w-md mx-auto">
+                            <Search className="w-4 h-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Rechercher par numéro (ex: 025 ou 025/165)"
+                              value={extensionSearchTerms[extensionKey] || ''}
+                              onChange={(e) => setExtensionSearchTerms(prev => ({
+                                ...prev,
+                                [extensionKey]: e.target.value
+                              }))}
+                              className="golden-border text-sm"
+                              style={{ textTransform: 'none' }}
+                            />
+                            {extensionSearchTerms[extensionKey] && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setExtensionSearchTerms(prev => {
+                                  const newTerms = { ...prev }
+                                  delete newTerms[extensionKey]
+                                  return newTerms
+                                })}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                Réinitialiser
+                              </Button>
+                            )}
+                          </div>
 
-                      {/* GRILLE DE CARTES */}
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-                        {filteredCards.map((card) => {
+                          {/* GRILLE DE CARTES */}
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                            {filteredCards.map((card) => {
                           const cardKey = card.card_id || card.id
                           const isSelected = selectedCards.find(c => (c.card_id || c.id) === cardKey)
                           const currentSelection = cardSelections[cardKey]
@@ -1088,14 +1136,16 @@ export function Duplicates() {
                     </div>
                   </CardContent>
                 </Card>
-                          )
-                        })}
-                      </div>
+                            )
+                          })}
+                          </div>
+                        </>
+                      )}
                     </div>
                     )
                   })}
                 </div>
-              ))}
+              )})}
             </div>
           ) : (
             <Card className="golden-border text-center py-12">
