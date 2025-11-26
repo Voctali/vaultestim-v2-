@@ -280,12 +280,13 @@ export function Duplicates() {
 
         extension.cards.forEach(card => {
           // Normaliser la version : undefined, null, '' → 'Normale'
-          const version = (card.version && card.version.trim()) ? card.version.trim() : 'Normale'
+          const rawVersion = card.version
+          const version = (rawVersion && String(rawVersion).trim()) ? String(rawVersion).trim() : 'Normale'
           const cardId = card.card_id || card.id
           // Clé basée sur card_id + version (card_id contient déjà l'extension)
           const key = `${cardId}-${version}`
 
-          console.log(`   📝 Carte: ${card.name} | card_id: ${cardId} | version: "${version}" | clé: ${key}`)
+          console.log(`   📝 Carte: ${card.name} | card_id: ${cardId} | version brute: "${rawVersion}" (type: ${typeof rawVersion}) | version normalisée: "${version}" | clé: ${key}`)
 
           if (!cardGroups[key]) {
             cardGroups[key] = {
