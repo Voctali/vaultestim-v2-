@@ -899,6 +899,7 @@ export function Duplicates() {
 
           {duplicateCards.length > 0 ? (
             <div className="space-y-12">
+              {console.log('🎨 [RENDU] consolidatedDuplicates:', consolidatedDuplicates?.length, 'blocs, premier bloc:', consolidatedDuplicates?.[0]?.name, 'extensions:', consolidatedDuplicates?.[0]?.extensions?.length)}
               {consolidatedDuplicates.map((block, blockIndex) => (
                 <div key={blockIndex} className="space-y-8">
                   {/* SÉPARATEUR DE BLOC */}
