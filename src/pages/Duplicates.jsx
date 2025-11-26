@@ -11,6 +11,7 @@ import { CardImage } from '@/components/features/explore/CardImage'
 import { SaleModal } from '@/components/features/collection/SaleModal'
 import { BatchSaleModal } from '@/components/features/collection/BatchSaleModal'
 import { DuplicateDetailModal } from '@/components/features/collection/DuplicateDetailModal'
+import { DuplicateVersionSelectModal } from '@/components/features/collection/DuplicateVersionSelectModal'
 import { CollectionTabs } from '@/components/features/navigation/CollectionTabs'
 import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
 import { translateCondition } from '@/utils/cardConditions'
@@ -28,25 +29,27 @@ import {
   ShoppingBag,
   Calculator,
   Euro,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react'
 
 export function Duplicates() {
   const { duplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale, collection } = useCollection()
 
-  // LOG IMMÉDIAT AU RENDU
-  console.log('🚀 [Duplicates] RENDU - duplicates du hook:', duplicates.length, '| collection:', collection.length)
-
+  
   const [currentTab, setCurrentTab] = useState('duplicates') // 'duplicates' ou 'batches'
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateBatchModal, setShowCreateBatchModal] = useState(false)
   const [editingBatch, setEditingBatch] = useState(null)
-  const [selectedCards, setSelectedCards] = useState([])
-  const [cardQuantities, setCardQuantities] = useState({}) // Pour stocker les quantités par carte
+  const [selectedCards, setSelectedCards] = useState([]) // Cartes sélectionnées avec leur version et quantité
+  const [cardSelections, setCardSelections] = useState({}) // { cardId: { version, quantity } }
+  const [cardQuantities, setCardQuantities] = useState({}) // Pour stocker les quantités par carte (compatibilité modale création)
   const [batchName, setBatchName] = useState('')
   const [showSaleModal, setShowSaleModal] = useState(false)
   const [showBatchSaleModal, setShowBatchSaleModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [showVersionSelectModal, setShowVersionSelectModal] = useState(false)
+  const [cardForVersionSelect, setCardForVersionSelect] = useState(null)
   const [cardToSell, setCardToSell] = useState(null)
   const [batchToSell, setBatchToSell] = useState(null)
   const [selectedCardForDetail, setSelectedCardForDetail] = useState(null)
@@ -92,21 +95,60 @@ export function Duplicates() {
   // Fonction pour extraire le préfixe d'extension depuis card_id (source de vérité)
   const getExtensionFromCardId = (cardId) => {
     if (!cardId) return null
-    // Exemples: me1-96, sv3pt5-34, swsh1-123, svp-203
-    const match = cardId.match(/^([a-z]+\d*(?:pt\d+)?)/i)
-    return match ? match[1].toLowerCase() : null
+    // Exemples: me1-96, sv3pt5-34, swsh1-123, svp-203, sv8a-12, sv8-45, rsv10pt5-1, zsv10pt5-1
+    // Capture tout avant le premier tiret
+    const match = cardId.match(/^([^-]+)/)
+    if (!match) return null
+    return match[1].toLowerCase()
   }
 
   // Fonction pour obtenir le bloc depuis le préfixe d'extension
   const getBlockFromExtensionPrefix = (prefix) => {
     if (!prefix) return 'Sans bloc'
     if (prefix.startsWith('me') || prefix === 'mep') return 'Mega Evolution'
-    if (prefix.startsWith('sv') || prefix.startsWith('zsv')) return 'Scarlet & Violet'
+    // rsv = Reverse SV (White Flare, Black Bolt versions japonaises/alternatives)
+    if (prefix.startsWith('sv') || prefix.startsWith('zsv') || prefix.startsWith('rsv')) return 'Scarlet & Violet'
     if (prefix.startsWith('swsh')) return 'Sword & Shield'
     if (prefix.startsWith('sm')) return 'Sun & Moon'
     if (prefix.startsWith('xy')) return 'XY'
     if (prefix.startsWith('bw')) return 'Black & White'
     return 'Autres'
+  }
+
+  // Dates de sortie correctes pour les extensions (override des dates incorrectes dans la base)
+  const EXTENSION_RELEASE_DATES = {
+    // Mega Evolution (septembre 2025)
+    'me1': '2025-09-01',
+    'me2': '2025-09-01',
+    'mep': '2025-09-01',
+    // Scarlet & Violet récentes
+    'sv10': '2025-05-30',     // Destined Rivals - mai 2025
+    'rsv10pt5': '2025-07-01', // White Flare - juillet 2025
+    'zsv10pt5': '2025-07-01', // Black Bolt - juillet 2025
+    'sv9': '2025-03-28',      // Journey Together - mars 2025
+    'sv8pt5': '2025-01-17',   // Prismatic Evolutions - janvier 2025
+    'sv8': '2024-11-08',      // Surging Sparks - novembre 2024
+    'sv7pt5': '2024-09-13',   // Shrouded Fable - septembre 2024
+    'sv7': '2024-09-13',      // Stellar Crown - septembre 2024
+    'sv6pt5': '2024-08-02',   // Twilight Masquerade (special) - août 2024
+    'sv6': '2024-05-24',      // Twilight Masquerade - mai 2024
+    'sv5pt5': '2024-03-22',   // Paldean Fates
+    'sv5': '2024-03-22',      // Temporal Forces
+    'sv4pt5': '2024-01-26',   // Paldean Fates
+    'sv4': '2023-11-03',      // Paradox Rift
+    'sv3pt5': '2023-09-22',   // 151
+    'sv3': '2023-08-11',      // Obsidian Flames
+    'sv2': '2023-06-09',      // Paldea Evolved
+    'sv1': '2023-03-31',      // Scarlet & Violet Base
+    'svp': '2023-03-31',      // SV Promos
+  }
+
+  // Fonction pour obtenir la date de sortie correcte d'une extension
+  const getCorrectReleaseDate = (extensionPrefix, cardReleaseDate) => {
+    if (extensionPrefix && EXTENSION_RELEASE_DATES[extensionPrefix]) {
+      return EXTENSION_RELEASE_DATES[extensionPrefix]
+    }
+    return cardReleaseDate || null
   }
 
   // Fonction pour filtrer les cartes d'une extension par numéro
@@ -125,18 +167,6 @@ export function Duplicates() {
   const consolidatedDuplicates = useMemo(() => {
     if (!duplicateCards || duplicateCards.length === 0) {
       return []
-    }
-
-    // DEBUG CONSOLIDATION
-    console.log('🔄 [CONSOLIDATION] Début avec', duplicateCards.length, 'cartes')
-
-    // DEBUG: Vérifier les card_id des premières cartes
-    const withoutCardId = duplicateCards.filter(c => !c.card_id)
-    console.log('🔄 [CONSOLIDATION] Cartes SANS card_id:', withoutCardId.length)
-    if (withoutCardId.length > 0) {
-      withoutCardId.slice(0, 5).forEach(c => {
-        console.log(`   SANS card_id: ${c.name} | id: ${c.id} | version: ${c.version}`)
-      })
     }
 
     // ÉTAPE 1: Consolider d'abord par card_id UNIQUEMENT (pas par version)
@@ -171,13 +201,6 @@ export function Duplicates() {
       consolidationMap[key].totalQuantity += (card.quantity || 1)
     })
 
-    // DEBUG: Afficher les groupes avec plus d'une instance
-    const multiInstanceGroups = Object.entries(consolidationMap).filter(([, g]) => g.instances.length > 1)
-    console.log('🔄 [CONSOLIDATION] Groupes avec >1 instance:', multiInstanceGroups.length)
-    multiInstanceGroups.slice(0, 5).forEach(([key, group]) => {
-      console.log(`   ${key}: ${group.instances.length} instances, total: ${group.totalQuantity}`)
-    })
-
     // Créer les cartes consolidées
     const conditionOrder = {
       'Neuf': 5, 'Proche du neuf': 4, 'Excellent': 3,
@@ -198,11 +221,6 @@ export function Duplicates() {
       }
     })
 
-    // DEBUG: Compter les cartes avec consolidation > 1
-    const consolidatedWithMulti = consolidatedCards.filter(c => c.consolidatedQuantity > 1)
-    console.log('🔄 [CONSOLIDATION] Cartes consolidées:', consolidatedCards.length)
-    console.log('🔄 [CONSOLIDATION] Avec consolidatedQuantity > 1:', consolidatedWithMulti.length)
-
     // ÉTAPE 2: Grouper par bloc et extension
     const cardsByBlock = consolidatedCards.reduce((acc, card) => {
       const extensionPrefix = getExtensionFromCardId(card.card_id)
@@ -217,7 +235,8 @@ export function Duplicates() {
 
       const extensionKey = extensionPrefix || card.set?.id || card.extension || 'Sans extension'
       const extensionName = card.set?.name || card.extension || extensionKey
-      const releaseDate = card.set?.releaseDate || null
+      // Utiliser la date corrigée si disponible
+      const releaseDate = getCorrectReleaseDate(extensionPrefix, card.set?.releaseDate)
 
       if (!acc[blockName].extensions[extensionKey]) {
         acc[blockName].extensions[extensionKey] = {
@@ -250,8 +269,9 @@ export function Duplicates() {
     // ÉTAPE 4: Convertir en tableau trié
     const blockGroups = Object.entries(cardsByBlock).map(([, blockData]) => {
       const sortedExtensions = Object.values(blockData.extensions).sort((a, b) => {
-        const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date()
-        const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date()
+        // Date très ancienne par défaut pour les extensions sans date (pas new Date() qui donne la date actuelle)
+        const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date('1970-01-01')
+        const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date('1970-01-01')
         return dateB - dateA
       })
 
@@ -261,16 +281,11 @@ export function Duplicates() {
         extensions: sortedExtensions
       }
     }).sort((a, b) => {
-      const dateA = a.mostRecentDate ? new Date(a.mostRecentDate) : new Date()
-      const dateB = b.mostRecentDate ? new Date(b.mostRecentDate) : new Date()
+      // Date très ancienne par défaut pour les blocs sans date
+      const dateA = a.mostRecentDate ? new Date(a.mostRecentDate) : new Date('1970-01-01')
+      const dateB = b.mostRecentDate ? new Date(b.mostRecentDate) : new Date('1970-01-01')
       return dateB - dateA
     })
-
-    // DEBUG: Compter le total de cartes dans le résultat final
-    const totalCardsInResult = blockGroups.reduce((total, block) => {
-      return total + block.extensions.reduce((extTotal, ext) => extTotal + ext.cards.length, 0)
-    }, 0)
-    console.log('🔄 [CONSOLIDATION] Total cartes dans blockGroups:', totalCardsInResult)
 
     return blockGroups
   }, [duplicateCards])
@@ -309,6 +324,7 @@ export function Duplicates() {
     // Reset
     setBatchName('')
     setSelectedCards([])
+    setCardSelections({})
     setCardQuantities({})
     setShowCreateBatchModal(false)
   }
@@ -352,6 +368,7 @@ export function Duplicates() {
     // Reset
     setBatchName('')
     setSelectedCards([])
+    setCardSelections({})
     setCardQuantities({})
     setShowCreateBatchModal(false)
     setEditingBatch(null)
@@ -363,12 +380,100 @@ export function Duplicates() {
     }
   }
 
+  // Sélection rapide avec le bouton "+" - version Normale par défaut
+  const toggleCardSelectionQuick = (card) => {
+    const cardKey = card.card_id || card.id
+
+    setSelectedCards(prev => {
+      const exists = prev.find(c => (c.card_id || c.id) === cardKey)
+      if (exists) {
+        // Retirer la carte et supprimer sa sélection
+        setCardSelections(prevSel => {
+          const newSel = { ...prevSel }
+          delete newSel[cardKey]
+          return newSel
+        })
+        setCardQuantities(prevQty => {
+          const newQty = { ...prevQty }
+          delete newQty[card.id]
+          return newQty
+        })
+        return prev.filter(c => (c.card_id || c.id) !== cardKey)
+      } else {
+        // Ajouter la carte avec version "Normale" et quantité 1
+        const cardWithVersion = { ...card, version: 'Normale' }
+        setCardSelections(prevSel => ({
+          ...prevSel,
+          [cardKey]: { version: 'Normale', quantity: 1 }
+        }))
+        setCardQuantities(prevQty => ({
+          ...prevQty,
+          [card.id]: 1
+        }))
+        return [...prev, cardWithVersion]
+      }
+    })
+  }
+
+  // Sélection via la modale avec choix de version et quantité
+  const handleVersionSelect = (selection) => {
+    if (!cardForVersionSelect) return
+
+    const cardKey = cardForVersionSelect.card_id || cardForVersionSelect.id
+
+    if (selection === null) {
+      // Désélectionner la carte
+      setSelectedCards(prev => prev.filter(c => (c.card_id || c.id) !== cardKey))
+      setCardSelections(prev => {
+        const newSel = { ...prev }
+        delete newSel[cardKey]
+        return newSel
+      })
+      setCardQuantities(prev => {
+        const newQty = { ...prev }
+        delete newQty[cardForVersionSelect.id]
+        return newQty
+      })
+    } else {
+      // Ajouter/modifier la sélection
+      const { card: selectedCard, version, quantity } = selection
+
+      setSelectedCards(prev => {
+        const exists = prev.find(c => (c.card_id || c.id) === cardKey)
+        const cardWithVersion = { ...selectedCard, version }
+
+        if (exists) {
+          // Mettre à jour la carte existante
+          return prev.map(c => (c.card_id || c.id) === cardKey ? cardWithVersion : c)
+        } else {
+          // Ajouter la nouvelle carte
+          return [...prev, cardWithVersion]
+        }
+      })
+
+      setCardSelections(prev => ({
+        ...prev,
+        [cardKey]: { version, quantity }
+      }))
+
+      setCardQuantities(prev => ({
+        ...prev,
+        [cardForVersionSelect.id]: quantity
+      }))
+    }
+  }
+
+  // Ouvrir la modale de sélection de version (clic sur l'image)
+  const handleCardImageClick = (card) => {
+    setCardForVersionSelect(card)
+    setShowVersionSelectModal(true)
+  }
+
+  // Ancienne fonction pour compatibilité avec la modale de création de lot
   const toggleCardSelection = (card) => {
-    console.log('📦📦📦 [LOT-DEBUG] Carte cliquée:', card.name, 'ID:', card.id)
     setSelectedCards(prev => {
       const exists = prev.find(c => c.id === card.id)
       if (exists) {
-        console.log('📦📦📦 [LOT-DEBUG] Carte DÉSÉLECTIONNÉE')
         // Retirer la carte et supprimer sa quantité
         setCardQuantities(prevQty => {
           const newQty = { ...prevQty }
@@ -377,7 +482,6 @@ export function Duplicates() {
         })
         return prev.filter(c => c.id !== card.id)
       } else {
-        console.log('📦📦📦 [LOT-DEBUG] Carte SÉLECTIONNÉE')
         // Ajouter la carte et initialiser sa quantité à 1
         setCardQuantities(prevQty => ({
           ...prevQty,
@@ -523,31 +627,17 @@ export function Duplicates() {
 
   // Fonction pour ajouter les cartes sélectionnées à un lot existant
   const handleAddToBatch = (batchId) => {
-    console.log('📦📦📦 [LOT-DEBUG] ========== FONCTION APPELÉE ==========')
-    console.log('📦📦📦 [LOT-DEBUG] batchId reçu:', batchId)
-    console.log('📦📦📦 [LOT-DEBUG] Nombre de cartes sélectionnées:', selectedCards.length)
-    console.log('📦📦📦 [LOT-DEBUG] Cartes:', selectedCards)
-
     if (selectedCards.length === 0) {
-      console.log('📦📦📦 [LOT-DEBUG] ❌ ERREUR: Aucune carte sélectionnée')
       alert('Veuillez sélectionner au moins une carte')
       return
     }
 
     const batch = duplicateBatches.find(b => b.id === batchId)
-    if (!batch) {
-      console.log('📦📦📦 [LOT-DEBUG] ❌ ERREUR: Lot non trouvé')
-      return
-    }
-
-    console.log('📦📦📦 [LOT-DEBUG] ✅ Lot trouvé:', batch.name)
-    console.log('📦📦📦 [LOT-DEBUG] ✅ Traitement de', selectedCards.length, 'carte(s)')
+    if (!batch) return
 
     // Créer une copie des cartes avec les quantités spécifiées
     const cardsWithQuantities = selectedCards.map(card => {
       const quantity = cardQuantities[card.id] || 1
-      console.log(`🎯 [AddToBatch] Carte: ${card.name} (ID: ${card.id}, card_id: ${card.card_id}, instanceIds: ${card.instanceIds?.length || 0})`)
-      console.log(`🎯 [AddToBatch] Quantité sélectionnée: ${quantity}`)
       return {
         ...card,
         batchQuantity: quantity
@@ -558,11 +648,6 @@ export function Duplicates() {
     const duplicateCards = []
     const newCards = []
 
-    console.log(`🔍 [AddToBatch] Lot actuel contient ${batch.cards.length} cartes:`)
-    batch.cards.forEach(c => {
-      console.log(`   - ${c.name} | Version: ${c.version || 'Normale'} | #${c.number} | Extension: ${c.set?.id || c.extension || 'N/A'}`)
-    })
-
     cardsWithQuantities.forEach(card => {
       const cardIdentity = {
         name: card.name,
@@ -570,12 +655,6 @@ export function Duplicates() {
         number: card.number,
         extension: card.set?.id || card.extension
       }
-
-      console.log(`🔍 [AddToBatch] Vérification carte sélectionnée:`)
-      console.log(`   Nom: ${cardIdentity.name}`)
-      console.log(`   Version: ${cardIdentity.version}`)
-      console.log(`   Numéro: ${cardIdentity.number}`)
-      console.log(`   Extension: ${cardIdentity.extension}`)
 
       // Chercher une carte identique dans le lot
       const existingCard = batch.cards.find(c => {
@@ -586,34 +665,21 @@ export function Duplicates() {
           extension: c.set?.id || c.extension
         }
 
-        const nameMatch = existingIdentity.name === cardIdentity.name
-        const versionMatch = existingIdentity.version === cardIdentity.version
-        const numberMatch = existingIdentity.number === cardIdentity.number
-        const extensionMatch = existingIdentity.extension === cardIdentity.extension
-
-        console.log(`   🔎 Comparaison avec "${c.name}":`)
-        console.log(`      Nom: ${nameMatch} (${existingIdentity.name} === ${cardIdentity.name})`)
-        console.log(`      Version: ${versionMatch} (${existingIdentity.version} === ${cardIdentity.version})`)
-        console.log(`      Numéro: ${numberMatch} (${existingIdentity.number} === ${cardIdentity.number})`)
-        console.log(`      Extension: ${extensionMatch} (${existingIdentity.extension} === ${cardIdentity.extension})`)
-
-        return nameMatch && versionMatch && numberMatch && extensionMatch
+        return existingIdentity.name === cardIdentity.name &&
+               existingIdentity.version === cardIdentity.version &&
+               existingIdentity.number === cardIdentity.number &&
+               existingIdentity.extension === cardIdentity.extension
       })
 
       if (existingCard) {
-        console.log(`⚠️ [AddToBatch] Carte identique trouvée dans le lot: ${card.name} ${cardIdentity.version} #${cardIdentity.number}`)
         duplicateCards.push({ card, existingCard })
       } else {
-        console.log(`✅ [AddToBatch] Nouvelle carte: ${card.name} ${cardIdentity.version} #${cardIdentity.number}`)
         newCards.push(card)
       }
     })
 
-    console.log(`📊 [AddToBatch] Résultat: ${newCards.length} nouvelles cartes, ${duplicateCards.length} doublons`)
-
     // Si des cartes identiques sont détectées, afficher l'avertissement
     if (duplicateCards.length > 0) {
-      console.log(`⚠️ [AddToBatch] ${duplicateCards.length} carte(s) identique(s) détectée(s), affichage avertissement`)
       setPendingBatchAdd({
         batchId,
         batch,
@@ -642,10 +708,9 @@ export function Duplicates() {
 
     updateDuplicateBatch(updatedBatch)
 
-    console.log(`✅ [AddToBatch] ${cardsToAdd.length} carte(s) ajoutée(s) au lot "${batch.name}"`)
-
     // Reset sélection
     setSelectedCards([])
+    setCardSelections({})
     setCardQuantities({})
     alert(`${cardsToAdd.length} carte(s) ajoutée(s) au lot "${batch.name}"`)
   }
@@ -678,12 +743,44 @@ export function Duplicates() {
     } else {
       // Reset sélection sans rien ajouter
       setSelectedCards([])
+      setCardSelections({})
       setCardQuantities({})
     }
 
     // Reset
     setPendingBatchAdd(null)
     setShowDuplicateWarning(false)
+  }
+
+  // Retirer une carte en double de la liste des doublons à ajouter
+  const handleRemoveDuplicateFromPending = (cardToRemove) => {
+    if (!pendingBatchAdd) return
+
+    const updatedDuplicateCards = pendingBatchAdd.duplicateCards.filter(
+      ({ card }) => card.id !== cardToRemove.id
+    )
+
+    // Si plus aucun doublon, fermer la modale et ajouter les nouvelles cartes
+    if (updatedDuplicateCards.length === 0) {
+      const { batch, newCards } = pendingBatchAdd
+      if (newCards.length > 0) {
+        performBatchAdd(batch, newCards)
+      } else {
+        // Reset sélection sans rien ajouter
+        setSelectedCards([])
+        setCardSelections({})
+        setCardQuantities({})
+        alert('Aucune carte à ajouter')
+      }
+      setPendingBatchAdd(null)
+      setShowDuplicateWarning(false)
+    } else {
+      // Mettre à jour la liste des doublons
+      setPendingBatchAdd({
+        ...pendingBatchAdd,
+        duplicateCards: updatedDuplicateCards
+      })
+    }
   }
 
   // Fonction pour ouvrir la vue détaillée d'un lot
@@ -885,35 +982,51 @@ export function Duplicates() {
 
                       {/* GRILLE DE CARTES */}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-                        {filteredCards.map((card) => (
+                        {filteredCards.map((card) => {
+                          const cardKey = card.card_id || card.id
+                          const isSelected = selectedCards.find(c => (c.card_id || c.id) === cardKey)
+                          const currentSelection = cardSelections[cardKey]
+
+                          return (
                 <Card
                   key={card.id}
                   className="golden-border card-hover cursor-pointer group overflow-hidden"
-                  onClick={() => handleCardClick(card)}
                 >
                   <CardContent className="p-4">
-                    {/* Card Image */}
-                    <div className="relative aspect-[3/4] mb-3 rounded-lg overflow-hidden group-hover:scale-105 transition-transform duration-200">
+                    {/* Card Image - Clic ouvre la modale de sélection de version */}
+                    <div
+                      className="relative aspect-[3/4] mb-3 rounded-lg overflow-hidden group-hover:scale-105 transition-transform duration-200 cursor-pointer"
+                      onClick={() => handleCardImageClick(card)}
+                    >
                       <CardImage
                         card={card}
                         className="w-full h-full object-cover"
                       />
+                      {/* Badge quantité doublons */}
                       {card.consolidatedQuantity > 1 && (
                         <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                           x{card.consolidatedQuantity}
                         </div>
                       )}
+                      {/* Badge sélection avec version */}
+                      {isSelected && currentSelection && (
+                        <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          {currentSelection.quantity}x {currentSelection.version === 'Normale' ? 'N' : currentSelection.version.charAt(0)}
+                        </div>
+                      )}
                       <div className="absolute bottom-2 left-2 right-2 flex gap-1">
+                        {/* Bouton + : sélection rapide en version Normale */}
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="flex-1 h-8 p-0 bg-green-500/80 text-white hover:bg-green-600"
+                          className={`flex-1 h-8 p-0 text-white ${isSelected ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500/80 hover:bg-green-600'}`}
                           onClick={(e) => {
                             e.stopPropagation()
-                            toggleCardSelection(card)
+                            toggleCardSelectionQuick(card)
                           }}
+                          title={isSelected ? 'Retirer du lot' : 'Ajouter au lot (version Normale)'}
                         >
-                          {selectedCards.find(c => c.id === card.id) ? '✓' : '+'}
+                          {isSelected ? '✓' : '+'}
                         </Button>
                         <Button
                           size="sm"
@@ -975,7 +1088,8 @@ export function Duplicates() {
                     </div>
                   </CardContent>
                 </Card>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                     )
@@ -1293,6 +1407,8 @@ export function Duplicates() {
                 setEditingBatch(null)
                 setBatchName('')
                 setSelectedCards([])
+                setCardSelections({})
+                setCardQuantities({})
               }}>
                 Annuler
               </Button>
@@ -1334,6 +1450,20 @@ export function Duplicates() {
         onClose={handleCloseDetailModal}
         card={selectedCardForDetail}
         collection={collection}
+      />
+
+      {/* Version Select Modal - Pour sélectionner version et quantité */}
+      <DuplicateVersionSelectModal
+        isOpen={showVersionSelectModal}
+        onClose={() => {
+          setShowVersionSelectModal(false)
+          setCardForVersionSelect(null)
+        }}
+        card={cardForVersionSelect}
+        collection={collection}
+        onSelectForBatch={handleVersionSelect}
+        isAlreadySelected={cardForVersionSelect && selectedCards.some(c => (c.card_id || c.id) === (cardForVersionSelect.card_id || cardForVersionSelect.id))}
+        currentSelection={cardForVersionSelect && cardSelections[cardForVersionSelect.card_id || cardForVersionSelect.id]}
       />
 
       {/* Batch Detail Modal - Vue détaillée d'un lot */}
@@ -1481,10 +1611,19 @@ export function Duplicates() {
                           {card.set?.name || card.extension}
                         </p>
                       </div>
-                      <div className="text-right flex-shrink-0">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <Badge variant="outline" className="bg-yellow-500/20 text-yellow-600 border-yellow-500/40">
                           Déjà x{existingCard.batchQuantity || 1}
                         </Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                          onClick={() => handleRemoveDuplicateFromPending(card)}
+                          title="Retirer cette carte de la sélection"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
