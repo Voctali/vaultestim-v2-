@@ -149,6 +149,15 @@ export function Duplicates() {
       return []
     }
 
+    // DEBUG: Afficher les Bulbasaur reçus
+    const bulbasaurInDuplicates = duplicateCards.filter(c => c.name?.toLowerCase().includes('bulbasaur'))
+    if (bulbasaurInDuplicates.length > 0) {
+      console.log('🐸 [BULBASAUR] Reçus dans duplicateCards:', bulbasaurInDuplicates.length)
+      bulbasaurInDuplicates.forEach(c => {
+        console.log(`   ID: ${c.id} | card_id: ${c.card_id} | version: ${c.version}`)
+      })
+    }
+
     // ÉTAPE 1: Consolider d'abord par card_id + version
     const consolidationMap = {}
     duplicateCards.forEach(card => {
@@ -185,6 +194,15 @@ export function Duplicates() {
         instanceIds: group.instances.map(c => c.id)
       }
     })
+
+    // DEBUG: Vérifier les Bulbasaur après consolidation
+    const bulbasaurConsolidated = consolidatedCards.filter(c => c.name?.toLowerCase().includes('bulbasaur'))
+    if (bulbasaurConsolidated.length > 0) {
+      console.log('🐸 [BULBASAUR] Après consolidation:', bulbasaurConsolidated.length)
+      bulbasaurConsolidated.forEach(c => {
+        console.log(`   card_id: ${c.card_id} | version: ${c.version} | consolidatedQuantity: ${c.consolidatedQuantity}`)
+      })
+    }
 
     // ÉTAPE 2: Grouper par bloc et extension
     const cardsByBlock = consolidatedCards.reduce((acc, card) => {
