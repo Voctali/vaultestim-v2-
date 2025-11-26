@@ -263,34 +263,24 @@ export function Duplicates() {
 
   // Consolider les cartes identiques pour l'affichage (grouper par carte et afficher avec badge quantité)
   const consolidatedDuplicates = useMemo(() => {
-    console.log('🔄 [Consolidation] Début - Blocs:', groupedDuplicates.length)
+    if (!groupedDuplicates || groupedDuplicates.length === 0) {
+      return []
+    }
 
-    // Compter le total de cartes et de regroupements
-    let totalCards = 0
-    let totalGroups = 0
-    let regroupements = []
-
-    const result = groupedDuplicates.map(block => {
-      return {
+    const result = groupedDuplicates.map(block => ({
       ...block,
       extensions: block.extensions.map(extension => {
-        totalCards += extension.cards.length
-
         // Grouper les cartes par identité (card_id + version normalisée)
-        // Utiliser card_id comme clé principale (plus fiable que nom)
         const cardGroups = {}
 
         extension.cards.forEach(card => {
           // Normaliser la version : undefined, null, '' → 'Normale'
-          const rawVersion = card.version
-          const version = (rawVersion && String(rawVersion).trim()) ? String(rawVersion).trim() : 'Normale'
+          const version = (card.version && String(card.version).trim()) ? String(card.version).trim() : 'Normale'
           const cardId = card.card_id || card.id
-          // Clé basée sur card_id + version (card_id contient déjà l'extension)
           const key = `${cardId}-${version}`
 
           if (!cardGroups[key]) {
             cardGroups[key] = {
-              representativeCard: card, // La carte représentative
               instances: [],
               totalQuantity: 0
             }
@@ -300,30 +290,11 @@ export function Duplicates() {
           cardGroups[key].totalQuantity += (card.quantity || 1)
         })
 
-        totalGroups += Object.keys(cardGroups).length
-
-        // Collecter les regroupements (groupes avec plusieurs instances)
-        Object.entries(cardGroups).forEach(([key, group]) => {
-          if (group.instances.length > 1) {
-            regroupements.push({
-              name: group.instances[0].name,
-              version: group.instances[0].version || 'Normale',
-              count: group.instances.length,
-              total: group.totalQuantity,
-              key
-            })
-          }
-        })
-
         // Convertir en tableau et garder la meilleure condition comme représentant
         const consolidatedCards = Object.values(cardGroups).map(group => {
           const conditionOrder = {
-            'Neuf': 5,
-            'Proche du neuf': 4,
-            'Excellent': 3,
-            'Bon': 2,
-            'Acceptable': 1,
-            'Endommagé': 0
+            'Neuf': 5, 'Proche du neuf': 4, 'Excellent': 3,
+            'Bon': 2, 'Acceptable': 1, 'Endommagé': 0
           }
 
           // Trouver la carte avec la meilleure condition
@@ -345,13 +316,15 @@ export function Duplicates() {
           cards: consolidatedCards
         }
       })
-    }
-    })
+    }))
 
-    // Log résumé (1 seul log au lieu de dizaines)
-    console.log(`🔄 [Consolidation] Terminé - ${totalCards} cartes → ${totalGroups} groupes, ${regroupements.length} regroupement(s)`)
-    if (regroupements.length > 0) {
-      console.log('🔀 [Consolidation] Regroupements:', regroupements.map(r => `${r.name} (${r.version}): ${r.count}x → ${r.total} total`).join(' | '))
+    // Log résumé une seule fois
+    const totalRegroupements = result.reduce((acc, block) =>
+      acc + block.extensions.reduce((extAcc, ext) =>
+        extAcc + ext.cards.filter(c => c.consolidatedQuantity > 1).length, 0), 0)
+
+    if (totalRegroupements > 0) {
+      console.log(`🔀 [Consolidation] ${totalRegroupements} carte(s) consolidée(s)`)
     }
 
     return result
@@ -891,15 +864,8 @@ export function Duplicates() {
             </div>
           </div>
 
-          {(() => {
-            console.log('🎨 [Duplicates] Rendu - duplicateCards.length:', duplicateCards.length)
-            console.log('🎨 [Duplicates] Première carte:', duplicateCards[0])
-            return null
-          })()}
-
           {duplicateCards.length > 0 ? (
             <div className="space-y-12">
-              {console.log('🎨 [RENDU] consolidatedDuplicates:', consolidatedDuplicates?.length, 'blocs, premier bloc:', consolidatedDuplicates?.[0]?.name, 'extensions:', consolidatedDuplicates?.[0]?.extensions?.length)}
               {consolidatedDuplicates.map((block, blockIndex) => (
                 <div key={blockIndex} className="space-y-8">
                   {/* SÉPARATEUR DE BLOC */}
@@ -917,13 +883,6 @@ export function Duplicates() {
                   {block.extensions.map((extension, extIndex) => {
                     const extensionKey = `${block.name}-${extension.name}`
                     const filteredCards = filterCardsByNumber(extension.cards, extensionKey)
-
-                    // DEBUG: Vérifier si les cartes sont consolidées
-                    if (extIndex === 0 && extension.cards.length > 0) {
-                      console.log(`🎨 [Rendu] Extension: ${extension.name}`)
-                      console.log(`🎨 [Rendu] Nombre de cartes à afficher: ${extension.cards.length}`)
-                      console.log(`🎨 [Rendu] Première carte:`, extension.cards[0]?.name, 'consolidatedQuantity:', extension.cards[0]?.consolidatedQuantity)
-                    }
 
                     return (
                     <div key={extIndex} className="space-y-4">
