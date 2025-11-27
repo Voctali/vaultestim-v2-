@@ -881,14 +881,38 @@ Script automatisé pour corriger les URLs CardMarket de toutes les cartes en uti
 3. Sword & Shield (`swsh*`)
 4. Autres extensions
 
-### Progression actuelle (26/11/2025)
-- **Cartes avec URL** : ~7100 (38%)
-- **Cartes sans URL** : ~11400 (62%)
+### Progression actuelle (27/11/2025)
+- **Cartes avec URL tcggo** : ~98%
+- **Cartes avec URL slug (invalide)** : ~15 (SVP promos récentes)
 - **Total** : ~18500 cartes
 
 **Exécutions effectuées** :
 1. Session 1 (25/11) : ~800 cartes (SV, SVP, ME1, ME2, MEP, SWSH1 partiel)
 2. Session 2 (26/11) : ~3000 cartes (quota complet)
+3. Session 3 (27/11) : Correction complète des URLs slug restantes
+
+### Correction URLs Slug (27/11/2025) - TERMINÉ ✅
+
+**Scripts utilisés** :
+- `fix-remaining-slug-urls.cjs` - 151, SV8, SV9, SVP (130 cartes corrigées)
+- `fix-sv1-urls.cjs` - Scarlet-Violet sv1 (37 cartes corrigées)
+- `fix-sv8pt5-sv10-urls.cjs` - Prismatic Evolutions sv8pt5 + Destined Rivals sv10 (50 cartes corrigées)
+
+**Résultats par extension** :
+
+| Extension | Préfixe | Slug → tcggo | Statut |
+|-----------|---------|--------------|--------|
+| 151 | sv3pt5 | 66/66 | ✅ 100% |
+| Scarlet-Violet | sv1 | 37/37 | ✅ 100% |
+| Surging Sparks | sv8 | 42/42 | ✅ 100% |
+| Prismatic Evolutions | sv8pt5 | 45/45 | ✅ 100% |
+| Journey Together | sv9 | 12/12 | ✅ 100% |
+| Destined Rivals | sv10 | 5/5 | ✅ 100% |
+| White Flare | rsv10pt5 | 173/173 | ✅ 100% |
+| Black Bolt | zsv10pt5 | 171/172 | ✅ 99% |
+| SV Promos | svp | 178/192 | ⚠️ 93% |
+
+**Total corrigé cette session** : 217 URLs slug → tcggo.com
 
 ### Fonctionnement
 - Le script filtre automatiquement `.is('cardmarket_url', null)`
@@ -897,31 +921,95 @@ Script automatisé pour corriger les URLs CardMarket de toutes les cartes en uti
 - Sauvegarde les URLs format `tcggo.com/external/cm/{id}?language=2` (FR)
 - **Fonction `addLanguageParam()`** : Ajoute automatiquement `?language=2` à toutes les URLs
 
-### Corrections manuelles (promos récentes non indexées)
-Certaines cartes promo récentes ne sont pas encore dans l'API RapidAPI/TCGGO. Elles doivent être corrigées manuellement avec des URLs directes CardMarket :
+### Promos SVP non indexées dans RapidAPI
+Certaines cartes promo récentes (SVP 166+) ne sont pas encore dans l'API RapidAPI/TCGGO :
+- svp-166 Teal Mask Ogerpon
+- svp-171 Glaceon
+- svp-174 Eevee ex
+- svp-181 N's Darmanitan
+- svp-182 Iono's Kilowattrel
+- svp-183 Lillie's Ribombee
+- svp-184 Hop's Snorlax
+- svp-186 Scraggy
+- svp-188 Scrafty
+- svp-189 N's Zorua
+- svp-203 Team Rocket's Wobbuffet
+- svp-206 Marnie's Morpeko
+- svp-207 Steven's Beldum
+- svp-87 Sprigatito ex
 
-| Carte | ID | URL correcte |
-|-------|----|----|
-| Wobbuffet | svp-203 | `https://www.cardmarket.com/fr/Pokemon/Products/Singles/SV-Black-Star-Promos/Team-Rockets-Wobbuffet-V1-SVP203?language=2` |
-| Eevee | svp-173 | `https://www.cardmarket.com/fr/Pokemon/Products/Singles/SV-Black-Star-Promos/Eevee-V1-SVP173?language=2` |
-| Magneton | svp-159 | `https://www.cardmarket.com/fr/Pokemon/Products/Singles/SV-Black-Star-Promos/Magneton-V1-SVP159?language=2` |
-
-**Commande de correction manuelle** :
-```javascript
-const { error } = await supabase
-  .from('discovered_cards')
-  .update({ cardmarket_url: 'URL_CORRECTE' })
-  .eq('id', 'CARD_ID');
-```
+Ces cartes garderont leurs URLs slug jusqu'à indexation dans l'API.
 
 ### Paramètre langue française
 Toutes les URLs incluent `?language=2` pour afficher CardMarket en français.
 
 **Mise à jour rétroactive (26/11/2025)** : 903 URLs existantes sans le paramètre ont été mises à jour.
 
-### Prochaine exécution
-Relancer la commande ci-dessus pour traiter les ~11400 cartes restantes (environ 4 exécutions nécessaires).
+---
+
+## 🎯 Améliorations Doublons (26/11/2025)
+
+### Sélection de Version pour Lots (v1.23.0)
+Amélioration de la sélection des cartes en double pour les lots.
+
+**Nouveau composant** : `DuplicateVersionSelectModal.jsx`
+
+**Fonctionnement** :
+- **Bouton "+"** : Ajoute la carte au lot en version "Normale" par défaut (quantité 1)
+- **Clic sur l'image** : Ouvre une modale pour choisir la version et la quantité
+- **Badge visuel** : Affiche la sélection actuelle sur la carte (ex: "2x N" pour 2 exemplaires Normale)
+
+**Modale de sélection** :
+- Affiche les détails de la carte (image, nom, extension, rareté, prix)
+- Liste uniquement les versions en double disponibles
+- Permet de choisir la quantité (max basé sur le nombre de doublons de cette version)
+- Bouton "Retirer du lot" si déjà sélectionné
+- Intègre les fonctionnalités de l'ancienne modale de détails
+
+### Suppression Individuelle de Doublons (v1.23.0)
+Lors de l'ajout de cartes déjà présentes dans un lot, possibilité de retirer individuellement les doublons.
+
+**Fonctionnement** :
+- Modale d'avertissement améliorée avec bouton croix rouge sur chaque doublon
+- Permet de retirer manuellement les cartes qu'on ne veut pas ajouter
+- Si tous les doublons sont retirés, ferme automatiquement la modale
+- Boutons existants conservés : "Non, annuler" et "Oui, ajouter quand même"
+
+### Tri et Dates des Extensions Corrigés (v1.23.0)
+Correction du tri des blocs et des dates d'extensions dans la page Doublons.
+
+**Problèmes résolus** :
+- White Flare dans "Autres" au lieu de "Scarlet & Violet"
+- Dates incorrectes (novembre 2025 au lieu de juillet 2025)
+- Mega Evolution pas en haut malgré sa date récente (septembre 2025)
+
+**Solutions** :
+1. **Regex simplifiée** : `^([^-]+)` pour extraire le préfixe avant le tiret
+2. **Mapping des préfixes** : Ajout de `rsv` et `zsv` pour Scarlet & Violet
+3. **Mapping des dates** : `EXTENSION_RELEASE_DATES` avec dates correctes
+
+**Préfixes d'extensions** :
+```javascript
+// Formats de card_id rencontrés
+'rsv10pt5-1'  // White Flare (format rsv)
+'zsv10pt5-1'  // Black Bolt (format zsv)
+'sv8pt5-1'    // Prismatic Evolutions
+'sv8-5'       // Surging Sparks
+'sv10-1'      // Destined Rivals
+'me1-96'      // Mega Evolution
+```
+
+**Dates corrigées** :
+| Extension | Préfixe | Date correcte |
+|-----------|---------|---------------|
+| Mega Evolution | me1, me2, mep | Septembre 2025 |
+| White Flare | rsv10pt5 | Juillet 2025 |
+| Black Bolt | zsv10pt5 | Juillet 2025 |
+| Destined Rivals | sv10 | Mai 2025 |
+| Journey Together | sv9 | Mars 2025 |
+| Prismatic Evolutions | sv8pt5 | Janvier 2025 |
+| Surging Sparks | sv8 | Novembre 2024 |
 
 ---
 
-**Dernière mise à jour** : 2025-11-26 (Ajout ?language=2 sur toutes les URLs + corrections manuelles promos)
+**Dernière mise à jour** : 2025-11-26 (Améliorations Doublons + Sélection de version + Tri corrigé)
