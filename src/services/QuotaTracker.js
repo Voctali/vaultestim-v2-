@@ -254,10 +254,11 @@ export class QuotaTracker {
 
   /**
    * Initialiser les données du quota (nouveau jour)
+   * Reset à 00h20 (RapidAPI reset réel ~00h19)
    */
   static initQuotaData() {
     const tomorrow = new Date()
-    tomorrow.setHours(24, 0, 0, 0) // Minuit demain
+    tomorrow.setHours(24, 20, 0, 0) // 00h20 demain (RapidAPI reset ~00h19)
 
     // Reset autoDisabled au nouveau jour
     this.autoDisabled = false
