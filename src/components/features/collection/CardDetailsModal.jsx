@@ -132,9 +132,8 @@ export function CardDetailsModal({ isOpen, onClose, card, allCardsOfSameType = [
       const cardToUpdate = group.cards.find(c => (c.quantity || 1) > 1) || group.cards[0]
 
       if ((cardToUpdate.quantity || 1) > 1) {
-        // Diminuer la quantité
+        // Diminuer la quantité - NE PAS passer ...cardToUpdate pour éviter d'écraser des champs
         updateCardInCollection(cardToUpdate.id, {
-          ...cardToUpdate,
           quantity: (cardToUpdate.quantity || 1) - 1
         })
       } else {

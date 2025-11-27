@@ -94,8 +94,9 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
 
     if (matchingCards.length > 0) {
       // Augmenter la quantité de la première carte trouvée
+      // NE PAS passer ...matchingCards[0] pour éviter d'écraser des champs enrichis (number, set, etc.)
       const newQuantity = (matchingCards[0].quantity || 1) + 1
-      updateCardInCollection(matchingCards[0].id, { ...matchingCards[0], quantity: newQuantity })
+      updateCardInCollection(matchingCards[0].id, { quantity: newQuantity })
       toast({
         title: 'Quantité augmentée',
         description: `${translateCardName(card.name)} (${normalizedVersion}, ${translateCondition(normalizedCondition)})`,
@@ -123,9 +124,10 @@ export function AddToCollectionModal({ isOpen, onClose, onSubmit, card }) {
       const currentQuantity = matchingCards[0].quantity || 1
 
       // Cas 1: quantity > 1 → diminuer la quantité
+      // NE PAS passer ...matchingCards[0] pour éviter d'écraser des champs enrichis
       if (currentQuantity > 1) {
         const newQuantity = currentQuantity - 1
-        updateCardInCollection(matchingCards[0].id, { ...matchingCards[0], quantity: newQuantity })
+        updateCardInCollection(matchingCards[0].id, { quantity: newQuantity })
         toast({
           title: 'Quantité diminuée',
           description: `${translateCardName(card.name)} (${normalizedVersion}, ${translateCondition(normalizedCondition)})`,

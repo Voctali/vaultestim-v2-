@@ -198,7 +198,7 @@ export class SupabaseService {
 
       const { data, error } = await supabase
         .from('discovered_cards')
-        .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, attacks, abilities, weaknesses, resistances, retreat_cost, _saved_at')
+        .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, cardmarket_url, attacks, abilities, weaknesses, resistances, retreat_cost, _saved_at')
         .gte('_saved_at', sinceTimestamp)
         .order('_saved_at', { ascending: true })
 
@@ -259,7 +259,7 @@ export class SupabaseService {
 
         const { data, error } = await supabase
           .from('discovered_cards')
-          .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, attacks, abilities, weaknesses, resistances, retreat_cost, has_cosmos_holo')
+          .select('id, name, name_fr, types, hp, number, artist, rarity, rarity_fr, images, set, set_id, _source, cardmarket, tcgplayer, cardmarket_url, attacks, abilities, weaknesses, resistances, retreat_cost, has_cosmos_holo')
           .range(rangeStart, rangeEnd)
           .order('id', { ascending: true }) // Important pour pagination stable
 

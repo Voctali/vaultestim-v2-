@@ -124,7 +124,9 @@
       "Bash(chmod:*)",
       "Bash(npx shadcn@latest add:*)",
       "Bash(exit 0)",
-      "Bash(Select-String \"SUPABASE\")"
+      "Bash(Select-String \"SUPABASE\")",
+      "Bash(F:LogicielsAppli Vaultestimvaultestim-v2pokemon-sets.json)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []

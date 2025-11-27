@@ -323,11 +323,24 @@ export function CollectionProvider({ children }) {
 
     // Cartes identiques multiples - utiliser card_id + version comme clé unique
     // Le card_id contient déjà l'extension (ex: me1-1, sv3pt5-34)
+    // Si card_id est manquant, utiliser name + set + number comme fallback
     collection.forEach(card => {
       const version = card.version || 'Normale'
-      const cardId = card.card_id || 'no-id'
+
+      // Construire une clé robuste
+      let cardKey
+      if (card.card_id) {
+        cardKey = card.card_id
+      } else {
+        // Fallback: construire une clé à partir de name + set + number
+        const setId = card.set?.id || card.extension || 'unknown'
+        const number = card.number || ''
+        const name = card.name || 'unknown'
+        cardKey = `${name.toLowerCase()}-${setId.toLowerCase()}-${number}`
+      }
+
       // Clé basée sur card_id + version (plus fiable que series/extension qui peuvent varier)
-      const key = `${cardId}-${version}`
+      const key = `${cardKey}-${version}`
       if (cardCounts[key]) {
         cardCounts[key].push(card)
       } else {
