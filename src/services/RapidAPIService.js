@@ -25,7 +25,10 @@ export class RapidAPIService {
 
   /**
    * Vérifier si le service est configuré et activé
-   * Prend en compte la préférence localStorage de l'utilisateur
+   * Prend en compte :
+   * - La préférence utilisateur (localStorage)
+   * - La configuration .env
+   * - Le flag autoDisabled de QuotaTracker (seuil de sécurité)
    */
   static isAvailable() {
     // Vérifier d'abord la préférence utilisateur dans localStorage
@@ -44,6 +47,12 @@ export class RapidAPIService {
 
     if (!this.API_KEY || this.API_KEY === 'YOUR_RAPIDAPI_KEY_HERE') {
       console.warn('⚠️ RapidAPI: Clé API manquante ou invalide')
+      return false
+    }
+
+    // Vérifier si QuotaTracker a désactivé automatiquement RapidAPI
+    if (QuotaTracker.isAutoDisabled()) {
+      console.log('🔒 RapidAPI désactivé automatiquement (seuil de sécurité atteint)')
       return false
     }
 

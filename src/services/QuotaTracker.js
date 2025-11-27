@@ -3,21 +3,139 @@
  *
  * Fonctionnalités :
  * - Compteur de requêtes quotidiennes avec reset automatique à minuit
- * - Alertes avant épuisement du quota (à 90%)
+ * - Plan configurable : Basic (100 req) ou Pro (3000 req)
+ * - Seuil de sécurité configurable (défaut 98%)
+ * - Désactivation automatique de RapidAPI quand seuil atteint
+ * - Fallback automatique vers Pokemon TCG API
  * - Sauvegarde dans Supabase (persistant) + localStorage (cache)
- * - Support multi-plans (Free: 100, Pro: 2500, Ultra: 15000, Mega: 50000)
  */
 
 import { supabase } from '@/lib/supabaseClient'
 
+// Constantes de configuration
+const PLANS = {
+  basic: { name: 'Basic (Gratuit)', limit: 100 },
+  pro: { name: 'Pro (Payant)', limit: 3000 }
+}
+
+const DEFAULT_PLAN = 'basic'
+const DEFAULT_SAFETY_THRESHOLD = 98 // Pourcentage
+
 export class QuotaTracker {
   static STORAGE_KEY = 'rapidapi_quota'
   static SUPABASE_KEY = 'rapidapi_quota_tracker'
-  static DAILY_LIMIT = parseInt(import.meta.env.VITE_RAPIDAPI_DAILY_QUOTA || '100')
-  static WARNING_THRESHOLD = 0.9 // Alerte à 90%
-  static BLOCK_THRESHOLD = 0.99 // Bloquer à 99%
+  static SETTINGS_KEY = 'rapidapi_quota_settings'
   static requestLock = false // Verrou pour empêcher requêtes simultanées
   static supabaseLoaded = false // Flag pour savoir si on a chargé depuis Supabase
+  static autoDisabled = false // Flag pour désactivation automatique
+
+  /**
+   * Obtenir les paramètres du quota (plan + seuil de sécurité)
+   */
+  static getSettings() {
+    try {
+      const stored = localStorage.getItem(this.SETTINGS_KEY)
+      if (stored) {
+        return JSON.parse(stored)
+      }
+    } catch (error) {
+      console.error('❌ QuotaTracker: Erreur lecture settings:', error)
+    }
+    return {
+      plan: DEFAULT_PLAN,
+      safetyThreshold: DEFAULT_SAFETY_THRESHOLD
+    }
+  }
+
+  /**
+   * Sauvegarder les paramètres du quota
+   */
+  static saveSettings(settings) {
+    try {
+      localStorage.setItem(this.SETTINGS_KEY, JSON.stringify(settings))
+      // Sauvegarder aussi dans Supabase (fire-and-forget)
+      this.saveSettingsToSupabase(settings)
+      console.log(`⚙️ QuotaTracker: Settings sauvegardés - Plan: ${settings.plan}, Seuil: ${settings.safetyThreshold}%`)
+    } catch (error) {
+      console.error('❌ QuotaTracker: Erreur sauvegarde settings:', error)
+    }
+  }
+
+  /**
+   * Sauvegarder les settings dans Supabase
+   */
+  static async saveSettingsToSupabase(settings) {
+    try {
+      await supabase
+        .from('admin_preferences')
+        .upsert({
+          preference_key: this.SETTINGS_KEY,
+          preference_value: settings
+        }, { onConflict: 'preference_key' })
+    } catch (error) {
+      console.warn('⚠️ QuotaTracker: Erreur sauvegarde settings Supabase:', error)
+    }
+  }
+
+  /**
+   * Obtenir la limite quotidienne selon le plan sélectionné
+   */
+  static getDailyLimit() {
+    const settings = this.getSettings()
+    return PLANS[settings.plan]?.limit || PLANS[DEFAULT_PLAN].limit
+  }
+
+  /**
+   * Obtenir le seuil de blocage (pourcentage)
+   */
+  static getBlockThreshold() {
+    const settings = this.getSettings()
+    return (settings.safetyThreshold || DEFAULT_SAFETY_THRESHOLD) / 100
+  }
+
+  /**
+   * Obtenir le seuil d'alerte (10% avant le seuil de blocage)
+   */
+  static getWarningThreshold() {
+    return Math.max(0, this.getBlockThreshold() - 0.10)
+  }
+
+  /**
+   * Obtenir les infos du plan actuel
+   */
+  static getPlanInfo() {
+    const settings = this.getSettings()
+    return {
+      ...PLANS[settings.plan],
+      id: settings.plan,
+      safetyThreshold: settings.safetyThreshold
+    }
+  }
+
+  /**
+   * Obtenir tous les plans disponibles
+   */
+  static getAvailablePlans() {
+    return Object.entries(PLANS).map(([id, plan]) => ({
+      id,
+      ...plan
+    }))
+  }
+
+  /**
+   * Vérifier si RapidAPI a été automatiquement désactivé
+   */
+  static isAutoDisabled() {
+    return this.autoDisabled
+  }
+
+  /**
+   * Réactiver RapidAPI (reset du flag autoDisabled)
+   */
+  static reEnable() {
+    this.autoDisabled = false
+    console.log('🔄 QuotaTracker: RapidAPI réactivé')
+  }
 
   /**
    * Obtenir le nombre de requêtes en cours depuis localStorage
@@ -141,9 +259,12 @@ export class QuotaTracker {
     const tomorrow = new Date()
     tomorrow.setHours(24, 0, 0, 0) // Minuit demain
 
+    // Reset autoDisabled au nouveau jour
+    this.autoDisabled = false
+
     const data = {
       used: 0,
-      limit: this.DAILY_LIMIT,
+      limit: this.getDailyLimit(),
       resetAt: tomorrow.getTime(),
       lastUpdated: Date.now(),
       pendingRequests: 0 // Réinitialiser les requêtes en cours
@@ -176,9 +297,24 @@ export class QuotaTracker {
   /**
    * Vérifier si on peut faire une requête
    *
-   * @returns {Object} { allowed: boolean, remaining: number, message: string }
+   * @returns {Object} { allowed: boolean, remaining: number, message: string, autoDisabled: boolean }
    */
   static canMakeRequest() {
+    // Si déjà auto-désactivé, refuser immédiatement
+    if (this.autoDisabled) {
+      const data = this.getQuotaData()
+      const resetDate = new Date(data.resetAt)
+      return {
+        allowed: false,
+        remaining: data.limit - data.used,
+        used: data.used,
+        limit: data.limit,
+        percentUsed: Math.round((data.used / data.limit) * 100),
+        autoDisabled: true,
+        message: `🔒 RapidAPI désactivé automatiquement (seuil de sécurité atteint). Fallback sur Pokemon TCG API. Reset à ${resetDate.toLocaleTimeString('fr-FR')}`
+      }
+    }
+
     const data = this.getQuotaData()
     // Prendre en compte les requêtes en cours pour calculer le remaining réel
     const pendingCount = data.pendingRequests || 0
@@ -186,35 +322,49 @@ export class QuotaTracker {
     const remaining = data.limit - effectiveUsed
     const percentUsed = effectiveUsed / data.limit
 
-    // BLOCAGE AUTOMATIQUE À 99%
-    if (percentUsed >= this.BLOCK_THRESHOLD) {
+    // Obtenir les seuils dynamiques
+    const blockThreshold = this.getBlockThreshold()
+    const warningThreshold = this.getWarningThreshold()
+    const settings = this.getSettings()
+
+    // BLOCAGE AUTOMATIQUE AU SEUIL DE SÉCURITÉ
+    if (percentUsed >= blockThreshold) {
       const resetDate = new Date(data.resetAt)
-      console.error(`🚫 QuotaTracker: QUOTA BLOQUÉ à ${Math.round(percentUsed * 100)}% (${effectiveUsed}/${data.limit})`)
+
+      // Activer le flag autoDisabled
+      this.autoDisabled = true
+
+      console.error(`🔒 QuotaTracker: QUOTA BLOQUÉ à ${Math.round(percentUsed * 100)}% (seuil: ${settings.safetyThreshold}%)`)
+      console.log(`🔄 QuotaTracker: Fallback automatique vers Pokemon TCG API activé`)
+
       return {
         allowed: false,
         remaining,
         used: effectiveUsed,
         limit: data.limit,
         percentUsed: Math.round(percentUsed * 100),
-        message: `🚫 QUOTA BLOQUÉ : ${Math.round(percentUsed * 100)}% utilisé (${effectiveUsed}/${data.limit}). Requêtes bloquées pour éviter dépassement. Reset à ${resetDate.toLocaleTimeString('fr-FR')}`
+        autoDisabled: true,
+        message: `🔒 Seuil de sécurité (${settings.safetyThreshold}%) atteint (${effectiveUsed}/${data.limit}). Fallback automatique sur Pokemon TCG API. Reset à ${resetDate.toLocaleTimeString('fr-FR')}`
       }
     }
 
     if (effectiveUsed >= data.limit) {
       const resetDate = new Date(data.resetAt)
+      this.autoDisabled = true
       return {
         allowed: false,
         remaining: 0,
         used: effectiveUsed,
         limit: data.limit,
         percentUsed: 100,
-        message: `Quota quotidien épuisé (${effectiveUsed}/${data.limit}). Reset à ${resetDate.toLocaleTimeString('fr-FR')}`
+        autoDisabled: true,
+        message: `Quota quotidien épuisé (${effectiveUsed}/${data.limit}). Fallback sur Pokemon TCG API. Reset à ${resetDate.toLocaleTimeString('fr-FR')}`
       }
     }
 
     // Alerte si proche de la limite
-    if (percentUsed >= this.WARNING_THRESHOLD && percentUsed < 1) {
-      console.warn(`⚠️ QuotaTracker: ${Math.round(percentUsed * 100)}% du quota utilisé (${effectiveUsed}/${data.limit})`)
+    if (percentUsed >= warningThreshold && percentUsed < blockThreshold) {
+      console.warn(`⚠️ QuotaTracker: ${Math.round(percentUsed * 100)}% du quota utilisé (${effectiveUsed}/${data.limit}) - Blocage à ${settings.safetyThreshold}%`)
     }
 
     return {
@@ -223,6 +373,7 @@ export class QuotaTracker {
       used: effectiveUsed,
       limit: data.limit,
       percentUsed: Math.round(percentUsed * 100),
+      autoDisabled: false,
       message: `${remaining} requêtes restantes sur ${data.limit}`
     }
   }
@@ -300,6 +451,11 @@ export class QuotaTracker {
    */
   static getStats() {
     const data = this.getQuotaData()
+    const settings = this.getSettings()
+    const planInfo = this.getPlanInfo()
+    const blockThreshold = this.getBlockThreshold()
+    const warningThreshold = this.getWarningThreshold()
+
     const percentUsed = Math.round((data.used / data.limit) * 100)
     const resetDate = new Date(data.resetAt)
     const hoursUntilReset = Math.ceil((data.resetAt - Date.now()) / (1000 * 60 * 60))
@@ -311,8 +467,14 @@ export class QuotaTracker {
       percentUsed,
       resetAt: resetDate,
       hoursUntilReset,
-      isNearLimit: percentUsed >= this.WARNING_THRESHOLD * 100,
-      isExhausted: data.used >= data.limit
+      isNearLimit: percentUsed >= warningThreshold * 100,
+      isExhausted: data.used >= data.limit,
+      // Nouvelles infos
+      autoDisabled: this.autoDisabled,
+      safetyThreshold: settings.safetyThreshold,
+      blockThreshold: Math.round(blockThreshold * 100),
+      warningThreshold: Math.round(warningThreshold * 100),
+      plan: planInfo
     }
   }
 
@@ -322,7 +484,28 @@ export class QuotaTracker {
   static forceReset() {
     console.log('🔄 QuotaTracker: Reset forcé du quota')
     localStorage.removeItem(this.STORAGE_KEY)
+    this.autoDisabled = false
     return this.initQuotaData()
+  }
+
+  /**
+   * Mettre à jour la limite quand le plan change
+   */
+  static updateLimit() {
+    const data = this.getQuotaData()
+    const newLimit = this.getDailyLimit()
+
+    if (data.limit !== newLimit) {
+      data.limit = newLimit
+      this.saveQuotaData(data)
+      console.log(`📊 QuotaTracker: Limite mise à jour - ${newLimit} requêtes/jour`)
+
+      // Si on passe à un plan avec plus de quota, réactiver si nécessaire
+      if (data.used < newLimit * this.getBlockThreshold()) {
+        this.autoDisabled = false
+        console.log('✅ QuotaTracker: RapidAPI réactivé (nouveau quota suffisant)')
+      }
+    }
   }
 
   /**

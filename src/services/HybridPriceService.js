@@ -52,14 +52,18 @@ export class HybridPriceService {
 
     // 1. Vérifier si RapidAPI est disponible et activé
     if (!RapidAPIService.isAvailable()) {
-      console.log('⏭️ RapidAPI désactivé → Fallback Pokemon TCG API')
+      const reason = QuotaTracker.isAutoDisabled()
+        ? '🔒 RapidAPI désactivé (seuil de sécurité atteint)'
+        : '⏭️ RapidAPI désactivé'
+      console.log(`${reason} → Fallback Pokemon TCG API`)
       return this.fallbackToPokemonTCGAPI(searchTerm, limit)
     }
 
     // 2. Réserver une requête dans le quota AVANT l'appel HTTP
     const reserved = QuotaTracker.reserveRequest()
     if (!reserved) {
-      console.log(`⏭️ Quota épuisé ou limite atteinte → Fallback Pokemon TCG API`)
+      const stats = QuotaTracker.getStats()
+      console.log(`🔒 Seuil de sécurité (${stats.safetyThreshold}%) atteint → Fallback Pokemon TCG API`)
       return this.fallbackToPokemonTCGAPI(searchTerm, limit)
     }
 
@@ -303,14 +307,18 @@ export class HybridPriceService {
 
     // 1. Vérifier si RapidAPI est disponible et activé
     if (!RapidAPIService.isAvailable()) {
-      console.log('⏭️ RapidAPI désactivé → Fallback Supabase CardMarket')
+      const reason = QuotaTracker.isAutoDisabled()
+        ? '🔒 RapidAPI désactivé (seuil de sécurité atteint)'
+        : '⏭️ RapidAPI désactivé'
+      console.log(`${reason} → Fallback Supabase CardMarket`)
       return this.fallbackToSupabaseProducts(searchTerm, limit)
     }
 
     // 2. Réserver une requête dans le quota AVANT l'appel HTTP
     const reserved = QuotaTracker.reserveRequest()
     if (!reserved) {
-      console.log(`⏭️ Quota épuisé ou limite atteinte → Fallback Supabase CardMarket`)
+      const stats = QuotaTracker.getStats()
+      console.log(`🔒 Seuil de sécurité (${stats.safetyThreshold}%) atteint → Fallback Supabase CardMarket`)
       return this.fallbackToSupabaseProducts(searchTerm, limit)
     }
 
@@ -352,14 +360,18 @@ export class HybridPriceService {
 
     // 1. Vérifier si RapidAPI est disponible et activé
     if (!RapidAPIService.isAvailable()) {
-      console.log('⏭️ RapidAPI désactivé → Fallback Supabase CardMarket')
+      const reason = QuotaTracker.isAutoDisabled()
+        ? '🔒 RapidAPI désactivé (seuil de sécurité atteint)'
+        : '⏭️ RapidAPI désactivé'
+      console.log(`${reason} → Fallback Supabase CardMarket`)
       return this.fallbackToSupabaseProductById(productId)
     }
 
     // 2. Réserver une requête dans le quota AVANT l'appel HTTP
     const reserved = QuotaTracker.reserveRequest()
     if (!reserved) {
-      console.log(`⏭️ Quota épuisé → Fallback Supabase CardMarket`)
+      const stats = QuotaTracker.getStats()
+      console.log(`🔒 Seuil de sécurité (${stats.safetyThreshold}%) atteint → Fallback Supabase CardMarket`)
       return this.fallbackToSupabaseProductById(productId)
     }
 
