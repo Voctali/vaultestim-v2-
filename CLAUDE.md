@@ -54,7 +54,7 @@ src/
 | `CardCacheService` | Cache IndexedDB avec reconnexion auto |
 | `HybridPriceService` | RapidAPI → fallback Pokemon TCG API |
 | `RapidAPIService` | Prix EUR CardMarket + cartes gradées |
-| `QuotaTracker` | Gestion quota RapidAPI (100 req/jour) |
+| `QuotaTracker` | Gestion quota RapidAPI (plans Basic/Pro, seuil sécurité, reset 00h20) |
 | `CardMarketUrlFixService` | Correction URLs CardMarket |
 | `PriceRefreshService` | Actualisation prix (1500 cartes/jour) |
 
@@ -148,6 +148,18 @@ node fix-cardmarket-urls-batch.cjs  # 3000 req/exécution
 
 ## 🎯 Fonctionnalités Récentes
 
+### v1.26.0 (27/11/2025)
+- **Gestion quota RapidAPI automatique** : Nouveau système complet
+  - Plans configurables : Basic (100 req) ou Pro (3000 req)
+  - Seuil de sécurité configurable (défaut 98%)
+  - Désactivation automatique quand seuil atteint → fallback Pokemon TCG API
+  - Reset à 00h20 (sync avec RapidAPI ~00h19)
+- **RapidAPIQuotaSettings** : Interface Admin → Système
+  - Sélection source prix (RapidAPI vs Pokemon TCG API)
+  - Sélection plan + slider seuil sécurité
+  - Stats quota temps réel avec barre progression
+  - Boutons: Synchroniser, Réactiver, Reset debug
+
 ### v1.24.3 (27/11/2025)
 - **CardMarketDebugPanel** : Refonte complète avec sélecteurs bloc/extension
 - **Fix écrasement champs** : `updateCardInCollection()` ne passe plus `...card`
@@ -186,4 +198,4 @@ node fix-cardmarket-urls-batch.cjs  # 3000 req/exécution
 
 ---
 
-**Dernière mise à jour** : 2025-11-27 (v1.24.3)
+**Dernière mise à jour** : 2025-11-27 (v1.26.0)
