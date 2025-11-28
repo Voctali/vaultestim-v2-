@@ -593,7 +593,7 @@ export class QuotaTracker {
 
   /**
    * Synchroniser avec RapidAPI en faisant un appel test léger
-   * Utilise l'endpoint /pokemon/expansions (rapide et peu coûteux)
+   * Utilise l'endpoint /pokemon/cards/search avec limit=1 (consomme 1 requête)
    *
    * @returns {Promise<Object>} Résultat de la synchronisation
    */
@@ -608,9 +608,10 @@ export class QuotaTracker {
         throw new Error('Clé API RapidAPI manquante')
       }
 
-      // Faire un appel test léger (liste des extensions, limit=1)
+      // Faire un appel test léger (recherche 1 carte)
+      // Note: consomme 1 requête du quota
       const response = await fetch(
-        `https://${API_HOST}/pokemon/expansions?limit=1`,
+        `https://${API_HOST}/pokemon/cards/search?q=pikachu&limit=1`,
         {
           headers: {
             'X-RapidAPI-Key': API_KEY,
