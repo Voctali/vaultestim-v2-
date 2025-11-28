@@ -127,8 +127,12 @@ export function CardMarketDebugPanel() {
     loading: true
   })
 
-  // Mode de correction : 'missing' (sans URL) ou 'invalid' (URLs invalides)
+  // Mode de correction : 'missing' (sans URL), 'invalid' (URLs invalides) ou 'broken' (URLs cassées/404)
   const [correctionMode, setCorrectionMode] = useState('missing')
+
+  // État pour la vérification des URLs cassées
+  const [brokenUrlsCount, setBrokenUrlsCount] = useState(null)
+  const [isCheckingBroken, setIsCheckingBroken] = useState(false)
 
   // Helper pour vérifier si une URL est valide (format tcggo.com ou CardMarket avec ID carte)
   // URLs invalides : se terminent par le nom de l'extension sans ID de carte
@@ -246,7 +250,132 @@ export function CardMarketDebugPanel() {
   // Reset extension quand le bloc change
   useEffect(() => {
     setSelectedExtension('all')
+    setBrokenUrlsCount(null) // Reset le compteur d'URLs cassées
   }, [selectedBlock])
+
+  // Reset le compteur d'URLs cassées quand l'extension change
+  useEffect(() => {
+    setBrokenUrlsCount(null)
+  }, [selectedExtension])
+
+  // Fonction pour vérifier les URLs cassées via RapidAPI
+  const checkBrokenUrls = useCallback(async () => {
+    if (isCheckingBroken || isRunning) return
+
+    // Vérifier RapidAPI disponible
+    if (!RapidAPIService.isAvailable()) {
+      alert('RapidAPI non disponible. Activez-le dans .env avec VITE_USE_RAPIDAPI=true')
+      return
+    }
+
+    setIsCheckingBroken(true)
+    setBrokenUrlsCount(null)
+
+    try {
+      // Construire la liste des IDs d'extensions à filtrer
+      let extensionIds = null
+      if (selectedExtension !== 'all') {
+        extensionIds = getExtensionIds(selectedExtension)
+      } else if (selectedBlock !== 'all') {
+        const block = blocks.find(b => b.id === selectedBlock)
+        if (block && block.extensions.length > 0) {
+          extensionIds = block.extensions.flatMap(ext => getExtensionIds(ext.id))
+        }
+      }
+
+      // Charger les cartes avec URL valide (format tcggo.com)
+      let query = supabase
+        .from('discovered_cards')
+        .select('id, name, number, set, cardmarket_url')
+        .like('cardmarket_url', '%tcggo.com/external/cm/%')
+        .order('id', { ascending: true })
+        .limit(50) // Limiter pour économiser le quota
+
+      if (extensionIds) {
+        query = query.in('set_id', extensionIds)
+      }
+
+      const { data: cardsWithUrl, error } = await query
+      if (error) throw error
+
+      if (!cardsWithUrl || cardsWithUrl.length === 0) {
+        setBrokenUrlsCount(0)
+        setIsCheckingBroken(false)
+        return
+      }
+
+      console.log(`🔍 Vérification de ${cardsWithUrl.length} URLs...`)
+
+      let brokenCount = 0
+      const sampleSize = Math.min(cardsWithUrl.length, 20) // Vérifier max 20 cartes
+
+      for (let i = 0; i < sampleSize; i++) {
+        const card = cardsWithUrl[i]
+
+        // Vérifier le quota
+        const quotaCheck = QuotaTracker.canMakeRequest()
+        if (!quotaCheck.allowed) {
+          console.warn('⚠️ Quota atteint pendant la vérification')
+          break
+        }
+
+        try {
+          // Extraire l'ID CardMarket de l'URL tcggo
+          const currentId = card.cardmarket_url.match(/\/cm\/(\d+)/)?.[1]
+
+          // Rechercher la carte via RapidAPI pour obtenir l'URL actuelle
+          const searchTerm = `${card.name} ${card.number || ''}`.trim()
+          const result = await RapidAPIService.searchCards(searchTerm, { limit: 1 })
+          QuotaTracker.incrementUsage()
+
+          if (result.data && result.data.length > 0) {
+            const apiCard = result.data[0]
+            const newUrl = apiCard.links?.cardmarket
+
+            if (newUrl) {
+              // Extraire le nouvel ID
+              const newId = newUrl.match(/\/cm\/(\d+)/)?.[1] ||
+                           newUrl.match(/cardmarket\.com.*\/([^/?]+)$/)?.[1]
+
+              // Si l'ID est différent ou si l'ancien ID n'existe plus dans la nouvelle URL
+              if (currentId && newId && currentId !== newId) {
+                brokenCount++
+                console.log(`❌ URL cassée: ${card.name} (ancien: ${currentId}, nouveau: ${newId})`)
+              }
+            } else {
+              // Pas de lien CardMarket dans l'API = carte supprimée ?
+              brokenCount++
+              console.log(`❌ URL cassée: ${card.name} (carte non trouvée dans l'API)`)
+            }
+          } else {
+            brokenCount++
+            console.log(`❌ URL cassée: ${card.name} (aucun résultat API)`)
+          }
+
+          // Pause entre requêtes
+          await new Promise(resolve => setTimeout(resolve, 200))
+
+        } catch (err) {
+          console.error(`Erreur vérification ${card.name}:`, err.message)
+        }
+      }
+
+      // Extrapoler le nombre total d'URLs cassées basé sur l'échantillon
+      const brokenRatio = brokenCount / sampleSize
+      const estimatedTotal = Math.round(cardsWithUrl.length * brokenRatio)
+
+      setBrokenUrlsCount(estimatedTotal)
+      setQuotaStats(QuotaTracker.getStats())
+
+      console.log(`✅ Vérification terminée: ~${estimatedTotal} URLs cassées estimées (${brokenCount}/${sampleSize} dans l'échantillon)`)
+
+    } catch (err) {
+      console.error('❌ Erreur vérification URLs:', err)
+      setBrokenUrlsCount(0)
+    } finally {
+      setIsCheckingBroken(false)
+    }
+  }, [isCheckingBroken, isRunning, selectedBlock, selectedExtension, blocks, getExtensionIds])
 
   // Fonction de correction ciblée
   const startCorrection = useCallback(async () => {
@@ -302,7 +431,7 @@ export function CardMarketDebugPanel() {
         if (error) throw error
         cardsToFix = data || []
 
-      } else {
+      } else if (correctionMode === 'invalid') {
         // Mode "URLs invalides" : charger les cartes avec URL puis filtrer côté client
         let query = supabase
           .from('discovered_cards')
@@ -320,6 +449,24 @@ export function CardMarketDebugPanel() {
         // Filtrer les URLs invalides côté client
         const invalidCards = (data || []).filter(card => !isValidCardMarketUrl(card.cardmarket_url))
         cardsToFix = invalidCards.slice(0, maxCards)
+
+      } else if (correctionMode === 'broken') {
+        // Mode "URLs cassées" : charger les cartes avec URL tcggo.com et vérifier via RapidAPI
+        let query = supabase
+          .from('discovered_cards')
+          .select('id, name, number, set, cardmarket_url')
+          .like('cardmarket_url', '%tcggo.com/external/cm/%')
+          .order('id', { ascending: true })
+
+        if (extensionIds) {
+          query = query.in('set_id', extensionIds)
+        }
+
+        const { data, error } = await query
+        if (error) throw error
+
+        // On prend toutes les cartes avec URL tcggo.com, on vérifiera une par une
+        cardsToFix = (data || []).slice(0, maxCards)
       }
 
       if (!cardsToFix || cardsToFix.length === 0) {
@@ -330,7 +477,9 @@ export function CardMarketDebugPanel() {
           total: 0,
           message: correctionMode === 'missing'
             ? 'Aucune carte sans URL dans cette sélection'
-            : 'Aucune carte avec URL invalide dans cette sélection'
+            : correctionMode === 'invalid'
+              ? 'Aucune carte avec URL invalide dans cette sélection'
+              : 'Aucune carte avec URL tcggo.com dans cette sélection'
         })
         setIsRunning(false)
         return
@@ -363,6 +512,9 @@ export function CardMarketDebugPanel() {
           const searchTerm = `${card.name} ${card.number || ''}`.trim()
           const result = await RapidAPIService.searchCards(searchTerm, { limit: 1 })
 
+          // Incrémenter le quota immédiatement après la requête
+          QuotaTracker.incrementUsage()
+
           if (result.data && result.data.length > 0) {
             const apiCard = result.data[0]
             let cardmarketUrl = apiCard.links?.cardmarket
@@ -370,6 +522,20 @@ export function CardMarketDebugPanel() {
             if (cardmarketUrl) {
               // Ajouter le paramètre language=2 (français)
               cardmarketUrl = CardMarketUrlFixService.addLanguageParam(cardmarketUrl)
+
+              // En mode 'broken', vérifier si l'URL a changé
+              if (correctionMode === 'broken') {
+                const currentId = card.cardmarket_url?.match(/\/cm\/(\d+)/)?.[1]
+                const newId = cardmarketUrl.match(/\/cm\/(\d+)/)?.[1]
+
+                if (currentId === newId) {
+                  // L'URL est identique, pas besoin de mettre à jour
+                  skipped++
+                  console.log(`⏭️ [${i + 1}/${cardsToFix.length}] ${card.name}: URL identique (ID: ${currentId})`)
+                  continue
+                }
+                console.log(`🔄 [${i + 1}/${cardsToFix.length}] ${card.name}: ID changé ${currentId} → ${newId}`)
+              }
 
               // Mettre à jour dans Supabase
               const { error: updateError } = await supabase
@@ -389,9 +555,6 @@ export function CardMarketDebugPanel() {
             skipped++
             console.log(`⏭️ [${i + 1}/${cardsToFix.length}] ${card.name}: Aucun résultat`)
           }
-
-          // Incrémenter le quota
-          QuotaTracker.incrementUsage()
 
         } catch (err) {
           errors++
@@ -636,7 +799,7 @@ export function CardMarketDebugPanel() {
         {/* Mode de correction */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Mode de correction</label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant={correctionMode === 'missing' ? 'default' : 'outline'}
               size="sm"
@@ -657,27 +820,83 @@ export function CardMarketDebugPanel() {
               <XCircle className="w-4 h-4 mr-1" />
               URLs invalides ({selectionStats.invalidUrl})
             </Button>
+            <Button
+              variant={correctionMode === 'broken' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setCorrectionMode('broken')}
+              disabled={isRunning}
+              className={correctionMode === 'broken' ? 'bg-red-500 hover:bg-red-600' : ''}
+            >
+              <XCircle className="w-4 h-4 mr-1" />
+              URLs cassées (404)
+              {brokenUrlsCount !== null && ` (~${brokenUrlsCount})`}
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground">
             {correctionMode === 'missing'
               ? 'Corrige les cartes sans aucun lien CardMarket'
-              : 'Re-corrige les cartes avec des liens invalides (ancien format slug)'}
+              : correctionMode === 'invalid'
+                ? 'Re-corrige les cartes avec des liens invalides (ancien format slug)'
+                : 'Vérifie et corrige les URLs tcggo.com dont l\'ID CardMarket a changé'}
           </p>
+          {correctionMode === 'broken' && (
+            <div className="flex items-center gap-2 mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={checkBrokenUrls}
+                disabled={isCheckingBroken || isRunning || selectionStats.validUrl === 0}
+              >
+                {isCheckingBroken ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                    Vérification...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4 mr-1" />
+                    Estimer URLs cassées
+                  </>
+                )}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                (Consomme ~20 requêtes pour échantillonner)
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Estimation */}
-        {!selectionStats.loading && ((correctionMode === 'missing' && selectionStats.withoutUrl > 0) || (correctionMode === 'invalid' && selectionStats.invalidUrl > 0)) && !isRunning && (
+        {!selectionStats.loading && (
+          (correctionMode === 'missing' && selectionStats.withoutUrl > 0) ||
+          (correctionMode === 'invalid' && selectionStats.invalidUrl > 0) ||
+          (correctionMode === 'broken' && selectionStats.validUrl > 0)
+        ) && !isRunning && (
           <div className="p-3 bg-muted/50 rounded-lg text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <AlertCircle className="w-4 h-4" />
               <span>
-                <strong>{Math.min(correctionMode === 'missing' ? selectionStats.withoutUrl : selectionStats.invalidUrl, maxCards)}</strong> cartes seront corrigées
-                (consommera <strong>{Math.min(correctionMode === 'missing' ? selectionStats.withoutUrl : selectionStats.invalidUrl, maxCards)}</strong> requêtes RapidAPI)
+                {correctionMode === 'broken' ? (
+                  <>
+                    <strong>{Math.min(selectionStats.validUrl, maxCards)}</strong> URLs seront vérifiées
+                    (consommera <strong>{Math.min(selectionStats.validUrl, maxCards)}</strong> requêtes RapidAPI)
+                  </>
+                ) : (
+                  <>
+                    <strong>{Math.min(correctionMode === 'missing' ? selectionStats.withoutUrl : selectionStats.invalidUrl, maxCards)}</strong> cartes seront corrigées
+                    (consommera <strong>{Math.min(correctionMode === 'missing' ? selectionStats.withoutUrl : selectionStats.invalidUrl, maxCards)}</strong> requêtes RapidAPI)
+                  </>
+                )}
               </span>
             </div>
-            {(correctionMode === 'missing' ? selectionStats.withoutUrl : selectionStats.invalidUrl) > maxCards && (
+            {correctionMode !== 'broken' && (correctionMode === 'missing' ? selectionStats.withoutUrl : selectionStats.invalidUrl) > maxCards && (
               <div className="mt-1 text-xs text-orange-500">
                 ⚠️ {(correctionMode === 'missing' ? selectionStats.withoutUrl : selectionStats.invalidUrl) - maxCards} cartes supplémentaires resteront à corriger
+              </div>
+            )}
+            {correctionMode === 'broken' && (
+              <div className="mt-1 text-xs text-blue-400">
+                ℹ️ Seules les URLs dont l'ID CardMarket a changé seront mises à jour
               </div>
             )}
           </div>
@@ -688,13 +907,27 @@ export function CardMarketDebugPanel() {
           {!isRunning ? (
             <Button
               onClick={startCorrection}
-              disabled={selectionStats.loading || (correctionMode === 'missing' ? selectionStats.withoutUrl : selectionStats.invalidUrl) === 0 || (quotaStats && quotaStats.remaining === 0)}
-              className={`flex-1 ${correctionMode === 'missing' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-yellow-600 hover:bg-yellow-700'}`}
+              disabled={
+                selectionStats.loading ||
+                (correctionMode === 'missing' && selectionStats.withoutUrl === 0) ||
+                (correctionMode === 'invalid' && selectionStats.invalidUrl === 0) ||
+                (correctionMode === 'broken' && selectionStats.validUrl === 0) ||
+                (quotaStats && quotaStats.remaining === 0)
+              }
+              className={`flex-1 ${
+                correctionMode === 'missing'
+                  ? 'bg-orange-600 hover:bg-orange-700'
+                  : correctionMode === 'invalid'
+                    ? 'bg-yellow-600 hover:bg-yellow-700'
+                    : 'bg-red-600 hover:bg-red-700'
+              }`}
             >
               <Play className="w-4 h-4 mr-2" />
               {correctionMode === 'missing'
                 ? `Corriger les cartes sans URL (${Math.min(selectionStats.withoutUrl, maxCards)})`
-                : `Re-corriger les URLs invalides (${Math.min(selectionStats.invalidUrl, maxCards)})`}
+                : correctionMode === 'invalid'
+                  ? `Re-corriger les URLs invalides (${Math.min(selectionStats.invalidUrl, maxCards)})`
+                  : `Vérifier et corriger les URLs cassées (${Math.min(selectionStats.validUrl, maxCards)})`}
             </Button>
           ) : (
             <Button
