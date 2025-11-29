@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Vérifier Dates Collection</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    pre {
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    button {
+      background: #d4af37;
+      color: #000;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Vérifier Dates des Cartes en Collection</h1>
+  <button onclick="checkDates()">Vérifier les dates White Flare et Black Bolt</button>
+
+  <div id="result"></div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAwMDIsImV4cCI6MjA3NTUxNjAwMn0.7d0303MNw__AVC9wkS7BodK2WG8Rvb2IY2V-0wv0l7Q'
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const resultDiv = document.getElementById('result')
+
+    function display(data) {
+      resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>'
+    }
+
+    window.checkDates = async () => {
+      // Récupérer l'utilisateur courant
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        display({ error: 'Non connecté' })
+        return
+      }
+
+      // Récupérer les cartes de la collection de l'utilisateur
+      const { data: collection, error } = await supabase
+        .from('user_cards')
+        .select('id, name, number, set, extension')
+        .eq('user_id', user.id)
+
+      if (error) {
+        display({ error: error.message })
+        return
+      }
+
+      // Filtrer White Flare et Black Bolt
+      const whiteFlare = collection.filter(c =>
+        c.set?.name?.toLowerCase().includes('white flare') ||
+        c.extension?.toLowerCase().includes('white flare')
+      )
+
+      const blackBolt = collection.filter(c =>
+        c.set?.name?.toLowerCase().includes('black bolt') ||
+        c.extension?.toLowerCase().includes('black bolt')
+      )
+
+      display({
+        whiteFlare: whiteFlare.map(c => ({
+          name: c.name,
+          number: c.number,
+          releaseDate: c.set?.releaseDate,
+          extension: c.set?.name || c.extension
+        })),
+        blackBolt: blackBolt.map(c => ({
+          name: c.name,
+          number: c.number,
+          releaseDate: c.set?.releaseDate,
+          extension: c.set?.name || c.extension
+        }))
+      })
+    }
+  </script>
+</body>
+</html>

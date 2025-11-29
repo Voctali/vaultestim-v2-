@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug IndexedDB Cache</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    pre {
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    button {
+      background: #d4af37;
+      color: #000;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    .danger {
+      background: #dc2626;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Debug Cache IndexedDB</h1>
+  <button onclick="checkCacheVersion()">Vérifier CACHE_VERSION</button>
+  <button onclick="checkWhiteFlareCache()">Vérifier WHITE FLARE (cache)</button>
+  <button onclick="checkBlackBoltCache()">Vérifier BLACK BOLT (cache)</button>
+  <button onclick="clearCache()" class="danger">🗑️ VIDER LE CACHE</button>
+
+  <div id="result"></div>
+
+  <script>
+    const DB_NAME = 'VaultEstimDB'
+    const DB_VERSION = 1
+    const resultDiv = document.getElementById('result')
+
+    function display(data) {
+      resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>'
+    }
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION)
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+    }
+
+    window.checkCacheVersion = async () => {
+      try {
+        const db = await openDB()
+        const tx = db.transaction(['metadata'], 'readonly')
+        const store = tx.objectStore('metadata')
+        const request = store.get('cache_version')
+
+        request.onsuccess = () => {
+          display({
+            cache_version: request.result?.value || 'Non trouvée',
+            expected: '2.5.1',
+            match: request.result?.value === '2.5.1'
+          })
+        }
+      } catch (error) {
+        display({ error: error.message })
+      }
+    }
+
+    window.checkWhiteFlareCache = async () => {
+      try {
+        const db = await openDB()
+        const tx = db.transaction(['cards'], 'readonly')
+        const store = tx.objectStore('cards')
+        const index = store.index('by_set')
+        const request = index.getAll('sv8')
+
+        request.onsuccess = () => {
+          const cards = request.result || []
+          display({
+            message: `${cards.length} cartes WHITE FLARE (sv8) dans le cache`,
+            samples: cards.slice(0, 3).map(c => ({
+              name: c.name,
+              number: c.number,
+              set_id: c.set?.id,
+              set_name: c.set?.name,
+              set_series: c.set?.series
+            }))
+          })
+        }
+      } catch (error) {
+        display({ error: error.message })
+      }
+    }
+
+    window.checkBlackBoltCache = async () => {
+      try {
+        const db = await openDB()
+        const tx = db.transaction(['cards'], 'readonly')
+        const store = tx.objectStore('cards')
+        const index = store.index('by_set')
+        const request = index.getAll('sv8a')
+
+        request.onsuccess = () => {
+          const cards = request.result || []
+          display({
+            message: `${cards.length} cartes BLACK BOLT (sv8a) dans le cache`,
+            samples: cards.slice(0, 3).map(c => ({
+              name: c.name,
+              number: c.number,
+              set_id: c.set?.id,
+              set_name: c.set?.name,
+              set_series: c.set?.series
+            }))
+          })
+        }
+      } catch (error) {
+        display({ error: error.message })
+      }
+    }
+
+    window.clearCache = async () => {
+      if (!confirm('Êtes-vous sûr de vouloir vider tout le cache ?')) return
+
+      try {
+        const db = await openDB()
+        db.close()
+
+        const deleteRequest = indexedDB.deleteDatabase(DB_NAME)
+        deleteRequest.onsuccess = () => {
+          display({ message: '✅ Cache vidé ! Rechargez la page.' })
+          setTimeout(() => location.reload(), 2000)
+        }
+        deleteRequest.onerror = () => {
+          display({ error: 'Erreur lors de la suppression' })
+        }
+      } catch (error) {
+        display({ error: error.message })
+      }
+    }
+  </script>
+</body>
+</html>

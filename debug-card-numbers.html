@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Numéros de Cartes</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    pre {
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    button {
+      background: #d4af37;
+      color: #000;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #d4af37;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #d4af37;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Debug Numéros de Cartes</h1>
+  <button onclick="checkWhiteFlare()">Vérifier WHITE FLARE</button>
+  <button onclick="checkBlackBolt()">Vérifier BLACK BOLT</button>
+
+  <div id="result"></div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAwMDIsImV4cCI6MjA3NTUxNjAwMn0.7d0303MNw__AVC9wkS7BodK2WG8Rvb2IY2V-0wv0l7Q'
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const resultDiv = document.getElementById('result')
+
+    function displayTable(cards, title) {
+      let html = `<h2>${title}</h2>`
+      html += `<table><tr><th>Nom</th><th>Numéro (number)</th><th>Numéro extrait</th><th>Numéro int</th></tr>`
+
+      cards.forEach(card => {
+        const num = card.number || ''
+        const match = num.match(/^(\d+)/)
+        const extracted = match ? match[1] : 'AUCUN'
+        const intVal = match ? parseInt(match[1]) : 'N/A'
+
+        html += `<tr>
+          <td>${card.name}</td>
+          <td>${num}</td>
+          <td>${extracted}</td>
+          <td>${intVal}</td>
+        </tr>`
+      })
+
+      html += '</table>'
+      resultDiv.innerHTML = html
+    }
+
+    window.checkWhiteFlare = async () => {
+      const { data, error } = await supabase
+        .from('discovered_cards')
+        .select('id, name, number, set')
+        .ilike('set->>name', '%white%flare%')
+        .order('number', { ascending: true })
+
+      if (error) {
+        resultDiv.innerHTML = '<pre>' + JSON.stringify({ error: error.message }, null, 2) + '</pre>'
+      } else {
+        displayTable(data, `WHITE FLARE - ${data.length} cartes`)
+      }
+    }
+
+    window.checkBlackBolt = async () => {
+      const { data, error } = await supabase
+        .from('discovered_cards')
+        .select('id, name, number, set')
+        .ilike('set->>name', '%black%bolt%')
+        .order('number', { ascending: true })
+
+      if (error) {
+        resultDiv.innerHTML = '<pre>' + JSON.stringify({ error: error.message }, null, 2) + '</pre>'
+      } else {
+        displayTable(data, `BLACK BOLT - ${data.length} cartes`)
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Dates Extensions</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1400px; margin: 0 auto; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        .warning { background-color: #fff3cd; }
+        .error { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Dates Extensions - White Flare, Black Bolt, Mega Evolution</h1>
+    <div id="results">Chargement...</div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjkxNjg3NzIsImV4cCI6MjA0NDc0NDc3Mn0.Y_jZGW-BP_zkhLDla2KdzeVWEUy8J_pBGZkSTHlaBhY'
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        const results = document.getElementById('results')
+
+        async function debugDates() {
+            const user = (await supabase.auth.getUser()).data.user
+            if (!user) {
+                results.innerHTML = '<p class="error">Veuillez vous connecter à l\'application d\'abord</p>'
+                return
+            }
+
+            results.innerHTML = '<p>Analyse en cours...</p>'
+
+            // Récupérer toutes les cartes de l'utilisateur
+            const { data: userCards, error } = await supabase
+                .from('user_collection')
+                .select('*')
+                .eq('user_id', user.id)
+                .limit(10000)
+
+            if (error) {
+                results.innerHTML = `<p class="error">Erreur: ${error.message}</p>`
+                return
+            }
+
+            // Filtrer les cartes White Flare, Black Bolt et Mega Evolution
+            const targetExtensions = ['sv8', 'sv8a', 'sv9', 'White Flare', 'Black Bolt', 'Journey Together', 'Mega Evolution']
+
+            const targetCards = userCards.filter(card => {
+                const ext = card.extension || ''
+                const setId = (card.set && typeof card.set === 'object') ? card.set.id : ''
+                const setName = (card.set && typeof card.set === 'object') ? card.set.name : ''
+
+                return targetExtensions.some(target =>
+                    ext.includes(target) ||
+                    setId.includes(target) ||
+                    setName.includes(target) ||
+                    ext === 'sv8' || ext === 'sv8a' || ext === 'sv9'
+                )
+            })
+
+            // Grouper par extension
+            const byExtension = {}
+            targetCards.forEach(card => {
+                const setId = (card.set && typeof card.set === 'object') ? card.set.id : card.extension
+                const setName = (card.set && typeof card.set === 'object') ? card.set.name : card.extension
+                const releaseDate = (card.set && typeof card.set === 'object') ? card.set.releaseDate : null
+
+                const key = setId || setName || 'Unknown'
+
+                if (!byExtension[key]) {
+                    byExtension[key] = {
+                        setId,
+                        setName,
+                        releaseDates: {},
+                        cards: []
+                    }
+                }
+
+                byExtension[key].cards.push(card)
+
+                if (releaseDate) {
+                    if (!byExtension[key].releaseDates[releaseDate]) {
+                        byExtension[key].releaseDates[releaseDate] = 0
+                    }
+                    byExtension[key].releaseDates[releaseDate]++
+                }
+            })
+
+            // Créer le rapport
+            let html = `
+                <h2>📊 Résumé</h2>
+                <p><strong>Total cartes analysées:</strong> ${targetCards.length}</p>
+                <p><strong>Extensions trouvées:</strong> ${Object.keys(byExtension).length}</p>
+            `
+
+            Object.entries(byExtension).forEach(([extKey, extData]) => {
+                const dates = Object.entries(extData.releaseDates).sort((a, b) => b[1] - a[1])
+                const mainDate = dates[0] ? dates[0][0] : 'Aucune date'
+                const cardsWithoutDate = extData.cards.filter(c => !c.set?.releaseDate).length
+
+                html += `
+                    <h3>🎴 ${extData.setName || extKey}</h3>
+                    <p><strong>Set ID:</strong> ${extData.setId || 'N/A'}</p>
+                    <p><strong>Nombre de cartes:</strong> ${extData.cards.length}</p>
+                    <p><strong>Date principale:</strong> ${mainDate}</p>
+                    <p><strong>Cartes sans date:</strong> ${cardsWithoutDate}</p>
+
+                    ${dates.length > 0 ? `
+                    <h4>Répartition des dates:</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Nombre de cartes</th>
+                                <th>Pourcentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${dates.map(([date, count]) => {
+                                const percent = ((count / extData.cards.length) * 100).toFixed(1)
+                                return `
+                                    <tr ${dates.length > 1 ? 'class="warning"' : ''}>
+                                        <td>${new Date(date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                                        <td>${count}</td>
+                                        <td>${percent}%</td>
+                                    </tr>
+                                `
+                            }).join('')}
+                        </tbody>
+                    </table>
+                    ` : '<p class="warning">Aucune date trouvée pour cette extension</p>'}
+
+                    <h4>📋 Détail des cartes (premières 10)</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Numéro</th>
+                                <th>Version</th>
+                                <th>Quantité</th>
+                                <th>Date (set.releaseDate)</th>
+                                <th>Date formatée</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${extData.cards.slice(0, 10).map(card => {
+                                const releaseDate = card.set?.releaseDate
+                                const formatted = releaseDate ? new Date(releaseDate).toLocaleDateString('fr-FR') : 'N/A'
+                                return `
+                                    <tr ${!releaseDate ? 'class="error"' : ''}>
+                                        <td>${card.name}</td>
+                                        <td>${card.number || 'N/A'}</td>
+                                        <td>${card.version || 'Normale'}</td>
+                                        <td>${card.quantity}</td>
+                                        <td><code>${releaseDate || 'NULL'}</code></td>
+                                        <td>${formatted}</td>
+                                    </tr>
+                                `
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `
+            })
+
+            results.innerHTML = html
+        }
+
+        debugDates()
+    </script>
+</body>
+</html>

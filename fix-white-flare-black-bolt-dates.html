@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Corriger dates White Flare & Black Bolt</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container { background: #2a2a2a; padding: 30px; border-radius: 10px; }
+        h1 { color: #ffd700; }
+        button {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover { background: #ffed4e; }
+        button:disabled { background: #666; cursor: not-allowed; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { background: #444; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: #333;
+        }
+        th, td {
+            border: 1px solid #555;
+            padding: 10px;
+            text-align: left;
+        }
+        th { background: #444; color: #ffd700; }
+        .log {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Correction des dates White Flare & Black Bolt</h1>
+
+        <div class="info">
+            <p><strong>Ce script va :</strong></p>
+            <ol>
+                <li>Trouver toutes vos cartes White Flare (sv8) et Black Bolt (sv8a)</li>
+                <li>Vérifier leur date actuelle dans <code>set.releaseDate</code></li>
+                <li>Corriger la date vers <strong>2025-07-18</strong> (juillet 2025)</li>
+            </ol>
+            <p class="warning">⚠️ Cette opération modifie votre collection dans Supabase.</p>
+        </div>
+
+        <div id="status">Prêt à démarrer...</div>
+
+        <div style="margin: 20px 0;">
+            <button id="analyzeBtn" onclick="analyzeCards()">1️⃣ Analyser les cartes</button>
+            <button id="fixBtn" onclick="fixDates()" disabled>2️⃣ Corriger les dates</button>
+        </div>
+
+        <div id="results"></div>
+        <div id="logs" class="log" style="display: none;"></div>
+    </div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjkxNjg3NzIsImV4cCI6MjA0NDc0NDc3Mn0.Y_jZGW-BP_zkhLDla2KdzeVWEUy8J_pBGZkSTHlaBhY'
+
+        window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        window.cardsToFix = []
+
+        const CORRECT_DATE = '2025-07-18'
+
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs')
+            logsDiv.style.display = 'block'
+            const timestamp = new Date().toLocaleTimeString()
+            const color = type === 'error' ? '#f44336' : type === 'success' ? '#4CAF50' : type === 'warning' ? '#ff9800' : '#fff'
+            logsDiv.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`
+            logsDiv.scrollTop = logsDiv.scrollHeight
+        }
+
+        window.analyzeCards = async function() {
+            const statusDiv = document.getElementById('status')
+            const resultsDiv = document.getElementById('results')
+            const analyzeBtn = document.getElementById('analyzeBtn')
+            const fixBtn = document.getElementById('fixBtn')
+
+            analyzeBtn.disabled = true
+            statusDiv.innerHTML = '<p>🔍 Analyse en cours...</p>'
+            resultsDiv.innerHTML = ''
+
+            try {
+                // Vérifier l'authentification
+                const { data: { user }, error: authError } = await window.supabase.auth.getUser()
+                if (authError || !user) {
+                    throw new Error('Vous devez être connecté à l\'application VaultEstim')
+                }
+
+                log(`✅ Connecté en tant que ${user.email}`, 'success')
+
+                // Récupérer toutes les cartes
+                const { data: allCards, error: fetchError } = await window.supabase
+                    .from('user_collection')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .limit(10000)
+
+                if (fetchError) throw fetchError
+
+                log(`📦 ${allCards.length} cartes récupérées`, 'info')
+
+                // Filtrer White Flare (sv8) et Black Bolt (sv8a)
+                const targetCards = allCards.filter(card => {
+                    const setId = card.set?.id
+                    return setId === 'sv8' || setId === 'sv8a'
+                })
+
+                log(`🎴 ${targetCards.length} cartes White Flare/Black Bolt trouvées`, 'info')
+
+                // Analyser les dates
+                const wrongDateCards = targetCards.filter(card => {
+                    const currentDate = card.set?.releaseDate
+                    return currentDate !== CORRECT_DATE
+                })
+
+                window.cardsToFix = wrongDateCards
+
+                log(`❌ ${wrongDateCards.length} cartes avec une date incorrecte`, 'warning')
+                log(`✅ ${targetCards.length - wrongDateCards.length} cartes avec la date correcte`, 'success')
+
+                // Afficher les résultats
+                let html = `
+                    <h2>📊 Résultats de l'analyse</h2>
+                    <p><strong>Cartes White Flare (sv8):</strong> ${targetCards.filter(c => c.set?.id === 'sv8').length}</p>
+                    <p><strong>Cartes Black Bolt (sv8a):</strong> ${targetCards.filter(c => c.set?.id === 'sv8a').length}</p>
+                    <p class="success"><strong>Cartes avec la bonne date (${CORRECT_DATE}):</strong> ${targetCards.length - wrongDateCards.length}</p>
+                    <p class="error"><strong>Cartes à corriger:</strong> ${wrongDateCards.length}</p>
+                `
+
+                if (wrongDateCards.length > 0) {
+                    // Grouper par date actuelle
+                    const dateGroups = {}
+                    wrongDateCards.forEach(card => {
+                        const date = card.set?.releaseDate || 'NULL'
+                        if (!dateGroups[date]) {
+                            dateGroups[date] = []
+                        }
+                        dateGroups[date].push(card)
+                    })
+
+                    html += `
+                        <h3>📋 Répartition des dates incorrectes</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date actuelle</th>
+                                    <th>Nombre de cartes</th>
+                                    <th>Extensions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `
+
+                    Object.entries(dateGroups).forEach(([date, cards]) => {
+                        const formatted = date !== 'NULL' ? new Date(date).toLocaleDateString('fr-FR') : 'Aucune date'
+                        const sv8Count = cards.filter(c => c.set?.id === 'sv8').length
+                        const sv8aCount = cards.filter(c => c.set?.id === 'sv8a').length
+                        html += `
+                            <tr>
+                                <td>${formatted}</td>
+                                <td>${cards.length}</td>
+                                <td>White Flare: ${sv8Count}, Black Bolt: ${sv8aCount}</td>
+                            </tr>
+                        `
+                    })
+
+                    html += `
+                            </tbody>
+                        </table>
+                    `
+
+                    // Afficher quelques exemples
+                    html += `
+                        <h3>🔍 Exemples de cartes à corriger (10 premières)</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Extension</th>
+                                    <th>Numéro</th>
+                                    <th>Date actuelle</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `
+
+                    wrongDateCards.slice(0, 10).forEach(card => {
+                        const currentDate = card.set?.releaseDate
+                        const formatted = currentDate ? new Date(currentDate).toLocaleDateString('fr-FR') : 'Aucune'
+                        html += `
+                            <tr>
+                                <td>${card.name}</td>
+                                <td>${card.set?.name || 'N/A'}</td>
+                                <td>${card.number || 'N/A'}</td>
+                                <td>${formatted}</td>
+                            </tr>
+                        `
+                    })
+
+                    html += `
+                            </tbody>
+                        </table>
+                    `
+
+                    fixBtn.disabled = false
+                    statusDiv.innerHTML = '<p class="warning">⚠️ Cartes trouvées ! Cliquez sur "Corriger les dates" pour appliquer la correction.</p>'
+                } else {
+                    statusDiv.innerHTML = '<p class="success">✅ Toutes les cartes ont déjà la bonne date !</p>'
+                }
+
+                resultsDiv.innerHTML = html
+
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error')
+                statusDiv.innerHTML = `<p class="error">❌ Erreur: ${error.message}</p>`
+            } finally {
+                analyzeBtn.disabled = false
+            }
+        }
+
+        window.fixDates = async function() {
+            const statusDiv = document.getElementById('status')
+            const fixBtn = document.getElementById('fixBtn')
+
+            if (window.cardsToFix.length === 0) {
+                alert('Aucune carte à corriger')
+                return
+            }
+
+            if (!confirm(`Êtes-vous sûr de vouloir corriger ${window.cardsToFix.length} cartes ?\n\nCela va changer leur date vers ${CORRECT_DATE} (juillet 2025).`)) {
+                return
+            }
+
+            fixBtn.disabled = true
+            statusDiv.innerHTML = '<p>🔧 Correction en cours...</p>'
+
+            let fixed = 0
+            let errors = 0
+
+            try {
+                for (const card of window.cardsToFix) {
+                    try {
+                        // Mettre à jour le champ set.releaseDate
+                        const updatedSet = {
+                            ...card.set,
+                            releaseDate: CORRECT_DATE
+                        }
+
+                        const { error } = await window.supabase
+                            .from('user_collection')
+                            .update({ set: updatedSet })
+                            .eq('id', card.id)
+
+                        if (error) throw error
+
+                        fixed++
+                        log(`✅ ${card.name} (${card.set?.name}) - Date corrigée`, 'success')
+
+                    } catch (error) {
+                        errors++
+                        log(`❌ Erreur pour ${card.name}: ${error.message}`, 'error')
+                    }
+                }
+
+                statusDiv.innerHTML = `
+                    <p class="success">✅ Correction terminée !</p>
+                    <p>Cartes corrigées: <strong>${fixed}</strong></p>
+                    <p>Erreurs: <strong>${errors}</strong></p>
+                    <p class="warning">⚠️ Rechargez l'application pour voir les changements.</p>
+                `
+
+                log(`🎉 Correction terminée: ${fixed} réussies, ${errors} erreurs`, 'success')
+
+            } catch (error) {
+                log(`❌ Erreur fatale: ${error.message}`, 'error')
+                statusDiv.innerHTML = `<p class="error">❌ Erreur: ${error.message}</p>`
+            } finally {
+                fixBtn.disabled = false
+            }
+        }
+    </script>
+</body>
+</html>

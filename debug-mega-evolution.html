@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Mega Evolution</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    pre {
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    button {
+      background: #d4af37;
+      color: #000;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Debug Mega Evolution</h1>
+  <button onclick="checkMegaEvolution()">Vérifier les extensions Mega Evolution</button>
+
+  <div id="result"></div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NDAwMDIsImV4cCI6MjA3NTUxNjAwMn0.7d0303MNw__AVC9wkS7BodK2WG8Rvb2IY2V-0wv0l7Q'
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const resultDiv = document.getElementById('result')
+
+    function display(data) {
+      resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>'
+    }
+
+    window.checkMegaEvolution = async () => {
+      // Chercher toutes les cartes avec series="Mega Evolution"
+      const { data: cards, error } = await supabase
+        .from('discovered_cards')
+        .select('id, name, number, set')
+        .ilike('set->>series', '%mega%evolution%')
+        .limit(20)
+
+      if (error) {
+        display({ error: error.message })
+        return
+      }
+
+      // Grouper par extension
+      const grouped = {}
+      cards.forEach(card => {
+        const setId = card.set?.id || 'null'
+        const setName = card.set?.name || 'null'
+        const series = card.set?.series || 'null'
+        const releaseDate = card.set?.releaseDate || 'null'
+        const key = setId
+
+        if (!grouped[key]) {
+          grouped[key] = {
+            setId,
+            setName,
+            series,
+            releaseDate,
+            count: 0
+          }
+        }
+        grouped[key].count++
+      })
+
+      display({
+        message: `Extensions avec series="Mega Evolution"`,
+        total_cards: cards.length,
+        extensions: Object.values(grouped)
+      })
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnostic Collection Supabase</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #1a1a2e;
+      color: #eee;
+    }
+    h1, h2 { color: #d4af37; }
+    .card {
+      background: #16213e;
+      border: 1px solid #d4af37;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    button {
+      background: #d4af37;
+      color: #1a1a2e;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+    }
+    button:hover { background: #c4a030; }
+    button.danger { background: #e74c3c; color: white; }
+    pre {
+      background: #0f0f23;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .stat {
+      display: inline-block;
+      background: #d4af37;
+      color: #1a1a2e;
+      padding: 5px 15px;
+      border-radius: 20px;
+      margin: 5px;
+      font-weight: bold;
+    }
+    .error { color: #e74c3c; }
+    .success { color: #2ecc71; }
+    .warning { color: #f39c12; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 8px;
+      text-align: left;
+    }
+    th { background: #d4af37; color: #1a1a2e; }
+    tr:nth-child(even) { background: #1e2a4a; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Diagnostic Collection Supabase</h1>
+
+  <div class="card">
+    <h2>Configuration</h2>
+    <p>URL Supabase: <code id="supabaseUrl"></code></p>
+    <p>User ID: <code id="userId">Non connecté</code></p>
+    <p>Storage Key trouvée: <code id="storageKey">...</code></p>
+  </div>
+
+  <div class="card">
+    <h2>Actions</h2>
+    <button onclick="checkAuth()">1. Vérifier Auth</button>
+    <button onclick="countAllCards()">2. Compter TOUTES les cartes (sans limite)</button>
+    <button onclick="getCollectionByExtension()">3. Cartes par extension</button>
+    <button onclick="findDuplicateIds()">4. Chercher doublons d'ID</button>
+    <button onclick="getRecentCards()">5. 50 dernières cartes ajoutées</button>
+    <button onclick="checkJourneyTogether()">6. Vérifier Journey Together</button>
+  </div>
+
+  <div class="card">
+    <h2>Statistiques</h2>
+    <div id="stats"></div>
+  </div>
+
+  <div class="card">
+    <h2>Résultats</h2>
+    <pre id="results">Cliquez sur un bouton pour commencer le diagnostic...</pre>
+  </div>
+
+  <div class="card">
+    <h2>Détails par extension</h2>
+    <div id="extensionDetails"></div>
+  </div>
+
+  <script>
+    // Configuration Supabase (même que l'app)
+    const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY1MTUyNjgsImV4cCI6MjA1MjA5MTI2OH0.Ej8EMoXgJDFvLZrNutLKnFcLbh7sGXbGbQz8cjkCR8k'
+
+    document.getElementById('supabaseUrl').textContent = SUPABASE_URL
+
+    // Vérifier quelle clé de storage est utilisée
+    const possibleKeys = ['vaultestim-auth', 'sb-ubphwlmnfjdaiarbihcx-auth-token']
+    let foundKey = null
+    for (const key of possibleKeys) {
+      if (localStorage.getItem(key) || sessionStorage.getItem(key)) {
+        foundKey = key
+        break
+      }
+    }
+    document.getElementById('storageKey').textContent = foundKey || 'Aucune clé trouvée'
+
+    // Custom storage adapter (même que l'app)
+    const customStorage = {
+      getItem: (key) => {
+        try {
+          const localItem = localStorage.getItem(key)
+          const sessionItem = sessionStorage.getItem(key)
+          return localItem || sessionItem
+        } catch (error) {
+          return null
+        }
+      },
+      setItem: (key, value) => {
+        try {
+          localStorage.setItem(key, value)
+          sessionStorage.setItem(key, value)
+        } catch (error) {
+          sessionStorage.setItem(key, value)
+        }
+      },
+      removeItem: (key) => {
+        try {
+          localStorage.removeItem(key)
+          sessionStorage.removeItem(key)
+        } catch (error) {}
+      }
+    }
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storage: customStorage,
+        storageKey: 'vaultestim-auth',
+        flowType: 'pkce'
+      }
+    })
+
+    let currentUserId = null
+
+    function log(message, type = 'info') {
+      const results = document.getElementById('results')
+      const timestamp = new Date().toLocaleTimeString()
+      const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️'
+      results.innerHTML += `\n[${timestamp}] ${prefix} ${message}`
+      results.scrollTop = results.scrollHeight
+    }
+
+    function clearResults() {
+      document.getElementById('results').textContent = ''
+    }
+
+    async function checkAuth() {
+      clearResults()
+      log('Vérification de l\'authentification...')
+
+      // Debug: afficher les clés localStorage
+      log('Clés localStorage: ' + Object.keys(localStorage).filter(k => k.includes('auth') || k.includes('supabase') || k.includes('vault')).join(', '))
+
+      const { data: { session }, error } = await supabase.auth.getSession()
+
+      if (error) {
+        log(`Erreur auth: ${error.message}`, 'error')
+        return
+      }
+
+      if (!session?.user) {
+        log('Aucun utilisateur connecté. Connectez-vous d\'abord sur l\'application principale.', 'warning')
+        log('Puis rafraîchissez cette page.', 'warning')
+        return
+      }
+
+      currentUserId = session.user.id
+      document.getElementById('userId').textContent = currentUserId
+      log(`Utilisateur connecté: ${session.user.email}`, 'success')
+      log(`User ID: ${currentUserId}`, 'success')
+    }
+
+    async function countAllCards() {
+      clearResults()
+      if (!currentUserId) {
+        await checkAuth()
+        if (!currentUserId) return
+      }
+
+      log('Comptage de TOUTES les cartes dans user_collection...')
+
+      // Méthode 1: Count direct
+      const { count, error: countError } = await supabase
+        .from('user_collection')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', currentUserId)
+
+      if (countError) {
+        log(`Erreur count: ${countError.message}`, 'error')
+      } else {
+        log(`COUNT exact: ${count} cartes`, 'success')
+      }
+
+      // Méthode 2: Fetch par lots pour vérifier
+      let allCards = []
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('user_collection')
+          .select('id, card_id, name, series, date_added')
+          .eq('user_id', currentUserId)
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+          .order('date_added', { ascending: false })
+
+        if (error) {
+          log(`Erreur fetch page ${page}: ${error.message}`, 'error')
+          break
+        }
+
+        if (data.length === 0) {
+          hasMore = false
+        } else {
+          allCards = allCards.concat(data)
+          log(`Page ${page + 1}: ${data.length} cartes (total: ${allCards.length})`)
+          page++
+          if (data.length < pageSize) hasMore = false
+        }
+      }
+
+      log(`\nTOTAL RÉEL: ${allCards.length} cartes dans la base`, 'success')
+
+      // Afficher stats
+      document.getElementById('stats').innerHTML = `
+        <span class="stat">Total: ${allCards.length} cartes</span>
+        <span class="stat">Pages: ${page}</span>
+      `
+    }
+
+    async function getCollectionByExtension() {
+      clearResults()
+      if (!currentUserId) {
+        await checkAuth()
+        if (!currentUserId) return
+      }
+
+      log('Récupération des cartes groupées par extension...')
+
+      // Récupérer toutes les cartes
+      let allCards = []
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('user_collection')
+          .select('id, card_id, name, series, extension, date_added')
+          .eq('user_id', currentUserId)
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+
+        if (error) {
+          log(`Erreur: ${error.message}`, 'error')
+          break
+        }
+
+        if (data.length === 0 || data.length < pageSize) {
+          allCards = allCards.concat(data)
+          hasMore = false
+        } else {
+          allCards = allCards.concat(data)
+          page++
+        }
+      }
+
+      // Grouper par extension
+      const byExtension = {}
+      allCards.forEach(card => {
+        const ext = card.series || card.extension || 'Inconnue'
+        if (!byExtension[ext]) byExtension[ext] = []
+        byExtension[ext].push(card)
+      })
+
+      // Trier par nombre de cartes
+      const sorted = Object.entries(byExtension).sort((a, b) => b[1].length - a[1].length)
+
+      log(`\n=== ${allCards.length} cartes dans ${sorted.length} extensions ===\n`)
+
+      let html = '<table><tr><th>Extension</th><th>Nombre</th></tr>'
+      sorted.forEach(([ext, cards]) => {
+        log(`${ext}: ${cards.length} cartes`)
+        html += `<tr><td>${ext}</td><td>${cards.length}</td></tr>`
+      })
+      html += '</table>'
+
+      document.getElementById('extensionDetails').innerHTML = html
+    }
+
+    async function findDuplicateIds() {
+      clearResults()
+      if (!currentUserId) {
+        await checkAuth()
+        if (!currentUserId) return
+      }
+
+      log('Recherche de doublons d\'ID dans la collection...')
+
+      // Récupérer toutes les cartes
+      let allCards = []
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('user_collection')
+          .select('id, card_id, name, series, date_added')
+          .eq('user_id', currentUserId)
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+
+        if (error) break
+
+        if (data.length === 0 || data.length < pageSize) {
+          allCards = allCards.concat(data)
+          hasMore = false
+        } else {
+          allCards = allCards.concat(data)
+          page++
+        }
+      }
+
+      // Chercher les card_id en double
+      const cardIdCount = {}
+      allCards.forEach(card => {
+        if (!cardIdCount[card.card_id]) {
+          cardIdCount[card.card_id] = []
+        }
+        cardIdCount[card.card_id].push(card)
+      })
+
+      const duplicates = Object.entries(cardIdCount)
+        .filter(([_, cards]) => cards.length > 1)
+        .sort((a, b) => b[1].length - a[1].length)
+
+      if (duplicates.length === 0) {
+        log('Aucun doublon trouvé (chaque card_id est unique)', 'success')
+      } else {
+        log(`\n⚠️ ${duplicates.length} card_id en double:\n`, 'warning')
+        duplicates.slice(0, 20).forEach(([cardId, cards]) => {
+          log(`  ${cards[0].name} (${cardId}): ${cards.length} entrées`)
+        })
+        if (duplicates.length > 20) {
+          log(`  ... et ${duplicates.length - 20} autres`)
+        }
+      }
+
+      // Vérifier les ID de ligne uniques
+      const rowIds = allCards.map(c => c.id)
+      const uniqueRowIds = new Set(rowIds)
+      if (rowIds.length !== uniqueRowIds.size) {
+        log(`\n❌ ALERTE: ${rowIds.length - uniqueRowIds.size} ID de ligne en double!`, 'error')
+      } else {
+        log(`\n✅ Tous les ID de ligne (${rowIds.length}) sont uniques`, 'success')
+      }
+    }
+
+    async function getRecentCards() {
+      clearResults()
+      if (!currentUserId) {
+        await checkAuth()
+        if (!currentUserId) return
+      }
+
+      log('Récupération des 50 dernières cartes ajoutées...')
+
+      const { data, error } = await supabase
+        .from('user_collection')
+        .select('id, card_id, name, series, date_added')
+        .eq('user_id', currentUserId)
+        .order('date_added', { ascending: false })
+        .limit(50)
+
+      if (error) {
+        log(`Erreur: ${error.message}`, 'error')
+        return
+      }
+
+      log(`\n=== 50 dernières cartes ===\n`)
+      data.forEach((card, i) => {
+        const date = new Date(card.date_added).toLocaleString('fr-FR')
+        log(`${i + 1}. ${card.name} (${card.series}) - ${date}`)
+      })
+    }
+
+    async function checkJourneyTogether() {
+      clearResults()
+      if (!currentUserId) {
+        await checkAuth()
+        if (!currentUserId) return
+      }
+
+      log('Recherche des cartes Journey Together / Voyage Ensemble...')
+
+      const { data, error } = await supabase
+        .from('user_collection')
+        .select('id, card_id, name, series, extension, date_added')
+        .eq('user_id', currentUserId)
+        .or('series.ilike.%journey%,series.ilike.%voyage%,extension.ilike.%journey%,extension.ilike.%sv09%,extension.ilike.%sv9%')
+
+      if (error) {
+        log(`Erreur: ${error.message}`, 'error')
+        return
+      }
+
+      if (data.length === 0) {
+        log('❌ Aucune carte Journey Together trouvée dans votre collection!', 'error')
+        log('Vérifiez si elles ont été supprimées ou jamais ajoutées.')
+      } else {
+        log(`✅ ${data.length} cartes Journey Together trouvées:\n`, 'success')
+        data.forEach(card => {
+          log(`  - ${card.name} (${card.series || card.extension})`)
+        })
+      }
+    }
+
+    // Vérifier l'auth au chargement
+    checkAuth()
+  </script>
+</body>
+</html>

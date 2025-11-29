@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vérification Collection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        .warning { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>📊 Diagnostic Collection</h1>
+    <div id="results">Chargement...</div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://ubphwlmnfjdaiarbihcx.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVicGh3bG1uZmpkYWlhcmJpaGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjkxNjg3NzIsImV4cCI6MjA0NDc0NDc3Mn0.Y_jZGW-BP_zkhLDla2KdzeVWEUy8J_pBGZkSTHlaBhY'
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        const results = document.getElementById('results')
+
+        async function checkCollection() {
+            const user = (await supabase.auth.getUser()).data.user
+            if (!user) {
+                results.innerHTML = '<p class="warning">Veuillez vous connecter à l\'application d\'abord</p>'
+                return
+            }
+
+            results.innerHTML = '<p>Analyse en cours...</p>'
+
+            // Compter le total exact dans Supabase
+            const { count: totalCount, error: countError } = await supabase
+                .from('user_collection')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id)
+
+            // Récupérer toutes les cartes (avec limite 10000)
+            const { data: allCards, error: fetchError } = await supabase
+                .from('user_collection')
+                .select('*')
+                .eq('user_id', user.id)
+                .limit(10000)
+
+            if (fetchError) {
+                results.innerHTML = `<p class="warning">Erreur: ${fetchError.message}</p>`
+                return
+            }
+
+            // Calculer la somme des quantités
+            const totalQuantity = allCards.reduce((sum, card) => sum + parseInt(card.quantity || 1), 0)
+
+            // Analyser les cartes TJG (sv9 / Journey Together)
+            const tjgCards = allCards.filter(card => {
+                const ext = card.extension || ''
+                const setId = (card.set && typeof card.set === 'object') ? card.set.id : ''
+                return ext === 'sv9' || ext === 'Journey Together' || setId === 'sv9'
+            })
+
+            const tjgQuantity = tjgCards.reduce((sum, card) => sum + parseInt(card.quantity || 1), 0)
+
+            // Compter les doublons TJG (quantity > 1)
+            const tjgDuplicates = tjgCards.filter(card => parseInt(card.quantity || 1) > 1)
+            const tjgDuplicateQuantity = tjgDuplicates.reduce((sum, card) => sum + (parseInt(card.quantity || 1) - 1), 0)
+
+            // Vérifier si limite atteinte
+            const limitReached = allCards.length >= 10000
+            const limitWarning = limitReached ?
+                '<p class="warning">⚠️ LIMITE DE 10000 LIGNES ATTEINTE ! Certaines cartes peuvent ne pas être affichées.</p>' :
+                '<p class="success">✅ Limite OK - Toutes les cartes sont récupérées</p>'
+
+            results.innerHTML = `
+                <h2>👤 Informations utilisateur</h2>
+                <p><strong>User ID:</strong> ${user.id}</p>
+                <p><strong>Email:</strong> ${user.email}</p>
+
+                <h2>📦 Collection totale</h2>
+                <p><strong>Lignes totales (Supabase):</strong> ${totalCount} lignes</p>
+                <p><strong>Lignes récupérées:</strong> ${allCards.length} lignes</p>
+                <p><strong>Total d'exemplaires:</strong> ${totalQuantity} cartes</p>
+                ${limitWarning}
+
+                <h2>🎴 Extension Journey Together (sv9)</h2>
+                <p><strong>Cartes uniques TJG:</strong> ${tjgCards.length} cartes différentes</p>
+                <p><strong>Total exemplaires TJG:</strong> ${tjgQuantity} exemplaires</p>
+                <p><strong>Cartes en double TJG:</strong> ${tjgDuplicates.length} cartes</p>
+                <p><strong>Exemplaires en double TJG:</strong> ${tjgDuplicateQuantity} doublons</p>
+
+                ${tjgDuplicates.length > 0 ? `
+                <h3>📋 Détail des doublons TJG</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Numéro</th>
+                            <th>Version</th>
+                            <th>Quantité</th>
+                            <th>Condition</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tjgDuplicates.map(card => `
+                            <tr>
+                                <td>${card.name}</td>
+                                <td>${card.number || 'N/A'}</td>
+                                <td>${card.version || 'Normale'}</td>
+                                <td><strong>${card.quantity}</strong></td>
+                                <td>${card.condition}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                ` : '<p>Aucun doublon TJG trouvé dans la base de données.</p>'}
+
+                <h3>🔍 Toutes les cartes TJG</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Numéro</th>
+                            <th>Version</th>
+                            <th>Quantité</th>
+                            <th>Condition</th>
+                            <th>Date ajout</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tjgCards.sort((a, b) => {
+                            const numA = parseInt(a.number) || 999
+                            const numB = parseInt(b.number) || 999
+                            return numA - numB
+                        }).map(card => `
+                            <tr style="${parseInt(card.quantity || 1) > 1 ? 'background-color: #ffe6e6;' : ''}">
+                                <td>${card.name}</td>
+                                <td>${card.number || 'N/A'}</td>
+                                <td>${card.version || 'Normale'}</td>
+                                <td><strong>${card.quantity}</strong></td>
+                                <td>${card.condition}</td>
+                                <td>${new Date(card.date_added).toLocaleDateString('fr-FR')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `
+        }
+
+        checkCollection()
+    </script>
+</body>
+</html>

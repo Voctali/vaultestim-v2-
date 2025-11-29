@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Diagnostic Extensions GG</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+    .extension { background: #2a2a2a; padding: 10px; margin: 10px 0; border-left: 3px solid #4a9eff; }
+    .gg { border-left-color: #ff4a4a; }
+    .parent { border-left-color: #4aff4a; }
+    .missing { border-left-color: #ffaa4a; }
+    h2 { color: #4a9eff; }
+    code { background: #3a3a3a; padding: 2px 5px; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Diagnostic Extensions GG (Galarian Gallery)</h1>
+  <div id="output"></div>
+
+  <script type="module">
+    // Importer le client Supabase depuis l'app
+    import { supabase } from './src/lib/supabaseClient.js'
+    const output = document.getElementById('output')
+
+    async function diagnose() {
+      output.innerHTML = '<p>⏳ Chargement des cartes depuis Supabase...</p>'
+
+      // Charger toutes les cartes
+      const { data: cards, error } = await supabase
+        .from('discovered_cards')
+        .select('id, name, number, set')
+        .order('set->id')
+
+      if (error) {
+        output.innerHTML = `<p style="color: red;">❌ Erreur: ${error.message}</p>`
+        return
+      }
+
+      output.innerHTML = `<p>✅ ${cards.length} cartes chargées</p>`
+
+      // Grouper par extension
+      const extensionGroups = {}
+      cards.forEach(card => {
+        const setId = card.set?.id || 'unknown'
+        if (!extensionGroups[setId]) {
+          extensionGroups[setId] = {
+            id: setId,
+            name: card.set?.name || 'Inconnu',
+            series: card.set?.series || 'Inconnu',
+            cards: []
+          }
+        }
+        extensionGroups[setId].cards.push(card)
+      })
+
+      // Trouver toutes les extensions GG et TG
+      const galleryExtensions = Object.keys(extensionGroups).filter(id =>
+        id.endsWith('gg') || id.endsWith('tg')
+      )
+
+      output.innerHTML += `<h2>📊 Extensions Gallery trouvées: ${galleryExtensions.length}</h2>`
+
+      galleryExtensions.forEach(galleryId => {
+        const gallery = extensionGroups[galleryId]
+
+        // Déterminer le parent selon notre logique
+        let parentId
+        if (galleryId.endsWith('gg')) {
+          parentId = galleryId.endsWith('pt5gg') ? galleryId.slice(0, -5) : galleryId.slice(0, -2)
+        } else if (galleryId.endsWith('tg')) {
+          parentId = galleryId.slice(0, -2)
+        }
+
+        const parentExists = extensionGroups[parentId] !== undefined
+        const parentInfo = parentExists ? extensionGroups[parentId] : null
+
+        const html = `
+          <div class="extension gg">
+            <strong>🎴 ${galleryId}</strong> (${gallery.cards.length} cartes)<br>
+            Nom: ${gallery.name}<br>
+            Série: ${gallery.series}<br>
+            <br>
+            <strong>→ Parent calculé: <code>${parentId}</code></strong><br>
+            ${parentExists ?
+              `<div class="parent" style="margin-top: 10px;">
+                ✅ Parent trouvé: ${parentInfo.name} (${parentInfo.cards.length} cartes)<br>
+                Série: ${parentInfo.series}
+              </div>` :
+              `<div class="missing" style="margin-top: 10px;">
+                ❌ Parent NON TROUVÉ dans la base<br>
+                <strong>Extensions disponibles commençant par "${galleryId.slice(0, 5)}":</strong><br>
+                ${Object.keys(extensionGroups)
+                  .filter(id => id.startsWith(galleryId.slice(0, 5)))
+                  .map(id => `• ${id} (${extensionGroups[id].name})`)
+                  .join('<br>') || 'Aucune'}
+              </div>`
+            }
+          </div>
+        `
+        output.innerHTML += html
+      })
+
+      // Liste toutes les extensions Sword & Shield
+      const swshExtensions = Object.keys(extensionGroups)
+        .filter(id => id.startsWith('swsh'))
+        .sort()
+
+      output.innerHTML += `<h2>📋 Toutes les extensions Sword & Shield (${swshExtensions.length}):</h2>`
+      output.innerHTML += '<div style="background: #2a2a2a; padding: 10px;">'
+      swshExtensions.forEach(id => {
+        const ext = extensionGroups[id]
+        output.innerHTML += `<code style="display: block;">${id.padEnd(20)} → ${ext.name} (${ext.cards.length} cartes)</code>`
+      })
+      output.innerHTML += '</div>'
+    }
+
+    diagnose()
+  </script>
+</body>
+</html>

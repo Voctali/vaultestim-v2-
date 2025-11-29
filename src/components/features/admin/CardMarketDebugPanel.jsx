@@ -134,26 +134,20 @@ export function CardMarketDebugPanel() {
   const [brokenUrlsCount, setBrokenUrlsCount] = useState(null)
   const [isCheckingBroken, setIsCheckingBroken] = useState(false)
 
-  // Helper pour vérifier si une URL est valide (format tcggo.com ou CardMarket avec ID carte)
-  // URLs invalides : se terminent par le nom de l'extension sans ID de carte
-  // Exemple invalide : https://www.cardmarket.com/fr/Pokemon/Products/Singles/Crown-Zenith
+  // Helper pour vérifier si une URL est valide
+  // SEUL le format tcggo.com est considéré comme valide (nouveau format avec ID numérique)
+  // Les URLs cardmarket.com directes sont considérées comme invalides car elles peuvent
+  // être cassées (redirection vers page extension) sans qu'on puisse le détecter
   // Exemple valide : https://tcggo.com/external/cm/123456?language=2
-  // Exemple valide : https://www.cardmarket.com/fr/Pokemon/Products/Singles/Crown-Zenith/Pikachu-V-123
+  // Exemple invalide : https://www.cardmarket.com/fr/Pokemon/Products/Singles/Silver-Tempest/Serperior-V-123
   const isValidCardMarketUrl = (url) => {
     if (!url) return false
 
-    // Format tcggo.com est toujours valide (nouveau format avec ID)
+    // SEUL le format tcggo.com avec ID numérique est valide
     if (url.includes('tcggo.com/external/cm/')) return true
 
-    // Format CardMarket direct : doit avoir un nom de carte après l'extension
-    // Regex : /Singles/Extension-Name/Card-Name (au moins 2 segments après Singles)
-    const singlesMatch = url.match(/\/Singles\/([^/]+)\/([^/?]+)/)
-    if (singlesMatch && singlesMatch[2]) {
-      // Il y a un nom de carte après l'extension
-      return true
-    }
-
-    // Sinon c'est invalide (pointe vers la page extension uniquement)
+    // Tout autre format (y compris cardmarket.com direct) est invalide
+    // Ces URLs peuvent rediriger vers la page extension sans retourner de 404
     return false
   }
 
