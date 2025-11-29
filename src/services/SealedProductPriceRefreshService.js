@@ -12,9 +12,25 @@ import { CardMarketSupabaseService } from './CardMarketSupabaseService'
 import { RapidAPIService } from './RapidAPIService'
 import { QuotaTracker } from './QuotaTracker'
 
+// Clé localStorage pour la limite (même que dans PriceRefreshToggle)
+const STORAGE_KEY_SEALED_LIMIT = 'vaultestim_price_refresh_sealed_limit'
+const DEFAULT_SEALED_LIMIT = 500
+
 export class SealedProductPriceRefreshService {
   // Configuration
-  static BATCH_SIZE = 500 // Nombre de produits à actualiser par batch
+  static DEFAULT_BATCH_SIZE = 500 // Valeur par défaut
+
+  /**
+   * Obtenir la taille du batch configurable
+   */
+  static getBatchSize() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_SEALED_LIMIT)
+      return stored ? parseInt(stored, 10) : DEFAULT_SEALED_LIMIT
+    } catch {
+      return DEFAULT_SEALED_LIMIT
+    }
+  }
   static REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000 // 24 heures
   static REQUEST_DELAY_MS = 1000 // Pause de 1s entre chaque requête
   static STORAGE_KEY_PROGRESS = 'vaultestim_sealed_price_refresh_progress'
@@ -176,7 +192,8 @@ export class SealedProductPriceRefreshService {
       console.log(`📍 Reprise depuis l'index ${startIndex}/${allProducts.length}`)
 
       // 3. Déterminer le batch à actualiser
-      const endIndex = Math.min(startIndex + this.BATCH_SIZE, allProducts.length)
+      const batchSize = this.getBatchSize()
+      const endIndex = Math.min(startIndex + batchSize, allProducts.length)
       const productsToRefresh = allProducts.slice(startIndex, endIndex)
 
       console.log(`🎯 Actualisation de ${productsToRefresh.length} produits (${startIndex} → ${endIndex})`)

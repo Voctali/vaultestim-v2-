@@ -12,9 +12,25 @@ import { TCGdxService } from './TCGdxService'
 import { CardCacheService } from './CardCacheService'
 import { SupabaseService } from './SupabaseService'
 
+// Clé localStorage pour la limite (même que dans PriceRefreshToggle)
+const STORAGE_KEY_CARDS_LIMIT = 'vaultestim_price_refresh_cards_limit'
+const DEFAULT_CARDS_LIMIT = 1500
+
 export class PriceRefreshService {
   // Configuration
-  static BATCH_SIZE = 1500 // Nombre de cartes à actualiser par batch (augmenté pour accélérer la rotation)
+  static DEFAULT_BATCH_SIZE = 1500 // Valeur par défaut
+
+  /**
+   * Obtenir la taille du batch configurable
+   */
+  static getBatchSize() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_CARDS_LIMIT)
+      return stored ? parseInt(stored, 10) : DEFAULT_CARDS_LIMIT
+    } catch {
+      return DEFAULT_CARDS_LIMIT
+    }
+  }
   static REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000 // 24 heures
   static MIN_PRICE_THRESHOLD = 0.10 // Skip cartes < 0.10€ (peu de variation)
   static PRIORITY_PRICE_THRESHOLD = 5.00 // Cartes > 5€ sont prioritaires
@@ -151,7 +167,8 @@ export class PriceRefreshService {
    * Sélectionner les cartes à actualiser (batch intelligent)
    */
   static selectCardsForRefresh(allCards) {
-    console.log(`🎯 Sélection intelligente de ${this.BATCH_SIZE} cartes parmi ${allCards.length}`)
+    const batchSize = this.getBatchSize()
+    console.log(`🎯 Sélection intelligente de ${batchSize} cartes parmi ${allCards.length}`)
 
     // Trier par priorité décroissante
     const sortedCards = [...allCards].sort((a, b) => {
@@ -161,7 +178,7 @@ export class PriceRefreshService {
     })
 
     // Prendre les N premières cartes
-    const selectedCards = sortedCards.slice(0, this.BATCH_SIZE)
+    const selectedCards = sortedCards.slice(0, batchSize)
 
     // Statistiques
     const highValueCount = selectedCards.filter(c => (c.marketPrice || 0) > this.PRIORITY_PRICE_THRESHOLD).length
@@ -363,15 +380,16 @@ export class PriceRefreshService {
    * Forcer l'actualisation manuelle de toutes les cartes
    */
   static async forceRefreshAll(allCards, onProgress) {
+    const batchSize = this.getBatchSize()
     console.log('🔄 Actualisation manuelle forcée de TOUTES les cartes...')
 
-    // Diviser en batches de BATCH_SIZE
+    // Diviser en batches de batchSize
     const batches = []
-    for (let i = 0; i < allCards.length; i += this.BATCH_SIZE) {
-      batches.push(allCards.slice(i, i + this.BATCH_SIZE))
+    for (let i = 0; i < allCards.length; i += batchSize) {
+      batches.push(allCards.slice(i, i + batchSize))
     }
 
-    console.log(`📦 ${batches.length} batches de ${this.BATCH_SIZE} cartes`)
+    console.log(`📦 ${batches.length} batches de ${batchSize} cartes`)
 
     let totalResults = {
       success: 0,
@@ -389,7 +407,7 @@ export class PriceRefreshService {
             ...progress,
             batch: batchIndex + 1,
             totalBatches: batches.length,
-            overallProgress: Math.round(((batchIndex * this.BATCH_SIZE + progress.current) / allCards.length) * 100)
+            overallProgress: Math.round(((batchIndex * batchSize + progress.current) / allCards.length) * 100)
           })
         }
       })
