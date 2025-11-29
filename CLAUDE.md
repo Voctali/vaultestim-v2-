@@ -56,7 +56,8 @@ src/
 | `RapidAPIService` | Prix EUR CardMarket + cartes gradées |
 | `QuotaTracker` | Gestion quota RapidAPI (plans Basic/Pro, seuil sécurité, reset 00h20) |
 | `CardMarketUrlFixService` | Correction URLs CardMarket |
-| `PriceRefreshService` | Actualisation prix (1500 cartes/jour) |
+| `PriceRefreshService` | Actualisation prix (configurable, défaut 1500 cartes/jour) |
+| `SealedProductPriceRefreshService` | Actualisation prix produits scellés (configurable, défaut 500/jour) |
 
 ## Configuration
 
@@ -115,26 +116,29 @@ git add . && git commit -m "Description" && git push github main
 
 ---
 
-## 🛠️ Correction URLs CardMarket (27/11/2025)
+## 🛠️ Correction URLs CardMarket (29/11/2025)
 
-### Panneau Admin (v1.24.3)
-Interface dans Admin → Système pour corriger les liens CardMarket.
+### Panneau Admin (v1.27.0)
+Interface dans Admin → Éditeur de base de données → Correction URLs CardMarket.
 
 **Fonctionnalités** :
 - Sélecteurs Bloc → Extension
 - Quota RapidAPI temps réel
-- Mode: URLs manquantes ou invalides
-- Statistiques depuis Supabase
+- 3 modes de correction :
+  - **Sans URL** : Cartes sans lien CardMarket
+  - **URLs invalides** : Format `cardmarket.com` (ancien format)
+  - **URLs cassées (404)** : URLs `tcggo.com` dont l'ID a changé
 
 **URLs valides** :
-- ✅ `tcggo.com/external/cm/{id}?language=2`
-- ❌ `cardmarket.com/.../Singles/Extension` (sans nom carte)
+- ✅ `tcggo.com/external/cm/{id}?language=2` (seul format valide)
+- ❌ `cardmarket.com/...` (tout format direct = invalide, peut rediriger silencieusement)
 
-### Progression (98% terminé)
+### Progression (99% terminé)
 
 | Extension | Statut |
 |-----------|--------|
 | 151, SV1-10, ME1-2 | ✅ 100% |
+| Silver Tempest TG | ✅ 100% (corrigé manuellement) |
 | SV Promos | ⚠️ 93% (14 non indexées) |
 
 **Promos non indexées** : svp-166, 171, 174, 181-184, 186, 188-189, 203, 206-207, 87
@@ -144,9 +148,34 @@ Interface dans Admin → Système pour corriger les liens CardMarket.
 node fix-cardmarket-urls-batch.cjs  # 3000 req/exécution
 ```
 
+### Diagnostic URLs par extension
+```javascript
+// Lister les cartes avec ancien format cardmarket.com
+const { data } = await supabase
+  .from('discovered_cards')
+  .select('name, number, cardmarket_url')
+  .eq('set_id', 'EXTENSION_ID')
+  .like('cardmarket_url', '%cardmarket.com%');
+```
+
 ---
 
 ## 🎯 Fonctionnalités Récentes
+
+### v1.28.1 (30/11/2025)
+- **Fix clic plan RapidAPI** : Le clic sur la carte du plan (Basic/Pro) fonctionne maintenant sur toute la zone
+
+### v1.28.0 (30/11/2025)
+- **Limites actualisation configurables** : Champs de saisie dans Admin → Système pour ajuster :
+  - Nombre de cartes/jour (défaut: 1500, max: 5000)
+  - Nombre de produits scellés/jour (défaut: 500, max: 2000)
+- **Fix upsert prix catalogue** : Utilisation de `upsert` au lieu de UPDATE+INSERT pour `cardmarket_prices`
+- **Contrainte UNIQUE Supabase** : Ajoutée sur `cardmarket_prices(id_product, id_language)`
+
+### v1.27.0 (29/11/2025)
+- **Mode URLs cassées (404)** : Nouveau mode de correction pour détecter les URLs tcggo.com dont l'ID CardMarket a changé
+- **Validation URLs stricte** : Seul le format `tcggo.com/external/cm/` est valide, les URLs `cardmarket.com` directes sont invalides
+- **Bouton estimation** : "Estimer URLs cassées" échantillonne ~20 cartes via RapidAPI
 
 ### v1.26.0 (27/11/2025)
 - **Gestion quota RapidAPI automatique** : Nouveau système complet
@@ -198,4 +227,4 @@ node fix-cardmarket-urls-batch.cjs  # 3000 req/exécution
 
 ---
 
-**Dernière mise à jour** : 2025-11-27 (v1.26.0)
+**Dernière mise à jour** : 2025-11-30 (v1.28.1)
