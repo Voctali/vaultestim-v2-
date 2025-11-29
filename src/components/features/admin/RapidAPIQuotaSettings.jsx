@@ -175,6 +175,7 @@ export function RapidAPIQuotaSettings() {
                 {plans.map((plan) => (
                   <div
                     key={plan.id}
+                    onClick={() => handlePlanChange(plan.id)}
                     className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
                       settings.plan === plan.id
                         ? 'border-primary bg-primary/5'
