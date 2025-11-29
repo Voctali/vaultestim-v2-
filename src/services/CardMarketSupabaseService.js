@@ -917,51 +917,33 @@ export class CardMarketSupabaseService {
     try {
       const updatedAt = new Date().toISOString()
 
-      // Stratégie: Toujours tenter UPDATE d'abord (ignore erreurs RLS), puis INSERT si nécessaire
-      const { data: updateData, error: updateError } = await supabase
+      // Utiliser upsert pour INSERT ou UPDATE en une seule opération
+      // onConflict sur (id_product, id_language) = clé unique
+      const { data, error } = await supabase
         .from('cardmarket_prices')
-        .update({
-          avg: priceData.avg || null,
-          low: priceData.low || null,
-          trend: priceData.trend || null,
-          updated_at: updatedAt
-        })
-        .eq('id_product', idProduct)
-        .eq('id_language', 2)
-        .select()
-
-      // Si UPDATE a réussi et a retourné des données (ligne trouvée et mise à jour), terminé
-      if (!updateError && updateData && updateData.length > 0) {
-        return true
-      }
-
-      // Si UPDATE a échoué OU n'a trouvé aucune ligne, tenter INSERT
-      // (On ignore les erreurs d'UPDATE car elles peuvent être dues aux RLS)
-      const { error: insertError } = await supabase
-        .from('cardmarket_prices')
-        .insert({
+        .upsert({
           id_product: idProduct,
           id_language: 2,
           avg: priceData.avg || null,
           low: priceData.low || null,
           trend: priceData.trend || null,
           updated_at: updatedAt
+        }, {
+          onConflict: 'id_product,id_language',
+          ignoreDuplicates: false // Force UPDATE si existe
         })
+        .select()
 
-      // Si INSERT réussit, parfait
-      if (!insertError) {
-        return true
+      if (error) {
+        // Si RLS bloque l'opération, log et retourne false (prix NON mis à jour)
+        if (error.code === '42501' || error.message?.includes('policy')) {
+          console.warn(`⚠️ Prix ${idProduct} non mis à jour (RLS bloque l'accès)`)
+          return false
+        }
+        throw error
       }
 
-      // Si INSERT échoue avec duplicate key (23505), la ligne existe mais on ne peut pas la voir/modifier
-      // On considère que c'est acceptable (les RLS bloquent l'accès mais la ligne est là)
-      if (insertError.code === '23505') {
-        console.warn(`⚠️ Prix ${idProduct} existe déjà (probablement créé par un autre utilisateur/processus)`)
-        return true
-      }
-
-      // Toute autre erreur INSERT est une vraie erreur
-      throw insertError
+      return true
 
     } catch (error) {
       console.error(`❌ Erreur mise à jour prix catalogue ${idProduct}:`, error)
