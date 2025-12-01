@@ -1594,15 +1594,25 @@ export function Duplicates() {
                         )}
                       </div>
 
-                      {/* Badges des versions */}
-                      <CardVersionBadges
-                        cardId={card.card_id || card.id}
-                        collection={collection}
-                        card={card}
-                        isUserCopy={true}
-                        showOnlyDuplicateVersions={false}
-                        className="mb-2"
-                      />
+                      {/* Badge de la version dans le lot (pas toutes les versions de la collection) */}
+                      {card.version && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] px-1.5 py-0 h-5 bg-primary/20 text-primary border-primary/30"
+                            title={`Version ${card.version}`}
+                          >
+                            {card.version === 'Normale' ? 'N' :
+                             card.version === 'Reverse Holo' ? 'R' :
+                             card.version === 'Reverse (Pokéball)' ? 'RPB' :
+                             card.version === 'Reverse (Masterball)' ? 'RMB' :
+                             card.version === 'Holo' ? 'H' :
+                             card.version === 'Holo étoile' ? 'HE' :
+                             card.version === 'Holo Cosmos' ? 'HC' :
+                             card.version.charAt(0).toUpperCase()}
+                          </Badge>
+                        </div>
+                      )}
 
                       {/* Card Info */}
                       <div className="space-y-1">
