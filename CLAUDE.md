@@ -162,6 +162,15 @@ const { data } = await supabase
 
 ## 🎯 Fonctionnalités Récentes
 
+### v1.28.5 (01/12/2025)
+- **Sélection rapide intelligente** : Le bouton "+" sélectionne automatiquement la première version en double disponible
+  - Si pas de "Normale" en double mais "Reverse" → affiche "1x R"
+  - Si pas de "Normale" ni "Reverse" mais "Holo" → affiche "1x H"
+  - Priorité : Normale > Reverse > Holo > Holo Cosmos > etc.
+
+### v1.28.4 (01/12/2025)
+- **Vue détaillée lot** : Affiche uniquement le badge de la version de chaque carte dans le lot (pas toutes les versions de la collection)
+
 ### v1.28.3 (01/12/2025)
 - **Optimisation onglet Doublons** : Correction des freezes lors de sélections multiples (37+ cartes)
   - Composant `DuplicateCard` mémorisé avec `React.memo` pour éviter re-renders de toutes les cartes
@@ -238,4 +247,4 @@ const { data } = await supabase
 
 ---
 
-**Dernière mise à jour** : 2025-12-01 (v1.28.3)
+**Dernière mise à jour** : 2025-12-01 (v1.28.5)
