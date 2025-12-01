@@ -347,6 +347,12 @@ export function Duplicates() {
       'Bon': 2, 'Acceptable': 1, 'Endommagé': 0
     }
 
+    // Ordre de priorité des versions pour la sélection rapide
+    const versionPriority = [
+      'Normale', 'Reverse Holo', 'Reverse (Pokéball)', 'Reverse (Masterball)',
+      'Holo', 'Holo étoile', 'Holo Cosmos', 'Promo', 'Full Art', 'AR', 'Alternate Art', 'Gold'
+    ]
+
     const consolidatedCards = Object.values(consolidationMap).map(group => {
       const bestCard = group.instances.reduce((best, current) => {
         const bestScore = conditionOrder[best.condition] || 0
@@ -354,10 +360,31 @@ export function Duplicates() {
         return currentScore > bestScore ? current : best
       }, group.instances[0])
 
+      // Calculer les versions en double (quantité > 1)
+      const versionCounts = {}
+      group.instances.forEach(instance => {
+        const version = instance.version || 'Normale'
+        const quantity = instance.quantity || 1
+        versionCounts[version] = (versionCounts[version] || 0) + quantity
+      })
+
+      // Filtrer uniquement les versions avec quantité > 1 (en double)
+      const duplicateVersions = Object.entries(versionCounts)
+        .filter(([, count]) => count > 1)
+        .map(([version]) => version)
+        .sort((a, b) => {
+          const indexA = versionPriority.indexOf(a)
+          const indexB = versionPriority.indexOf(b)
+          if (indexA === -1) return 1
+          if (indexB === -1) return -1
+          return indexA - indexB
+        })
+
       return {
         ...bestCard,
         consolidatedQuantity: group.totalQuantity,
-        instanceIds: group.instances.map(c => c.id)
+        instanceIds: group.instances.map(c => c.id),
+        duplicateVersions // Versions en double disponibles, triées par priorité
       }
     })
 
@@ -520,10 +547,14 @@ export function Duplicates() {
     }
   }
 
-  // Sélection rapide avec le bouton "+" - version Normale par défaut
+  // Sélection rapide avec le bouton "+" - utilise la première version en double disponible
   // Mémorisé avec useCallback pour éviter re-création à chaque render
   const toggleCardSelectionQuick = useCallback((card) => {
     const cardKey = card.card_id || card.id
+    // Utiliser la première version en double disponible, sinon "Normale" par défaut
+    const defaultVersion = (card.duplicateVersions && card.duplicateVersions.length > 0)
+      ? card.duplicateVersions[0]
+      : 'Normale'
 
     setSelectedCards(prev => {
       const exists = prev.find(c => (c.card_id || c.id) === cardKey)
@@ -531,8 +562,8 @@ export function Duplicates() {
         // Retirer la carte - les autres états seront mis à jour après
         return prev.filter(c => (c.card_id || c.id) !== cardKey)
       } else {
-        // Ajouter la carte avec version "Normale"
-        return [...prev, { ...card, version: 'Normale' }]
+        // Ajouter la carte avec la première version en double disponible
+        return [...prev, { ...card, version: defaultVersion }]
       }
     })
 
@@ -544,7 +575,7 @@ export function Duplicates() {
         delete newSel[cardKey]
         return newSel
       } else {
-        return { ...prevSel, [cardKey]: { version: 'Normale', quantity: 1 } }
+        return { ...prevSel, [cardKey]: { version: defaultVersion, quantity: 1 } }
       }
     })
 
