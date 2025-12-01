@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,6 +35,120 @@ import {
   ChevronRight
 } from 'lucide-react'
 
+/**
+ * Composant DuplicateCard mémorisé pour éviter les re-renders inutiles
+ * Chaque carte ne se re-rend que si ses props changent (isSelected, currentSelection)
+ */
+const DuplicateCard = memo(function DuplicateCard({
+  card,
+  isSelected,
+  currentSelection,
+  collection,
+  onToggleSelection,
+  onImageClick,
+  onSellCard
+}) {
+  return (
+    <Card className="golden-border card-hover cursor-pointer group overflow-hidden">
+      <CardContent className="p-4">
+        {/* Card Image - Clic ouvre la modale de sélection de version */}
+        <div
+          className="relative aspect-[3/4] mb-3 rounded-lg overflow-hidden group-hover:scale-105 transition-transform duration-200 cursor-pointer"
+          onClick={() => onImageClick(card)}
+        >
+          <CardImage
+            card={card}
+            className="w-full h-full object-cover"
+          />
+          {/* Badge quantité doublons */}
+          {card.consolidatedQuantity > 1 && (
+            <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+              x{card.consolidatedQuantity}
+            </div>
+          )}
+          {/* Badge sélection avec version */}
+          {isSelected && currentSelection && (
+            <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+              {currentSelection.quantity}x {currentSelection.version === 'Normale' ? 'N' : currentSelection.version.charAt(0)}
+            </div>
+          )}
+          <div className="absolute bottom-2 left-2 right-2 flex gap-1">
+            {/* Bouton + : sélection rapide en version Normale */}
+            <Button
+              size="sm"
+              variant="ghost"
+              className={`flex-1 h-8 p-0 text-white ${isSelected ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500/80 hover:bg-green-600'}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleSelection(card)
+              }}
+              title={isSelected ? 'Retirer du lot' : 'Ajouter au lot (version Normale)'}
+            >
+              {isSelected ? '✓' : '+'}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 px-2 bg-blue-500/80 text-white hover:bg-blue-600"
+              onClick={(e) => {
+                e.stopPropagation()
+                onSellCard(card)
+              }}
+              title="Vendre cette carte"
+            >
+              <Euro className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Badges des versions en double uniquement */}
+        <CardVersionBadges
+          cardId={card.card_id || card.id}
+          collection={collection}
+          card={card}
+          isUserCopy={true}
+          showOnlyDuplicateVersions={true}
+          className="mb-2"
+        />
+
+        {/* Card Info */}
+        <div className="space-y-2">
+          <h3 className="font-semibold text-sm golden-glow truncate" title={translateCardName(card.name)}>
+            {translateCardName(card.name)}
+          </h3>
+
+          {/* Numéro de carte - extrait depuis card_id si manquant */}
+          {(() => {
+            const displayNumber = card.number || (card.card_id?.match(/-(\d+)$/)?.[1])
+            return displayNumber ? (
+              <p className="text-xs text-muted-foreground">
+                #{displayNumber}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground/40 italic">
+                Sans numéro
+              </p>
+            )
+          })()}
+
+          <p className="text-xs text-muted-foreground truncate">{card.set?.name || card.extension || card.series}</p>
+
+          <div className="space-y-1">
+            <Badge variant="secondary" className="text-xs">
+              {card.rarity}
+            </Badge>
+            <p className="text-xs text-orange-500">{translateCondition(card.condition)}</p>
+          </div>
+
+          <div className="text-right">
+            <p className="font-semibold text-green-500">{card.marketPrice || card.value || '0.00'}€</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+})
+
 export function Duplicates() {
   const { duplicates, duplicateBatches, createDuplicateBatch, updateDuplicateBatch, deleteDuplicateBatch, createSale, collection } = useCollection()
 
@@ -63,37 +177,41 @@ export function Duplicates() {
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
   const [pendingBatchAdd, setPendingBatchAdd] = useState(null) // { batchId, duplicateCards: [...] }
 
-  // Filtrer les doublons selon la recherche (duplicates vient du Context et est déjà mémorisé)
-  const duplicateCards = duplicates.filter(card => {
-    if (!searchTerm.trim()) return true
+  // Filtrer les doublons selon la recherche - MÉMORISÉ pour éviter recalcul à chaque render
+  const duplicateCards = useMemo(() => {
+    if (!duplicates || duplicates.length === 0) return []
+    if (!searchTerm.trim()) return duplicates
 
-    // Recherche bilingue : français et anglais
     const searchLower = searchTerm.toLowerCase().trim()
-    const cardNameLower = card.name.toLowerCase()
 
-    // Recherche directe dans le nom anglais de la carte
-    const matchesEnglish = (
-      cardNameLower === searchLower ||
-      cardNameLower.startsWith(searchLower + ' ') ||
-      cardNameLower.includes(' ' + searchLower + ' ') ||
-      cardNameLower.endsWith(' ' + searchLower)
-    )
+    return duplicates.filter(card => {
+      const cardNameLower = card.name.toLowerCase()
 
-    // Si l'utilisateur recherche en français, traduire vers l'anglais
-    let translatedSearch = translatePokemonName(searchLower)
-    if (translatedSearch === searchLower) {
-      translatedSearch = translateTrainerName(searchLower)
-    }
-    // Recherche par mot complet pour éviter faux positifs (ex: "eri" ne doit PAS matcher "Erika")
-    const matchesTranslated = translatedSearch !== searchLower && (
-      cardNameLower === translatedSearch || // Exact match
-      cardNameLower.startsWith(translatedSearch + ' ') || // "eri " au début
-      cardNameLower.includes(' ' + translatedSearch + ' ') || // " eri " au milieu
-      cardNameLower.endsWith(' ' + translatedSearch) // " eri" à la fin
-    )
+      // Recherche directe dans le nom anglais de la carte
+      const matchesEnglish = (
+        cardNameLower === searchLower ||
+        cardNameLower.startsWith(searchLower + ' ') ||
+        cardNameLower.includes(' ' + searchLower + ' ') ||
+        cardNameLower.endsWith(' ' + searchLower)
+      )
 
-    return matchesEnglish || matchesTranslated
-  })
+      if (matchesEnglish) return true
+
+      // Si l'utilisateur recherche en français, traduire vers l'anglais
+      let translatedSearch = translatePokemonName(searchLower)
+      if (translatedSearch === searchLower) {
+        translatedSearch = translateTrainerName(searchLower)
+      }
+
+      // Recherche par mot complet pour éviter faux positifs (ex: "eri" ne doit PAS matcher "Erika")
+      return translatedSearch !== searchLower && (
+        cardNameLower === translatedSearch ||
+        cardNameLower.startsWith(translatedSearch + ' ') ||
+        cardNameLower.includes(' ' + translatedSearch + ' ') ||
+        cardNameLower.endsWith(' ' + translatedSearch)
+      )
+    })
+  }, [duplicates, searchTerm])
 
   // Fonction pour extraire le préfixe d'extension depuis card_id (source de vérité)
   const getExtensionFromCardId = (cardId) => {
@@ -403,39 +521,44 @@ export function Duplicates() {
   }
 
   // Sélection rapide avec le bouton "+" - version Normale par défaut
-  const toggleCardSelectionQuick = (card) => {
+  // Mémorisé avec useCallback pour éviter re-création à chaque render
+  const toggleCardSelectionQuick = useCallback((card) => {
     const cardKey = card.card_id || card.id
 
     setSelectedCards(prev => {
       const exists = prev.find(c => (c.card_id || c.id) === cardKey)
       if (exists) {
-        // Retirer la carte et supprimer sa sélection
-        setCardSelections(prevSel => {
-          const newSel = { ...prevSel }
-          delete newSel[cardKey]
-          return newSel
-        })
-        setCardQuantities(prevQty => {
-          const newQty = { ...prevQty }
-          delete newQty[card.id]
-          return newQty
-        })
+        // Retirer la carte - les autres états seront mis à jour après
         return prev.filter(c => (c.card_id || c.id) !== cardKey)
       } else {
-        // Ajouter la carte avec version "Normale" et quantité 1
-        const cardWithVersion = { ...card, version: 'Normale' }
-        setCardSelections(prevSel => ({
-          ...prevSel,
-          [cardKey]: { version: 'Normale', quantity: 1 }
-        }))
-        setCardQuantities(prevQty => ({
-          ...prevQty,
-          [card.id]: 1
-        }))
-        return [...prev, cardWithVersion]
+        // Ajouter la carte avec version "Normale"
+        return [...prev, { ...card, version: 'Normale' }]
       }
     })
-  }
+
+    // Mettre à jour les sélections et quantités
+    setCardSelections(prevSel => {
+      const exists = prevSel[cardKey]
+      if (exists) {
+        const newSel = { ...prevSel }
+        delete newSel[cardKey]
+        return newSel
+      } else {
+        return { ...prevSel, [cardKey]: { version: 'Normale', quantity: 1 } }
+      }
+    })
+
+    setCardQuantities(prevQty => {
+      const exists = prevQty[card.id]
+      if (exists) {
+        const newQty = { ...prevQty }
+        delete newQty[card.id]
+        return newQty
+      } else {
+        return { ...prevQty, [card.id]: 1 }
+      }
+    })
+  }, [])
 
   // Sélection via la modale avec choix de version et quantité
   const handleVersionSelect = (selection) => {
@@ -485,11 +608,11 @@ export function Duplicates() {
     }
   }
 
-  // Ouvrir la modale de sélection de version (clic sur l'image)
-  const handleCardImageClick = (card) => {
+  // Ouvrir la modale de sélection de version (clic sur l'image) - mémorisé
+  const handleCardImageClick = useCallback((card) => {
     setCardForVersionSelect(card)
     setShowVersionSelectModal(true)
-  }
+  }, [])
 
   // Ancienne fonction pour compatibilité avec la modale de création de lot
   const toggleCardSelection = (card) => {
@@ -523,10 +646,11 @@ export function Duplicates() {
     }))
   }
 
-  const handleSellCard = (card) => {
+  // Mémorisé pour éviter re-création à chaque render
+  const handleSellCard = useCallback((card) => {
     setCardToSell(card)
     setShowSaleModal(true)
-  }
+  }, [])
 
   const handleCardClick = (card) => {
     setSelectedCardForDetail(card)
@@ -930,12 +1054,6 @@ export function Duplicates() {
 
           {duplicateCards.length > 0 ? (
             <div className="space-y-12">
-              {(() => {
-                // DEBUG AU MOMENT DU RENDU
-                const totalCards = consolidatedDuplicates.reduce((t, b) => t + b.extensions.reduce((e, ext) => e + ext.cards.length, 0), 0)
-                console.log('🎨 [RENDER] consolidatedDuplicates contient', totalCards, 'cartes au total')
-                return null
-              })()}
               {consolidatedDuplicates.map((block, blockIndex) => {
                 const isBlockCollapsed = collapsedBlocks[block.name]
 
@@ -1028,116 +1146,26 @@ export function Duplicates() {
                             )}
                           </div>
 
-                          {/* GRILLE DE CARTES */}
+                          {/* GRILLE DE CARTES - Utilise le composant mémorisé DuplicateCard */}
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                             {filteredCards.map((card) => {
-                          const cardKey = card.card_id || card.id
-                          const isSelected = selectedCards.find(c => (c.card_id || c.id) === cardKey)
-                          const currentSelection = cardSelections[cardKey]
+                              const cardKey = card.card_id || card.id
+                              const isSelected = !!selectedCards.find(c => (c.card_id || c.id) === cardKey)
+                              const currentSelection = cardSelections[cardKey]
 
-                          return (
-                <Card
-                  key={card.id}
-                  className="golden-border card-hover cursor-pointer group overflow-hidden"
-                >
-                  <CardContent className="p-4">
-                    {/* Card Image - Clic ouvre la modale de sélection de version */}
-                    <div
-                      className="relative aspect-[3/4] mb-3 rounded-lg overflow-hidden group-hover:scale-105 transition-transform duration-200 cursor-pointer"
-                      onClick={() => handleCardImageClick(card)}
-                    >
-                      <CardImage
-                        card={card}
-                        className="w-full h-full object-cover"
-                      />
-                      {/* Badge quantité doublons */}
-                      {card.consolidatedQuantity > 1 && (
-                        <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                          x{card.consolidatedQuantity}
-                        </div>
-                      )}
-                      {/* Badge sélection avec version */}
-                      {isSelected && currentSelection && (
-                        <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                          {currentSelection.quantity}x {currentSelection.version === 'Normale' ? 'N' : currentSelection.version.charAt(0)}
-                        </div>
-                      )}
-                      <div className="absolute bottom-2 left-2 right-2 flex gap-1">
-                        {/* Bouton + : sélection rapide en version Normale */}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className={`flex-1 h-8 p-0 text-white ${isSelected ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500/80 hover:bg-green-600'}`}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            toggleCardSelectionQuick(card)
-                          }}
-                          title={isSelected ? 'Retirer du lot' : 'Ajouter au lot (version Normale)'}
-                        >
-                          {isSelected ? '✓' : '+'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 px-2 bg-blue-500/80 text-white hover:bg-blue-600"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleSellCard(card)
-                          }}
-                          title="Vendre cette carte"
-                        >
-                          <Euro className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Badges des versions en double uniquement */}
-                    <CardVersionBadges
-                      cardId={card.card_id || card.id}
-                      collection={collection}
-                      card={card}
-                      isUserCopy={true}
-                      showOnlyDuplicateVersions={true}
-                      className="mb-2"
-                    />
-
-                    {/* Card Info */}
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-sm golden-glow truncate" title={translateCardName(card.name)}>
-                        {translateCardName(card.name)}
-                      </h3>
-
-                      {/* Numéro de carte - extrait depuis card_id si manquant */}
-                      {(() => {
-                        const displayNumber = card.number || (card.card_id?.match(/-(\d+)$/)?.[1])
-                        return displayNumber ? (
-                          <p className="text-xs text-muted-foreground">
-                            #{displayNumber}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground/40 italic">
-                            Sans numéro
-                          </p>
-                        )
-                      })()}
-
-                      <p className="text-xs text-muted-foreground truncate">{card.set?.name || card.extension || card.series}</p>
-
-                      <div className="space-y-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {card.rarity}
-                        </Badge>
-                        <p className="text-xs text-orange-500">{translateCondition(card.condition)}</p>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="font-semibold text-green-500">{card.marketPrice || card.value || '0.00'}€</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                            )
-                          })}
+                              return (
+                                <DuplicateCard
+                                  key={card.id}
+                                  card={card}
+                                  isSelected={isSelected}
+                                  currentSelection={currentSelection}
+                                  collection={collection}
+                                  onToggleSelection={toggleCardSelectionQuick}
+                                  onImageClick={handleCardImageClick}
+                                  onSellCard={handleSellCard}
+                                />
+                              )
+                            })}
                           </div>
                         </>
                       )}

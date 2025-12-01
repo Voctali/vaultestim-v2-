@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { CosmosHoloBadge } from './CosmosHoloBadge'
 
@@ -47,6 +48,7 @@ const VERSION_ORDER = [
 
 /**
  * Composant pour afficher les initiales des versions possédées d'une carte
+ * Optimisé avec React.memo et useMemo pour éviter les re-renders inutiles
  *
  * @param {Object} props
  * @param {string} props.cardId - ID de la carte (pour chercher dans collection)
@@ -57,61 +59,72 @@ const VERSION_ORDER = [
  * @param {boolean} props.showOnlyDuplicateVersions - true pour afficher uniquement les versions en double (onglet Doublons)
  * @param {string} props.className - Classes CSS additionnelles
  */
-export function CardVersionBadges({ cardId, collection, instances, card, isUserCopy = false, showOnlyDuplicateVersions = false, className = '' }) {
-  // Récupérer toutes les instances de cette carte
-  const cardInstances = instances || collection.filter(c =>
-    (c.card_id === cardId || c.id === cardId)
-  )
+export const CardVersionBadges = memo(function CardVersionBadges({
+  cardId,
+  collection,
+  instances,
+  card,
+  isUserCopy = false,
+  showOnlyDuplicateVersions = false,
+  className = ''
+}) {
+  // Mémoriser le filtrage des instances - évite O(n) à chaque render
+  const cardInstances = useMemo(() => {
+    if (instances) return instances
+    if (!collection || !cardId) return []
+    return collection.filter(c => c.card_id === cardId || c.id === cardId)
+  }, [instances, collection, cardId])
 
-  if (!cardInstances || cardInstances.length === 0) {
-    return null
-  }
+  // Mémoriser le calcul des versions triées
+  const sortedVersions = useMemo(() => {
+    if (!cardInstances || cardInstances.length === 0) {
+      return []
+    }
 
-  // Extraire les versions selon le mode
-  let uniqueVersions
+    let uniqueVersions
 
-  if (showOnlyDuplicateVersions) {
-    // Mode Doublons : afficher uniquement les versions en double
-    const versionCounts = {}
+    if (showOnlyDuplicateVersions) {
+      // Mode Doublons : afficher uniquement les versions en double
+      const versionCounts = {}
 
-    cardInstances.forEach(instance => {
-      const version = instance.version || 'Normale'
-      const quantity = instance.quantity || 1
+      cardInstances.forEach(instance => {
+        const version = instance.version || 'Normale'
+        const quantity = instance.quantity || 1
 
-      if (!versionCounts[version]) {
-        versionCounts[version] = 0
-      }
-      versionCounts[version] += quantity
+        if (!versionCounts[version]) {
+          versionCounts[version] = 0
+        }
+        versionCounts[version] += quantity
+      })
+
+      // Filtrer uniquement les versions avec quantité > 1
+      uniqueVersions = Object.keys(versionCounts).filter(version => versionCounts[version] > 1)
+    } else {
+      // Mode normal : afficher toutes les versions possédées
+      uniqueVersions = [...new Set(
+        cardInstances
+          .map(c => c.version)
+          .filter(Boolean)
+      )]
+    }
+
+    if (uniqueVersions.length === 0) {
+      return []
+    }
+
+    // Trier les versions selon l'ordre prédéfini
+    return uniqueVersions.sort((a, b) => {
+      const indexA = VERSION_ORDER.indexOf(a)
+      const indexB = VERSION_ORDER.indexOf(b)
+      if (indexA === -1) return 1
+      if (indexB === -1) return -1
+      return indexA - indexB
     })
+  }, [cardInstances, showOnlyDuplicateVersions])
 
-    // Filtrer uniquement les versions avec quantité > 1
-    uniqueVersions = Object.keys(versionCounts).filter(version => versionCounts[version] > 1)
-
-    console.log('🔍 [CardVersionBadges] Mode doublons pour:', card?.name || cardId)
-    console.log('   Comptage versions:', versionCounts)
-    console.log('   Versions en double:', uniqueVersions)
-  } else {
-    // Mode normal : afficher toutes les versions possédées
-    uniqueVersions = [...new Set(
-      cardInstances
-        .map(card => card.version)
-        .filter(Boolean) // Enlever les null/undefined
-    )]
-  }
-
-  if (uniqueVersions.length === 0) {
+  if (sortedVersions.length === 0) {
     return null
   }
-
-  // Trier les versions selon l'ordre prédéfini
-  const sortedVersions = uniqueVersions.sort((a, b) => {
-    const indexA = VERSION_ORDER.indexOf(a)
-    const indexB = VERSION_ORDER.indexOf(b)
-    // Si une version n'est pas dans VERSION_ORDER, la mettre à la fin
-    if (indexA === -1) return 1
-    if (indexB === -1) return -1
-    return indexA - indexB
-  })
 
   return (
     <div className={`flex flex-wrap gap-1 ${className}`}>
@@ -134,4 +147,4 @@ export function CardVersionBadges({ cardId, collection, instances, card, isUserC
       {card && <CosmosHoloBadge card={card} isUserCopy={isUserCopy} />}
     </div>
   )
-}
+})

@@ -162,6 +162,17 @@ const { data } = await supabase
 
 ## 🎯 Fonctionnalités Récentes
 
+### v1.28.3 (01/12/2025)
+- **Optimisation onglet Doublons** : Correction des freezes lors de sélections multiples (37+ cartes)
+  - Composant `DuplicateCard` mémorisé avec `React.memo` pour éviter re-renders de toutes les cartes
+  - `CardVersionBadges` optimisé avec `useMemo` et `React.memo` (suppression `console.log` en prod)
+  - `CardImage` optimisé avec `React.memo` et `useCallback`
+  - `duplicateCards` mémorisé avec `useMemo` (évite recalcul à chaque render)
+  - Handlers `toggleCardSelectionQuick`, `handleCardImageClick`, `handleSellCard` mémorisés avec `useCallback`
+
+### v1.28.2 (01/12/2025)
+- **Fix conflit upsert cardmarket_prices** : Remplacé l'upsert par SELECT + UPDATE/INSERT pour éviter l'erreur 409 (conflit entre clé primaire `id` et contrainte UNIQUE `(id_product, id_language)`)
+
 ### v1.28.1 (30/11/2025)
 - **Fix clic plan RapidAPI** : Le clic sur la carte du plan (Basic/Pro) fonctionne maintenant sur toute la zone
 
@@ -227,4 +238,4 @@ const { data } = await supabase
 
 ---
 
-**Dernière mise à jour** : 2025-11-30 (v1.28.1)
+**Dernière mise à jour** : 2025-12-01 (v1.28.3)

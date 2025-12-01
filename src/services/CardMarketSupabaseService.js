@@ -916,31 +916,61 @@ export class CardMarketSupabaseService {
   static async updateCatalogProductPrice(idProduct, priceData) {
     try {
       const updatedAt = new Date().toISOString()
+      const languageId = 2 // Français
 
-      // Utiliser upsert pour INSERT ou UPDATE en une seule opération
-      // onConflict sur (id_product, id_language) = clé unique
-      const { data, error } = await supabase
+      // 1. Vérifier si l'enregistrement existe déjà
+      const { data: existing, error: selectError } = await supabase
         .from('cardmarket_prices')
-        .upsert({
-          id_product: idProduct,
-          id_language: 2,
-          avg: priceData.avg || null,
-          low: priceData.low || null,
-          trend: priceData.trend || null,
-          updated_at: updatedAt
-        }, {
-          onConflict: 'id_product,id_language',
-          ignoreDuplicates: false // Force UPDATE si existe
-        })
-        .select()
+        .select('id')
+        .eq('id_product', idProduct)
+        .eq('id_language', languageId)
+        .maybeSingle()
 
-      if (error) {
-        // Si RLS bloque l'opération, log et retourne false (prix NON mis à jour)
-        if (error.code === '42501' || error.message?.includes('policy')) {
-          console.warn(`⚠️ Prix ${idProduct} non mis à jour (RLS bloque l'accès)`)
-          return false
+      if (selectError) {
+        console.error(`❌ Erreur vérification prix ${idProduct}:`, selectError)
+        throw selectError
+      }
+
+      if (existing) {
+        // 2a. UPDATE si existe
+        const { error: updateError } = await supabase
+          .from('cardmarket_prices')
+          .update({
+            avg: priceData.avg || null,
+            low: priceData.low || null,
+            trend: priceData.trend || null,
+            updated_at: updatedAt
+          })
+          .eq('id_product', idProduct)
+          .eq('id_language', languageId)
+
+        if (updateError) {
+          if (updateError.code === '42501' || updateError.message?.includes('policy')) {
+            console.warn(`⚠️ Prix ${idProduct} non mis à jour (RLS bloque l'accès)`)
+            return false
+          }
+          throw updateError
         }
-        throw error
+      } else {
+        // 2b. INSERT si n'existe pas
+        const { error: insertError } = await supabase
+          .from('cardmarket_prices')
+          .insert({
+            id_product: idProduct,
+            id_language: languageId,
+            avg: priceData.avg || null,
+            low: priceData.low || null,
+            trend: priceData.trend || null,
+            updated_at: updatedAt
+          })
+
+        if (insertError) {
+          if (insertError.code === '42501' || insertError.message?.includes('policy')) {
+            console.warn(`⚠️ Prix ${idProduct} non inséré (RLS bloque l'accès)`)
+            return false
+          }
+          throw insertError
+        }
       }
 
       return true
