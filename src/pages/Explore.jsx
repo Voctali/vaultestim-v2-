@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,7 @@ import { translateCardName } from '@/utils/cardTranslations'
 import { translateCardType } from '@/utils/typeTranslations'
 import { formatCardPrice } from '@/utils/priceFormatter'
 import { CardVersionBadges } from '@/components/features/collection/CardVersionBadges'
+import { ExploreCard } from '@/components/features/explore/ExploreCard'
 import { SetProgressBar } from '@/components/features/collection/SetProgressBar'
 import { RarityProgressIcons } from '@/components/features/collection/RarityProgressIcons'
 import { PriceSourceBadge } from '@/components/ui/PriceSourceBadge'
@@ -394,7 +395,7 @@ export function Explore() {
     toggleFavorite(card)
   }
 
-  const handleToggleWishlist = async (card) => {
+  const handleToggleWishlist = useCallback(async (card) => {
     try {
       const result = await toggleWishlist(card)
       if (result.action === 'added') {
@@ -413,7 +414,63 @@ export function Explore() {
     } catch (error) {
       console.error('Erreur toggle wishlist:', error)
     }
-  }
+  }, [toggleWishlist, toast])
+
+  // Handler mémorisé pour l'ajout rapide de carte
+  const handleQuickAdd = useCallback(async (card) => {
+    console.log('🚀 [Explore Quick Add] Ajout rapide de:', card.name)
+
+    const cardData = {
+      id: card.id,
+      name: card.name,
+      series: card.set?.series || card.series || 'Non spécifié',
+      extension: card.set?.name || card.extension || 'Non spécifié',
+      number: card.number || null,
+      set: card.set || null,
+      rarity: card.rarity || 'Non spécifié',
+      image: card.images?.large || card.images?.small || card.image || null,
+      images: card.images || null,
+      quantity: 1,
+      condition: 'near_mint',
+      version: 'Normale',
+      language: 'Français',
+      purchasePrice: null,
+      marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
+      value: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
+      cardmarket: card.cardmarket || null,
+      tcgplayer: card.tcgplayer || null,
+      isGraded: false
+    }
+
+    try {
+      await addToCollection(cardData)
+      console.log('✅ [Explore Quick Add] Carte ajoutée avec succès!')
+      toast({
+        title: 'Carte ajoutée !',
+        description: `${card.name} a été ajoutée à votre collection`,
+        variant: 'success'
+      })
+    } catch (error) {
+      console.error('❌ [Explore Quick Add] Erreur:', error)
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'ajouter la carte',
+        variant: 'error'
+      })
+    }
+  }, [addToCollection, toast])
+
+  // Handler mémorisé pour le clic sur une carte
+  const handleCardClick = useCallback((card) => {
+    console.log('🖼️ [Explore] Clic sur la carte:', card.name)
+    setSelectedCard(card)
+    setShowAddToCollectionModal(true)
+  }, [])
+
+  // Handler mémorisé pour toggle favorite
+  const handleToggleFavoriteCallback = useCallback((card) => {
+    toggleFavorite(card)
+  }, [toggleFavorite])
 
   return (
     <div className="space-y-6 p-6">
@@ -751,204 +808,23 @@ export function Explore() {
             </Card>
           )}
 
-          {/* Cards Grid */}
+          {/* Cards Grid - Composants mémorisés pour éviter les re-renders */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-            {getFilteredData().map((card, cardIndex) => {
-            const isInCollection = collection.some(c => c.card_id === card.id)
-
-            return (
-            <Card
-              key={`card-${card.id || cardIndex}`}
-              className="golden-border card-hover cursor-pointer group overflow-hidden"
-              onClick={() => {
-                console.log('🖼️ [Explore] Clic sur la carte:', card.name)
-                setSelectedCard(card)
-                setShowAddToCollectionModal(true)
-              }}
-            >
-              <CardContent className="p-4">
-                <div className="relative aspect-[3/4] mb-3 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg overflow-hidden group-hover:scale-105 transition-transform duration-200">
-                  {card.images?.small || card.image ? (
-                    <img
-                      src={card.images?.small || card.image}
-                      alt={card.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none'
-                        e.target.nextSibling.style.display = 'flex'
-                      }}
-                    />
-                  ) : null}
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground" style={{ display: card.images?.small || card.image ? 'none' : 'flex' }}>
-                    <Database className="w-8 h-8" />
-                  </div>
-
-                  {/* Overlay obscurci si carte non possédée */}
-                  {!isInCollection && (
-                    <div className="absolute inset-0 bg-black/60 pointer-events-none" />
-                  )}
-
-                  {/* Bouton d'ajout rapide à la collection */}
-                  <div className="absolute top-2 right-2">
-                    <Button
-                      size="sm"
-                      className="w-8 h-8 p-0 bg-green-500 hover:bg-green-600 text-white"
-                      onClick={async (e) => {
-                        e.stopPropagation()
-                        console.log('🚀 [Explore Quick Add] Ajout rapide de:', card.name)
-
-                        // Mapper correctement les données de la carte pour ajout rapide
-                        const cardData = {
-                          id: card.id,
-                          name: card.name,
-                          series: card.set?.series || card.series || 'Non spécifié',
-                          extension: card.set?.name || card.extension || 'Non spécifié',
-                          number: card.number || null, // REQUIS pour liens CardMarket et tri
-                          set: card.set || null, // REQUIS pour liens CardMarket et tri
-                          rarity: card.rarity || 'Non spécifié',
-                          image: card.images?.large || card.images?.small || card.image || null,
-                          images: card.images || null,
-                          quantity: 1,
-                          condition: 'near_mint', // État quasi-neuf par défaut
-                          version: 'Normale',
-                          language: 'Français', // Langue française par défaut
-                          purchasePrice: null,
-                          marketPrice: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
-                          value: card.cardmarket?.prices?.averageSellPrice || card.tcgplayer?.prices?.holofoil?.market || null,
-                          // Sauvegarder aussi les structures complètes pour référence future
-                          cardmarket: card.cardmarket || null,
-                          tcgplayer: card.tcgplayer || null,
-                          isGraded: false
-                        }
-
-                        console.log('📦 [Explore Quick Add] Données mappées:', cardData)
-
-                        try {
-                          await addToCollection(cardData)
-                          console.log('✅ [Explore Quick Add] Carte ajoutée avec succès!')
-                          toast({
-                            title: 'Carte ajoutée !',
-                            description: `${card.name} a été ajoutée à votre collection`,
-                            variant: 'success'
-                          })
-                        } catch (error) {
-                          console.error('❌ [Explore Quick Add] Erreur:', error)
-                          toast({
-                            title: 'Erreur',
-                            description: 'Impossible d\'ajouter la carte',
-                            variant: 'error'
-                          })
-                        }
-                      }}
-                      title="Ajout rapide (état quasi-neuf)"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  {/* Icônes favoris et wishlist en bas à gauche */}
-                  <div className="absolute bottom-2 left-2 flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="w-8 h-8 p-0 bg-black/50 text-white hover:bg-black/70"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleToggleFavorite(card)
-                      }}
-                    >
-                      <Heart className={`w-4 h-4 ${favorites.find(fav => fav.card_id === card.id) ? 'fill-red-500 text-red-500' : ''}`} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="w-8 h-8 p-0 bg-black/50 text-white hover:bg-black/70"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleToggleWishlist(card)
-                      }}
-                    >
-                      <List className={`w-4 h-4 ${wishlist.find(wish => wish.card_id === card.id) ? 'fill-yellow-500 text-yellow-500' : ''}`} />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Badges des versions possédées */}
-                <CardVersionBadges
-                  cardId={card.id}
-                  collection={collection}
-                  card={card}
-                  isUserCopy={false}
-                  className="mb-2"
-                />
-
-                {/* Card Info */}
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-sm golden-glow truncate" title={translateCardName(card.name)}>
-                    {translateCardName(card.name)}
-                  </h4>
-
-                  {/* Informations principales */}
-                  <div className="space-y-0.5">
-                    {/* Numéro de carte */}
-                    {card.number ? (
-                      <p className="text-xs text-muted-foreground">
-                        #{card.number}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground/40 italic">
-                        Sans numéro
-                      </p>
-                    )}
-
-                    {/* Rareté */}
-                    {card.rarity ? (
-                      <p className="text-xs text-muted-foreground truncate" title={card.rarity}>
-                        {card.rarity}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground/40 italic">
-                        Rareté inconnue
-                      </p>
-                    )}
-
-                    {/* Types Pokémon */}
-                    {card.types && card.types.length > 0 ? (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {card.types.slice(0, 2).map((type, i) => (
-                          <Badge key={`type-${cardIndex}-${i}-${type}`} variant="outline" className="text-xs py-0">
-                            {translateCardType(type)}
-                          </Badge>
-                        ))}
-                        {card.types.length > 2 && (
-                          <Badge variant="outline" className="text-xs py-0">
-                            +{card.types.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    ) : card.supertype === 'Pokémon' ? (
-                      <p className="text-xs text-muted-foreground/40 italic">
-                        Type inconnu
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {card.supertype || 'Carte'}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Prix de la carte */}
-                  <div className="mt-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <PriceSourceBadge source={card._price_source} size="small" />
-                      <p className="font-semibold text-green-500 text-sm">{formatCardPrice(card)}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            )
-          })}
+            {getFilteredData().map((card, cardIndex) => (
+              <ExploreCard
+                key={`card-${card.id || cardIndex}`}
+                card={card}
+                cardIndex={cardIndex}
+                isInCollection={collection.some(c => c.card_id === card.id)}
+                isFavorite={!!favorites.find(fav => fav.card_id === card.id)}
+                isInWishlist={!!wishlist.find(wish => wish.card_id === card.id)}
+                onCardClick={handleCardClick}
+                onQuickAdd={handleQuickAdd}
+                onToggleFavorite={handleToggleFavoriteCallback}
+                onToggleWishlist={handleToggleWishlist}
+                collection={collection}
+              />
+            ))}
           </div>
         </div>
       ) : null}

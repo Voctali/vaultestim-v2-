@@ -224,6 +224,22 @@ export function getAvailableVersions(card) {
     return [{ value: 'AR', label: 'AR (★ dorée)' }]
   }
 
+  // 7b. Cas spécial : Carte n°80 de Forces Temporelles (sv5) - Version normale, pas Full Art
+  // Cette carte a été incorrectement identifiée comme Full Art
+  const isTemporalForces = setId.includes('sv5') ||
+    setName.includes('temporal forces') ||
+    setName.includes('forces temporelles')
+
+  if (isTemporalForces && number === '80') {
+    return [
+      { value: 'Normale', label: 'Normale' },
+      { value: 'Reverse Holo', label: 'Reverse Holo' },
+      { value: 'Holo', label: 'Holo' },
+      { value: 'Holo Cosmos', label: '✨ Holo Cosmos' },
+      { value: 'Tampon (logo extension)', label: 'Tampon (logo extension)' }
+    ]
+  }
+
   // 8. Full Art (2 étoiles grises) - GX, V, VMAX, VSTAR
   if (
     rarity.includes('rare holo gx') ||
