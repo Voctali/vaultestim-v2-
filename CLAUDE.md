@@ -237,6 +237,20 @@ const { data } = await supabase
 **État** : Partiellement résolu (v1.11.3)
 **Contournement** : Supprimer manuellement l'extension vide au lieu de fusionner
 
+### Badges versions non mis à jour en temps réel (Mobile uniquement)
+**État** : Non résolu (v1.28.8)
+**Description** : Dans l'onglet "Explorer les séries", quand on ajoute une nouvelle version d'une carte déjà présente dans la collection, le badge de version ne s'affiche pas immédiatement. Il faut rafraîchir l'app pour voir le nouveau badge.
+**Particularité** : Fonctionne correctement sur desktop, bug uniquement sur mobile.
+**Fichiers concernés** :
+- `src/pages/Explore.jsx` (cardInstancesMap)
+- `src/components/features/explore/ExploreCard.jsx` (comparaison memo)
+- `src/components/features/collection/CardVersionBadges.jsx`
+
+**Pistes d'investigation** :
+- Différence de comportement React.memo sur mobile vs desktop
+- Possible problème de référence avec le tableau `cardInstances` passé en prop
+- Vérifier si le re-render est déclenché mais le composant CardVersionBadges ne reçoit pas les nouvelles instances
+
 ---
 
 ## Liens Utiles
