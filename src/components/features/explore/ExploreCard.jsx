@@ -23,7 +23,7 @@ export const ExploreCard = memo(function ExploreCard({
   onQuickAdd,
   onToggleFavorite,
   onToggleWishlist,
-  collection
+  cardInstances = [] // Instances de cette carte dans la collection (pré-filtrées)
 }) {
   return (
     <Card
@@ -98,7 +98,7 @@ export const ExploreCard = memo(function ExploreCard({
         {/* Badges des versions possédées */}
         <CardVersionBadges
           cardId={card.id}
-          collection={collection}
+          instances={cardInstances}
           card={card}
           isUserCopy={false}
           className="mb-2"
@@ -173,11 +173,34 @@ export const ExploreCard = memo(function ExploreCard({
 }, (prevProps, nextProps) => {
   // Comparaison personnalisée pour éviter les re-renders inutiles
   // On ne re-render que si les props importantes changent
-  return (
-    prevProps.card.id === nextProps.card.id &&
-    prevProps.isInCollection === nextProps.isInCollection &&
-    prevProps.isFavorite === nextProps.isFavorite &&
-    prevProps.isInWishlist === nextProps.isInWishlist &&
-    prevProps.cardIndex === nextProps.cardIndex
-  )
+
+  // Comparaison rapide des props simples
+  if (
+    prevProps.card.id !== nextProps.card.id ||
+    prevProps.isInCollection !== nextProps.isInCollection ||
+    prevProps.isFavorite !== nextProps.isFavorite ||
+    prevProps.isInWishlist !== nextProps.isInWishlist ||
+    prevProps.cardIndex !== nextProps.cardIndex
+  ) {
+    return false // Re-render
+  }
+
+  // Comparaison des instances (pour mise à jour des badges)
+  const prevInstances = prevProps.cardInstances || []
+  const nextInstances = nextProps.cardInstances || []
+
+  // Si le nombre d'instances change, re-render
+  if (prevInstances.length !== nextInstances.length) {
+    return false
+  }
+
+  // Comparaison des versions pour détecter les changements
+  const prevVersions = prevInstances.map(i => `${i.version || 'Normale'}-${i.quantity || 1}`).sort().join(',')
+  const nextVersions = nextInstances.map(i => `${i.version || 'Normale'}-${i.quantity || 1}`).sort().join(',')
+
+  if (prevVersions !== nextVersions) {
+    return false
+  }
+
+  return true // Pas de re-render nécessaire
 })

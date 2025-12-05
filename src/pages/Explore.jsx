@@ -50,6 +50,39 @@ export function Explore() {
   const { settings } = useSettings()
   const { toast } = useToast()
 
+  // Optimisation : pré-calculer un Set de card_ids pour vérification O(1)
+  const collectionCardIds = useMemo(() => {
+    const ids = new Set()
+    collection.forEach(c => {
+      if (c.card_id) ids.add(c.card_id)
+      if (c.id) ids.add(c.id)
+    })
+    return ids
+  }, [collection])
+
+  // Optimisation : pré-calculer les instances par card_id pour les badges
+  const cardInstancesMap = useMemo(() => {
+    const map = new Map()
+    collection.forEach(c => {
+      const cardId = c.card_id || c.id
+      if (!cardId) return
+      if (!map.has(cardId)) {
+        map.set(cardId, [])
+      }
+      map.get(cardId).push(c)
+    })
+    return map
+  }, [collection])
+
+  // Optimisation : pré-calculer les Sets de favoris et wishlist
+  const favoritesCardIds = useMemo(() => {
+    return new Set(favorites.map(f => f.card_id))
+  }, [favorites])
+
+  const wishlistCardIds = useMemo(() => {
+    return new Set(wishlist.map(w => w.card_id))
+  }, [wishlist])
+
   // AbortController pour annuler la recherche
   const abortControllerRef = useRef(null)
 
@@ -815,14 +848,14 @@ export function Explore() {
                 key={`card-${card.id || cardIndex}`}
                 card={card}
                 cardIndex={cardIndex}
-                isInCollection={collection.some(c => c.card_id === card.id)}
-                isFavorite={!!favorites.find(fav => fav.card_id === card.id)}
-                isInWishlist={!!wishlist.find(wish => wish.card_id === card.id)}
+                isInCollection={collectionCardIds.has(card.id)}
+                isFavorite={favoritesCardIds.has(card.id)}
+                isInWishlist={wishlistCardIds.has(card.id)}
                 onCardClick={handleCardClick}
                 onQuickAdd={handleQuickAdd}
                 onToggleFavorite={handleToggleFavoriteCallback}
                 onToggleWishlist={handleToggleWishlist}
-                collection={collection}
+                cardInstances={cardInstancesMap.get(card.id) || []}
               />
             ))}
           </div>
