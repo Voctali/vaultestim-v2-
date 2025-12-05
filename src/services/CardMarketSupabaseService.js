@@ -918,10 +918,10 @@ export class CardMarketSupabaseService {
       const updatedAt = new Date().toISOString()
       const languageId = 2 // Français
 
-      // 1. Vérifier si l'enregistrement existe déjà
+      // 1. Vérifier si l'enregistrement existe déjà (la table n'a pas de colonne 'id', on utilise id_product)
       const { data: existing, error: selectError } = await supabase
         .from('cardmarket_prices')
-        .select('id')
+        .select('id_product')
         .eq('id_product', idProduct)
         .eq('id_language', languageId)
         .maybeSingle()

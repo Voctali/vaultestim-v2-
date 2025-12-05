@@ -189,17 +189,22 @@ export const ExploreCard = memo(function ExploreCard({
   const prevInstances = prevProps.cardInstances || []
   const nextInstances = nextProps.cardInstances || []
 
-  // Si le nombre d'instances change, re-render
-  if (prevInstances.length !== nextInstances.length) {
-    return false
-  }
+  // Si la référence du tableau est différente, vérifier le contenu
+  // (Fix bug mobile : forcer re-render si la référence change)
+  if (prevInstances !== nextInstances) {
+    // Si le nombre d'instances change, re-render
+    if (prevInstances.length !== nextInstances.length) {
+      return false
+    }
 
-  // Comparaison des versions pour détecter les changements
-  const prevVersions = prevInstances.map(i => `${i.version || 'Normale'}-${i.quantity || 1}`).sort().join(',')
-  const nextVersions = nextInstances.map(i => `${i.version || 'Normale'}-${i.quantity || 1}`).sort().join(',')
+    // Comparaison complète des instances (ID + version + quantité)
+    // Utiliser l'ID unique de chaque instance pour détecter les changements
+    const prevKey = prevInstances.map(i => `${i.id || i.card_id || ''}-${i.version || 'Normale'}-${i.quantity || 1}`).sort().join('|')
+    const nextKey = nextInstances.map(i => `${i.id || i.card_id || ''}-${i.version || 'Normale'}-${i.quantity || 1}`).sort().join('|')
 
-  if (prevVersions !== nextVersions) {
-    return false
+    if (prevKey !== nextKey) {
+      return false
+    }
   }
 
   return true // Pas de re-render nécessaire

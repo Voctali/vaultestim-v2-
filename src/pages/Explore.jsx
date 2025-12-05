@@ -27,6 +27,9 @@ import { PriceSourceBadge } from '@/components/ui/PriceSourceBadge'
 import { useSettings } from '@/hooks/useSettings'
 import { Search, ChevronRight, Plus, Database, Layers, Package, ArrowLeft, X, Heart, List } from 'lucide-react'
 
+// Tableau vide constant pour éviter les re-renders inutiles sur mobile
+const EMPTY_INSTANCES = []
+
 export function Explore() {
   const [filterTerm, setFilterTerm] = useState('') // Filtrage local des blocs/extensions/cartes
   const [searchTerm, setSearchTerm] = useState('') // Recherche API globale
@@ -855,7 +858,7 @@ export function Explore() {
                 onQuickAdd={handleQuickAdd}
                 onToggleFavorite={handleToggleFavoriteCallback}
                 onToggleWishlist={handleToggleWishlist}
-                cardInstances={cardInstancesMap.get(card.id) || []}
+                cardInstances={cardInstancesMap.get(card.id) || EMPTY_INSTANCES}
               />
             ))}
           </div>

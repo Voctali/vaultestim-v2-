@@ -162,6 +162,13 @@ const { data } = await supabase
 
 ## 🎯 Fonctionnalités Récentes
 
+### v1.28.9 (05/12/2025)
+- **Fix badges versions mobile** : Correction du bug où les badges de versions ne se mettaient pas à jour en temps réel sur mobile
+  - Utilisation de `EMPTY_INSTANCES` constant au lieu de `[]` pour éviter les problèmes de référence
+  - Amélioration de la comparaison memo dans `ExploreCard.jsx` avec vérification de l'ID unique
+- **Fix erreur Supabase cardmarket_prices** : Correction de l'erreur `column cardmarket_prices.id does not exist`
+  - La table utilise une clé composite `(id_product, id_language)` et non une colonne `id`
+
 ### v1.28.5 (01/12/2025)
 - **Sélection rapide intelligente** : Le bouton "+" sélectionne automatiquement la première version en double disponible
   - Si pas de "Normale" en double mais "Reverse" → affiche "1x R"
