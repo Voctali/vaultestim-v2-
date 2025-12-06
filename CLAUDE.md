@@ -162,6 +162,12 @@ const { data } = await supabase
 
 ## 🎯 Fonctionnalités Récentes
 
+### v1.28.10 (06/12/2025)
+- **Fix race condition upsert cardmarket_prices** : Correction de l'erreur `duplicate key value violates unique constraint "cardmarket_prices_pkey"` lors de l'actualisation des prix
+  - Remplacé le pattern SELECT + INSERT/UPDATE par un upsert atomique avec `onConflict: 'id_product,id_language'`
+  - Corrigé dans 3 fonctions : `updateCatalogProductPrice`, `upsertSealedProductsFromRapidAPI`, `_importInBatches`
+  - Ajout de `id_language` manquant dans le mapping de `upsertSealedProductsFromRapidAPI`
+
 ### v1.28.9 (05/12/2025)
 - **Fix badges versions mobile** : Correction du bug où les badges de versions ne se mettaient pas à jour en temps réel sur mobile
   - Utilisation de `EMPTY_INSTANCES` constant au lieu de `[]` pour éviter les problèmes de référence

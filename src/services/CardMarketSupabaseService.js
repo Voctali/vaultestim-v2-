@@ -171,16 +171,26 @@ export class CardMarketSupabaseService {
 
   /**
    * Import par batches pour éviter les timeouts
+   * @param {string} tableName - Nom de la table
+   * @param {Array} data - Données à importer
+   * @param {number} batchSize - Taille des batches
+   * @param {Function} onProgress - Callback de progression
    */
   static async _importInBatches(tableName, data, batchSize, onProgress = null) {
     const total = data.length
+
+    // Déterminer la clé de conflit selon la table
+    // cardmarket_prices utilise une clé composite (id_product, id_language)
+    const onConflict = tableName === 'cardmarket_prices'
+      ? 'id_product,id_language'
+      : 'id_product'
 
     for (let i = 0; i < total; i += batchSize) {
       const batch = data.slice(i, i + batchSize)
 
       const { error } = await supabase
         .from(tableName)
-        .upsert(batch, { onConflict: 'id_product' })
+        .upsert(batch, { onConflict })
 
       if (error) {
         console.error(`❌ Erreur batch ${i}-${i + batch.length}:`, error)
@@ -726,10 +736,13 @@ export class CardMarketSupabaseService {
         console.log(`✅ ${upsertedProducts?.length || products.length} produits sauvegardés dans cardmarket_nonsingles`)
 
         // Sauvegarder les prix dans cardmarket_prices
+        // La table utilise une clé composite (id_product, id_language)
+        const languageId = 2 // Français par défaut
         const pricesToUpsert = products
           .filter(p => p.price || p.priceDetails) // Seulement ceux avec prix
           .map(product => ({
             id_product: product.id_product,
+            id_language: languageId,
             avg: product.priceDetails?.avg || product.price || null,
             low: product.priceDetails?.low || product.priceLow || null,
             trend: product.priceDetails?.trend || null,
@@ -740,7 +753,7 @@ export class CardMarketSupabaseService {
           const { data: upsertedPrices, error: pricesError } = await supabase
             .from('cardmarket_prices')
             .upsert(pricesToUpsert, {
-              onConflict: 'id_product',
+              onConflict: 'id_product,id_language',
               ignoreDuplicates: false
             })
             .select()
@@ -909,6 +922,7 @@ export class CardMarketSupabaseService {
 
   /**
    * Mettre à jour le prix d'un produit du catalogue CardMarket
+   * Utilise upsert atomique pour éviter les race conditions
    * @param {number} idProduct - ID CardMarket du produit
    * @param {Object} priceData - Données de prix {avg, low, trend}
    * @returns {Promise<boolean>}
@@ -918,59 +932,28 @@ export class CardMarketSupabaseService {
       const updatedAt = new Date().toISOString()
       const languageId = 2 // Français
 
-      // 1. Vérifier si l'enregistrement existe déjà (la table n'a pas de colonne 'id', on utilise id_product)
-      const { data: existing, error: selectError } = await supabase
+      // Utiliser upsert atomique avec clé composite (id_product, id_language)
+      // Cela évite les race conditions du pattern SELECT + INSERT/UPDATE
+      const { error: upsertError } = await supabase
         .from('cardmarket_prices')
-        .select('id_product')
-        .eq('id_product', idProduct)
-        .eq('id_language', languageId)
-        .maybeSingle()
+        .upsert({
+          id_product: idProduct,
+          id_language: languageId,
+          avg: priceData.avg || null,
+          low: priceData.low || null,
+          trend: priceData.trend || null,
+          updated_at: updatedAt
+        }, {
+          onConflict: 'id_product,id_language',
+          ignoreDuplicates: false // Mettre à jour si existe
+        })
 
-      if (selectError) {
-        console.error(`❌ Erreur vérification prix ${idProduct}:`, selectError)
-        throw selectError
-      }
-
-      if (existing) {
-        // 2a. UPDATE si existe
-        const { error: updateError } = await supabase
-          .from('cardmarket_prices')
-          .update({
-            avg: priceData.avg || null,
-            low: priceData.low || null,
-            trend: priceData.trend || null,
-            updated_at: updatedAt
-          })
-          .eq('id_product', idProduct)
-          .eq('id_language', languageId)
-
-        if (updateError) {
-          if (updateError.code === '42501' || updateError.message?.includes('policy')) {
-            console.warn(`⚠️ Prix ${idProduct} non mis à jour (RLS bloque l'accès)`)
-            return false
-          }
-          throw updateError
+      if (upsertError) {
+        if (upsertError.code === '42501' || upsertError.message?.includes('policy')) {
+          console.warn(`⚠️ Prix ${idProduct} non mis à jour (RLS bloque l'accès)`)
+          return false
         }
-      } else {
-        // 2b. INSERT si n'existe pas
-        const { error: insertError } = await supabase
-          .from('cardmarket_prices')
-          .insert({
-            id_product: idProduct,
-            id_language: languageId,
-            avg: priceData.avg || null,
-            low: priceData.low || null,
-            trend: priceData.trend || null,
-            updated_at: updatedAt
-          })
-
-        if (insertError) {
-          if (insertError.code === '42501' || insertError.message?.includes('policy')) {
-            console.warn(`⚠️ Prix ${idProduct} non inséré (RLS bloque l'accès)`)
-            return false
-          }
-          throw insertError
-        }
+        throw upsertError
       }
 
       return true
