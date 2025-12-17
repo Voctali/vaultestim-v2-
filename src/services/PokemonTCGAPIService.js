@@ -15,10 +15,16 @@
  * 2. Optionnel : Ajouter VITE_POKEMON_TCG_API_KEY pour augmenter le rate limit
  */
 
-// Utiliser le proxy Vercel en production (CORS bloque les appels directs)
-const BASE_URL = import.meta.env.DEV
-  ? 'https://api.pokemontcg.io/v2'  // Dev: appel direct
-  : '/api/pokemontcg/v2'             // Production: via proxy Vercel
+// Fonction pour obtenir l'URL de base (proxy en production, direct en dev)
+function getBaseUrl() {
+  const isLocal = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
+  if (isLocal) {
+    return 'https://api.pokemontcg.io/v2'  // Dev: appel direct
+  }
+  return '/api/pokemontcg/v2'  // Production: via proxy Vercel
+}
 
 const API_KEY = import.meta.env.VITE_POKEMON_TCG_API_KEY || ''
 // Activé par défaut comme fallback (gratuit, supporte CORS)
@@ -75,7 +81,7 @@ export class PokemonTCGAPIService {
       if (options.page) params.append('page', options.page.toString())
       params.append('pageSize', (options.pageSize || 250).toString())
 
-      const url = `${BASE_URL}/sets?${params}`
+      const url = `${getBaseUrl()}/sets?${params}`
       console.log(`📡 URL: ${url}`)
 
       const controller = new AbortController()
@@ -132,7 +138,7 @@ export class PokemonTCGAPIService {
     console.log(`📦 Pokemon TCG API: Récupération extension ${setId}...`)
 
     try {
-      const response = await fetch(`${BASE_URL}/sets/${setId}`, {
+      const response = await fetch(`${getBaseUrl()}/sets/${setId}`, {
         headers: this.getHeaders()
       })
 
@@ -183,7 +189,7 @@ export class PokemonTCGAPIService {
           pageSize: pageSize.toString()
         })
 
-        const url = `${BASE_URL}/cards?${params}`
+        const url = `${getBaseUrl()}/cards?${params}`
         console.log(`📄 Page ${page}: ${url}`)
 
         const response = await fetch(url, {
@@ -248,7 +254,7 @@ export class PokemonTCGAPIService {
         params.append('orderBy', options.orderBy)
       }
 
-      const response = await fetch(`${BASE_URL}/cards?${params}`, {
+      const response = await fetch(`${getBaseUrl()}/cards?${params}`, {
         headers: this.getHeaders()
       })
 
