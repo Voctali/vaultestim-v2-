@@ -15,9 +15,10 @@
  * 2. Optionnel : Ajouter VITE_POKEMON_TCG_API_KEY pour augmenter le rate limit
  */
 
-// L'API Pokemon TCG supporte CORS, on peut appeler directement
-// (plus fiable que le proxy Vercel qui peut timeout)
-const BASE_URL = 'https://api.pokemontcg.io/v2'
+// Utiliser le proxy Vercel en production (CORS bloque les appels directs)
+const BASE_URL = import.meta.env.DEV
+  ? 'https://api.pokemontcg.io/v2'  // Dev: appel direct
+  : '/api/pokemontcg/v2'             // Production: via proxy Vercel
 
 const API_KEY = import.meta.env.VITE_POKEMON_TCG_API_KEY || ''
 // Activé par défaut comme fallback (gratuit, supporte CORS)
