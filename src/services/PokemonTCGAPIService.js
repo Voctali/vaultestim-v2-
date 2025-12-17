@@ -15,10 +15,9 @@
  * 2. Optionnel : Ajouter VITE_POKEMON_TCG_API_KEY pour augmenter le rate limit
  */
 
-// Utiliser le proxy en production pour éviter CORS
-const BASE_URL = import.meta.env.DEV
-  ? 'https://api.pokemontcg.io/v2'  // Dev: appel direct (proxy Vite)
-  : '/api/pokemontcg/v2'             // Production: via proxy Vercel
+// L'API Pokemon TCG supporte CORS, on peut appeler directement
+// (plus fiable que le proxy Vercel qui peut timeout)
+const BASE_URL = 'https://api.pokemontcg.io/v2'
 
 const API_KEY = import.meta.env.VITE_POKEMON_TCG_API_KEY || ''
 const ENABLED = import.meta.env.VITE_USE_POKEMON_TCG_API === 'true'
@@ -77,7 +76,7 @@ export class PokemonTCGAPIService {
       console.log(`📡 URL: ${url}`)
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60s timeout (API parfois lente)
 
       const response = await fetch(url, {
         headers: this.getHeaders(),
@@ -113,7 +112,7 @@ export class PokemonTCGAPIService {
       }
     } catch (error) {
       if (error.name === 'AbortError') {
-        throw new Error('Timeout: L\'API Pokemon TCG met trop de temps à répondre (>30s)')
+        throw new Error('Timeout: L\'API Pokemon TCG met trop de temps à répondre (>60s)')
       }
       console.error('❌ Pokemon TCG API: Erreur getAllSets:', error)
       throw error

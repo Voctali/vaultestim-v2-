@@ -331,8 +331,14 @@ class NewExtensionDiscoveryService {
       let apiSets = []
       let source = 'unknown'
 
+      // Vérifier quelles APIs sont disponibles
+      const rapidApiAvailable = RapidAPIService.isAvailable()
+      const pokemonTcgApiAvailable = PokemonTCGAPIService.isAvailable()
+
+      console.log(`📊 APIs disponibles: RapidAPI=${rapidApiAvailable}, Pokemon TCG API=${pokemonTcgApiAvailable}`)
+
       // Essayer RapidAPI d'abord (plus rapide et fiable)
-      if (RapidAPIService.isAvailable()) {
+      if (rapidApiAvailable) {
         try {
           console.log('📡 Tentative via RapidAPI...')
           const allExpansions = []
@@ -381,18 +387,24 @@ class NewExtensionDiscoveryService {
         } catch (rapidError) {
           console.warn('⚠️ RapidAPI échoué, fallback sur Pokemon TCG API:', rapidError.message)
         }
+      } else {
+        console.log('⏭️ RapidAPI non disponible, utilisation directe de Pokemon TCG API')
       }
 
-      // Fallback sur Pokemon TCG API si RapidAPI a échoué
+      // Fallback sur Pokemon TCG API si RapidAPI a échoué ou n'est pas disponible
       if (apiSets.length === 0) {
+        if (!pokemonTcgApiAvailable) {
+          throw new Error('Impossible de récupérer les extensions. Aucune API n\'est activée. Vérifiez VITE_USE_RAPIDAPI ou VITE_USE_POKEMON_TCG_API dans .env')
+        }
+
         try {
-          console.log('📡 Fallback via Pokemon TCG API...')
+          console.log('📡 Utilisation de Pokemon TCG API...')
           const result = await PokemonTCGAPIService.getAllSets()
           apiSets = result.data || []
           source = 'Pokemon TCG API'
           console.log(`✅ Pokemon TCG API: ${apiSets.length} extensions récupérées`)
         } catch (tcgError) {
-          throw new Error(`Impossible de récupérer les extensions. RapidAPI et Pokemon TCG API sont indisponibles. Détail: ${tcgError.message}`)
+          throw new Error(`Impossible de récupérer les extensions via Pokemon TCG API. Détail: ${tcgError.message}`)
         }
       }
 
