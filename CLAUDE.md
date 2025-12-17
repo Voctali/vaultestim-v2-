@@ -58,6 +58,7 @@ src/
 | `CardMarketUrlFixService` | Correction URLs CardMarket |
 | `PriceRefreshService` | Actualisation prix (configurable, défaut 1500 cartes/jour) |
 | `SealedProductPriceRefreshService` | Actualisation prix produits scellés (configurable, défaut 500/jour) |
+| `PokemonTCGAPIService` | Fallback gratuit pour découverte extensions (proxy Vercel) |
 
 ## Configuration
 
@@ -162,6 +163,13 @@ const { data } = await supabase
 
 ## 🎯 Fonctionnalités Récentes
 
+### v1.28.20 (17/12/2025)
+- **Pokemon TCG API comme fallback** : Quand RapidAPI n'est pas disponible, l'application utilise automatiquement l'API Pokemon TCG gratuite
+  - Proxy serverless Vercel (`api/pokemontcg.js`) avec timeout 60s
+  - Détection dynamique prod/dev via `window.location.hostname`
+  - Activé par défaut (désactivable avec `VITE_USE_POKEMON_TCG_API=false`)
+  - Rewrite Vercel : `/api/pokemontcg/v2/*` → fonction serverless
+
 ### v1.28.10 (06/12/2025)
 - **Fix race condition upsert cardmarket_prices** : Correction de l'erreur `duplicate key value violates unique constraint "cardmarket_prices_pkey"` lors de l'actualisation des prix
   - Remplacé le pattern SELECT + INSERT/UPDATE par un upsert atomique avec `onConflict: 'id_product,id_language'`
@@ -260,4 +268,4 @@ const { data } = await supabase
 
 ---
 
-**Dernière mise à jour** : 2025-12-06 (v1.28.10)
+**Dernière mise à jour** : 2025-12-17 (v1.28.20)
