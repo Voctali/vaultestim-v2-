@@ -9,8 +9,8 @@
   },
   "rewrites": [
     {
-      "source": "/api/pokemontcg/v2/:path*",
-      "destination": "/api/pokemontcg?path=:path*"
+      "source": "/api/pokemontcg/v2/(.*)",
+      "destination": "/api/pokemontcg?path=$1"
     },
     {
       "source": "/((?!api).*)",
