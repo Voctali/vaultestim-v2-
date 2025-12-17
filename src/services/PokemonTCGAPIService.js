@@ -20,7 +20,9 @@
 const BASE_URL = 'https://api.pokemontcg.io/v2'
 
 const API_KEY = import.meta.env.VITE_POKEMON_TCG_API_KEY || ''
-const ENABLED = import.meta.env.VITE_USE_POKEMON_TCG_API === 'true'
+// Activé par défaut comme fallback (gratuit, supporte CORS)
+// Peut être désactivé explicitement avec VITE_USE_POKEMON_TCG_API=false
+const ENABLED = import.meta.env.VITE_USE_POKEMON_TCG_API !== 'false'
 
 // Cache pour éviter les appels répétés
 let cachedSets = null
