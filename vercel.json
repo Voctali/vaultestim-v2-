@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "functions": {
-    "api/pokemontcg/[...path].js": {
+    "api/pokemontcg/v2/[...path].js": {
       "maxDuration": 60
     }
   },
