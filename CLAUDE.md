@@ -163,6 +163,25 @@ const { data } = await supabase
 
 ## 🎯 Fonctionnalités Récentes
 
+### v1.28.24 (18/12/2025)
+- **Fix mapping raretés → versions** : Distinction correcte entre Double Rare et Ultra Rare
+  - **Double Rare** → EX (★★ noires) - cartes EX standard
+  - **Ultra Rare** → Full Art (★★ argentées) - cartes EX en illustration complète
+  - Harmonisation labels: "grises" → "argentées"
+
+### v1.28.23 (18/12/2025)
+- **Optimisation performances ajout cartes** : Correction freeze après 30+ ajouts
+  - Suppression 50+ console.log excessifs (useCollection, SupabaseService, Explore)
+  - Algorithme duplicates optimisé O(n²) → O(n) avec passe unique
+  - `getFilteredData()` mémorisé avec useMemo
+  - Traductions pré-calculées une seule fois dans le filtrage
+
+### v1.28.22 (18/12/2025)
+- **Fix modale création lot mobile** : Boutons "Annuler" et "Créer le lot" maintenant visibles
+  - Structure flex avec `max-h-[90vh]` sur DialogContent
+  - Liste de cartes limitée à `max-h-[50vh]` sur mobile
+  - Boutons avec `flex-shrink-0` pour rester en bas
+
 ### v1.28.20 (17/12/2025)
 - **Pokemon TCG API comme fallback** : Quand RapidAPI n'est pas disponible, l'application utilise automatiquement l'API Pokemon TCG gratuite
   - Proxy serverless Vercel (`api/pokemontcg.js`) avec timeout 60s
@@ -268,4 +287,4 @@ const { data } = await supabase
 
 ---
 
-**Dernière mise à jour** : 2025-12-17 (v1.28.20)
+**Dernière mise à jour** : 2025-12-18 (v1.28.24)
