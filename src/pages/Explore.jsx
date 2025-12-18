@@ -94,7 +94,6 @@ export function Explore() {
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
-        console.log('🛑 Recherche annulée - composant démonté')
       }
     }
   }, [])
@@ -109,9 +108,8 @@ export function Explore() {
         ])
         setCustomBlocks(customBlocksList)
         setCustomExtensions(customExtensionsList)
-        console.log(`📦 Chargé ${customBlocksList.length} blocs personnalisés et ${customExtensionsList.length} extensions personnalisées`)
       } catch (error) {
-        console.error('❌ Erreur chargement données personnalisées:', error)
+        // Erreur silencieuse - données personnalisées non critiques
       }
     }
 
@@ -126,9 +124,7 @@ export function Explore() {
         return
       }
 
-      console.log(`🔍 Chargement des cartes pour l'extension: ${selectedExtension.id}`)
       const cards = await getCardsBySet(selectedExtension.id)
-      console.log(`✅ ${cards.length} cartes chargées (incluant cartes fusionnées Gallery)`)
       setExtensionCards(cards)
     }
 
@@ -169,8 +165,7 @@ export function Explore() {
                       image: latestExtImage?.url || extension.image || extension.imageUrl,
                       imageUrl: latestExtImage?.url || extension.image || extension.imageUrl
                     }
-                  } catch (error) {
-                    console.warn(`⚠️ Erreur chargement image pour extension ${extension.id}:`, error)
+                  } catch {
                     return extension
                   }
                 })
@@ -182,25 +177,30 @@ export function Explore() {
                 image: latestImage?.url || block.image || block.imageUrl,
                 imageUrl: latestImage?.url || block.image || block.imageUrl
               }
-            } catch (error) {
-              console.warn(`⚠️ Erreur enrichissement bloc ${block.id}:`, error)
+            } catch {
               return block
             }
           })
         )
 
         setBlocksData(enrichedBlocks)
-        console.log(`✅ Explore.jsx - ${enrichedBlocks.length} blocs enrichis avec images`)
-      } catch (error) {
-        console.error('❌ Erreur construction hiérarchie:', error)
+      } catch {
+        // Erreur silencieuse - hiérarchie non critique
       }
     }
 
     buildAndEnrichBlocks()
   }, [discoveredCards, seriesDatabase, customExtensions, customBlocks])
 
-  // Filtrer selon la vue actuelle
-  const getFilteredData = () => {
+  // Fonction pour extraire le numéro d'une carte (ex: "001/197" -> 1, "SWSH123" -> 123)
+  const extractCardNumber = useCallback((cardNumber) => {
+    if (!cardNumber) return 999999
+    const match = cardNumber.match(/(\d+)/)
+    return match ? parseInt(match[1]) : 999999
+  }, [])
+
+  // Filtrer selon la vue actuelle - MÉMORISÉ pour éviter recalculs à chaque render
+  const filteredData = useMemo(() => {
     const searchLower = filterTerm.toLowerCase()
 
     switch (currentView) {
@@ -212,9 +212,22 @@ export function Explore() {
         return selectedBlock?.extensions?.filter(ext =>
           ext.name.toLowerCase().includes(searchLower)
         ) || []
-      case 'cards':
+      case 'cards': {
+        if (!extensionCards || extensionCards.length === 0) return []
+
+        // Pré-calculer la traduction une seule fois
+        let translatedSearch = null
+        if (searchLower && searchLower.trim()) {
+          translatedSearch = translatePokemonName(searchLower)
+          if (translatedSearch === searchLower) {
+            translatedSearch = translateTrainerName(searchLower)
+          }
+          if (translatedSearch === searchLower) {
+            translatedSearch = null // Pas de traduction trouvée
+          }
+        }
+
         const filteredCards = extensionCards.filter(card => {
-          // Si pas de recherche active, afficher toutes les cartes de l'extension
           if (!searchLower || searchLower.trim() === '') return true
 
           // Recherche par numéro de carte
@@ -223,67 +236,43 @@ export function Explore() {
             return true
           }
 
-          // Recherche bilingue : français et anglais (par nom)
+          // Recherche bilingue
           const cardNameLower = card.name.toLowerCase()
 
-          // Recherche directe dans le nom anglais de la carte (par mot complet)
+          // Recherche directe dans le nom anglais
           const matchesEnglish = (
-            cardNameLower === searchLower || // Exact match
-            cardNameLower.startsWith(searchLower + ' ') || // Debut: "taro "
-            cardNameLower.includes(' ' + searchLower + ' ') || // Milieu: " taro "
-            cardNameLower.endsWith(' ' + searchLower) // Fin: " taro"
+            cardNameLower === searchLower ||
+            cardNameLower.startsWith(searchLower + ' ') ||
+            cardNameLower.includes(' ' + searchLower + ' ') ||
+            cardNameLower.endsWith(' ' + searchLower)
           )
 
-          // Si l'utilisateur recherche en français, traduire vers l'anglais (Pokémon OU Dresseur)
-          let translatedSearch = translatePokemonName(searchLower)
-          // Si pas de traduction Pokémon trouvée, essayer les dresseurs
-          if (translatedSearch === searchLower) {
-            translatedSearch = translateTrainerName(searchLower)
+          if (matchesEnglish) return true
+
+          // Recherche par traduction
+          if (translatedSearch) {
+            return (
+              cardNameLower === translatedSearch ||
+              cardNameLower.startsWith(translatedSearch + ' ') ||
+              cardNameLower.includes(' ' + translatedSearch + ' ') ||
+              cardNameLower.endsWith(' ' + translatedSearch)
+            )
           }
-          // Recherche par mot complet pour éviter faux positifs (ex: "eri" ne doit PAS matcher "Erika")
-          const matchesTranslated = translatedSearch !== searchLower && (
-            cardNameLower === translatedSearch || // Exact match
-            cardNameLower.startsWith(translatedSearch + ' ') || // "eri " au début
-            cardNameLower.includes(' ' + translatedSearch + ' ') || // " eri " au milieu
-            cardNameLower.endsWith(' ' + translatedSearch) // " eri" à la fin
-          )
 
-          return matchesEnglish || matchesTranslated
+          return false
         })
 
-        // Debug: Afficher les propriétés de la première carte pour vérifier les données
-        if (filteredCards.length > 0 && !window.cardDebugLogged) {
-          console.log('🔍 Debug - Exemple de carte:', {
-            name: filteredCards[0].name,
-            number: filteredCards[0].number,
-            rarity: filteredCards[0].rarity,
-            types: filteredCards[0].types,
-            supertype: filteredCards[0].supertype,
-            subtypes: filteredCards[0].subtypes,
-            allProperties: Object.keys(filteredCards[0])
-          })
-          window.cardDebugLogged = true
-        }
-
-        // Trier les cartes par numéro (ordre croissant)
+        // Trier les cartes par numéro
         return filteredCards.sort((a, b) => {
-          const numA = extractCardNumber(a.number)
-          const numB = extractCardNumber(b.number)
+          const numA = a.number ? parseInt(a.number.match(/(\d+)/)?.[1]) || 999999 : 999999
+          const numB = b.number ? parseInt(b.number.match(/(\d+)/)?.[1]) || 999999 : 999999
           return numA - numB
         })
+      }
       default:
         return []
     }
-  }
-
-  // Fonction pour extraire le numéro d'une carte (ex: "001/197" -> 1, "SWSH123" -> 123)
-  const extractCardNumber = (cardNumber) => {
-    if (!cardNumber) return 999999 // Mettre les cartes sans numéro à la fin
-
-    // Extraire le premier nombre du numéro de carte
-    const match = cardNumber.match(/(\d+)/)
-    return match ? parseInt(match[1]) : 999999
-  }
+  }, [currentView, filterTerm, blocksData, selectedBlock?.extensions, extensionCards])
 
   // Utility function to format dates
   const formatDate = (dateString) => {
@@ -351,8 +340,6 @@ export function Explore() {
       marketPrice: cardData.marketPrice || '0.00',
       value: cardData.marketPrice || '0.00'
     })
-
-    console.log('Carte ajoutée avec succès:', cardData.name)
   }
 
   const handleSearch = async () => {
@@ -365,43 +352,32 @@ export function Explore() {
     // Annuler toute recherche en cours
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
-      console.log('🛑 Recherche précédente annulée')
     }
 
     // Créer un nouveau AbortController pour cette recherche
     abortControllerRef.current = new AbortController()
-    setIsSearching(true) // Activer l'état de recherche pour afficher le bouton d'annulation
+    setIsSearching(true)
 
     try {
-      console.log(`🔍 Recherche de cartes: "${searchTerm}"`)
       setCurrentView('search')
-
-      // Rechercher via l'API Pokémon TCG avec le signal d'annulation
       const results = await searchCards(searchTerm, abortControllerRef.current.signal)
       setSearchResults(results)
-
-      console.log(`✅ ${results.length} cartes trouvées`)
     } catch (error) {
-      // Ne pas afficher d'erreur si c'est une annulation volontaire
-      if (error.name === 'AbortError' || abortControllerRef.current?.signal.aborted) {
-        console.log('🛑 Recherche annulée par l\'utilisateur')
-      } else {
-        console.error('❌ Erreur lors de la recherche:', error)
+      if (error.name !== 'AbortError' && !abortControllerRef.current?.signal.aborted) {
+        // Erreur réelle, pas une annulation
       }
       setSearchResults([])
     } finally {
-      setIsSearching(false) // Désactiver l'état de recherche
+      setIsSearching(false)
     }
   }
 
   const handleCancelSearch = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
-      console.log('🛑 Recherche annulée manuellement par l\'utilisateur')
       abortControllerRef.current = null
     }
 
-    // Réinitialiser complètement la vue
     setIsSearching(false)
     setCurrentView('blocks')
     setSearchTerm('')
@@ -409,7 +385,6 @@ export function Explore() {
     setSelectedBlock(null)
     setSelectedExtension(null)
     setNavigationPath([])
-    console.log('🔙 Retour à la vue des blocs')
   }
 
   const handleKeyPress = (e) => {
@@ -447,15 +422,13 @@ export function Explore() {
           variant: 'error'
         })
       }
-    } catch (error) {
-      console.error('Erreur toggle wishlist:', error)
+    } catch {
+      // Erreur toggle wishlist silencieuse
     }
   }, [toggleWishlist, toast])
 
   // Handler mémorisé pour l'ajout rapide de carte
   const handleQuickAdd = useCallback(async (card) => {
-    console.log('🚀 [Explore Quick Add] Ajout rapide de:', card.name)
-
     const cardData = {
       id: card.id,
       name: card.name,
@@ -480,14 +453,12 @@ export function Explore() {
 
     try {
       await addToCollection(cardData)
-      console.log('✅ [Explore Quick Add] Carte ajoutée avec succès!')
       toast({
         title: 'Carte ajoutée !',
         description: `${card.name} a été ajoutée à votre collection`,
         variant: 'success'
       })
-    } catch (error) {
-      console.error('❌ [Explore Quick Add] Erreur:', error)
+    } catch {
       toast({
         title: 'Erreur',
         description: 'Impossible d\'ajouter la carte',
@@ -498,7 +469,6 @@ export function Explore() {
 
   // Handler mémorisé pour le clic sur une carte
   const handleCardClick = useCallback((card) => {
-    console.log('🖼️ [Explore] Clic sur la carte:', card.name)
     setSelectedCard(card)
     setShowAddToCollectionModal(true)
   }, [])
@@ -681,7 +651,7 @@ export function Explore() {
       ) : currentView === 'blocks' ? (
         /* Blocks List */
         <div className="space-y-4">
-          {getFilteredData().map((block, blockIndex) => (
+          {filteredData.map((block, blockIndex) => (
             <Card
               key={`block-${block.id || blockIndex}`}
               className="golden-border card-hover cursor-pointer group"
@@ -743,7 +713,7 @@ export function Explore() {
       ) : currentView === 'extensions' ? (
         /* Extensions List */
         <div className="space-y-4">
-          {getFilteredData().map((extension, extensionIndex) => (
+          {filteredData.map((extension, extensionIndex) => (
             <Card
               key={`extension-${extension.id || extensionIndex}`}
               className="golden-border card-hover cursor-pointer group"
@@ -846,7 +816,7 @@ export function Explore() {
 
           {/* Cards Grid - Composants mémorisés pour éviter les re-renders */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-            {getFilteredData().map((card, cardIndex) => (
+            {filteredData.map((card, cardIndex) => (
               <ExploreCard
                 key={`card-${card.id || cardIndex}`}
                 card={card}
@@ -866,7 +836,7 @@ export function Explore() {
       ) : null}
 
       {/* Empty State */}
-      {getFilteredData().length === 0 && !isLoading && currentView !== 'search' && (
+      {filteredData.length === 0 && !isLoading && currentView !== 'search' && (
         <div className="text-center py-12">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             {currentView === 'blocks' ? (
@@ -907,7 +877,6 @@ export function Explore() {
           }}
           card={selectedCard}
           onAddToCollection={(card) => {
-            console.log('📸 [Explore] Fermeture CardPreviewModal et ouverture AddToCollectionModal')
             setShowPreviewModal(false)
             setShowAddToCollectionModal(true)
           }}
@@ -923,17 +892,13 @@ export function Explore() {
             setSelectedCard(null)
           }}
           onSubmit={async (formData) => {
-            console.log('🎯 [Explore Add] Données formulaire reçues:', formData)
-            console.log('📋 [Explore Add] Carte sélectionnée:', selectedCard?.name)
-
-            // Mapper correctement les données de la carte + formulaire pour Supabase
             const cardData = {
               id: selectedCard.id,
               name: selectedCard.name,
               series: selectedCard.set?.series || selectedCard.series || 'Non spécifié',
               extension: selectedCard.set?.name || selectedCard.extension || 'Non spécifié',
-              number: selectedCard.number || null, // REQUIS pour liens CardMarket et tri
-              set: selectedCard.set || null, // REQUIS pour liens CardMarket et tri
+              number: selectedCard.number || null,
+              set: selectedCard.set || null,
               rarity: selectedCard.rarity || 'Non spécifié',
               image: selectedCard.images?.large || selectedCard.images?.small || selectedCard.image || null,
               images: selectedCard.images || null,
@@ -944,17 +909,13 @@ export function Explore() {
               purchasePrice: formData.purchasePrice || null,
               marketPrice: selectedCard.cardmarket?.prices?.averageSellPrice || selectedCard.tcgplayer?.prices?.holofoil?.market || null,
               value: selectedCard.cardmarket?.prices?.averageSellPrice || selectedCard.tcgplayer?.prices?.holofoil?.market || null,
-              // Sauvegarder aussi les structures complètes pour référence future
               cardmarket: selectedCard.cardmarket || null,
               tcgplayer: selectedCard.tcgplayer || null,
               isGraded: formData.isGraded || false
             }
 
-            console.log('📦 [Explore Add] Données mappées:', cardData)
-
             try {
               await addToCollection(cardData)
-              console.log('✅ [Explore Add] Carte ajoutée avec succès!')
               toast({
                 title: 'Carte ajoutée !',
                 description: `${selectedCard.name} a été ajoutée à votre collection`,
@@ -962,8 +923,7 @@ export function Explore() {
               })
               setShowAddToCollectionModal(false)
               setSelectedCard(null)
-            } catch (error) {
-              console.error('❌ [Explore Add] Erreur:', error)
+            } catch {
               toast({
                 title: 'Erreur',
                 description: 'Impossible d\'ajouter la carte',

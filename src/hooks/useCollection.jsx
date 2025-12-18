@@ -21,7 +21,6 @@ export function CollectionProvider({ children }) {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
-        console.log('✅ [Collection] Auth prête')
         setAuthInitialized(true)
       }
     }
@@ -31,14 +30,11 @@ export function CollectionProvider({ children }) {
     // Écouter les événements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ [Collection] SIGNED_IN détecté')
         // IMPORTANT : Attendre 500ms pour que getSession() soit prêt
         setTimeout(() => {
-          console.log('✅ [Collection] Délai écoulé, activation du chargement')
           setAuthInitialized(true)
         }, 500)
       } else if (event === 'SIGNED_OUT') {
-        console.log('⚠️ [Collection] SIGNED_OUT détecté')
         setAuthInitialized(false)
         setCollection([])
         setFavorites([])
@@ -90,10 +86,8 @@ export function CollectionProvider({ children }) {
           .sort((a, b) => new Date(b.date_added) - new Date(a.date_added))
           .slice(0, 10)
         setRecentAdditions(recent)
-
-        console.log('✅ Données utilisateur chargées depuis Supabase')
       } catch (error) {
-        console.error('❌ Erreur chargement données utilisateur:', error)
+        console.error('Erreur chargement données utilisateur:', error)
       } finally {
         setIsLoading(false)
       }
@@ -128,31 +122,23 @@ export function CollectionProvider({ children }) {
 
       return result
     } catch (error) {
-      console.error('❌ Erreur ajout collection:', error)
       throw error
     }
   }
 
   const removeFromCollection = async (cardId) => {
     try {
-      // Appel API Supabase
       await SupabaseCollectionService.removeFromCollection(cardId)
-
-      // Mettre à jour l'état local
       setCollection(prev => prev.filter(card => card.id !== cardId))
       setRecentAdditions(prev => prev.filter(card => card.id !== cardId))
     } catch (error) {
-      console.error('❌ Erreur suppression collection:', error)
       throw error
     }
   }
 
   const updateCardInCollection = async (cardId, updatedData) => {
     try {
-      // Appel API Supabase
       await SupabaseCollectionService.updateCollectionCard(cardId, updatedData)
-
-      // Mettre à jour l'état local
       setCollection(prev => prev.map(card =>
         card.id === cardId ? { ...card, ...updatedData } : card
       ))
@@ -160,69 +146,48 @@ export function CollectionProvider({ children }) {
         card.id === cardId ? { ...card, ...updatedData } : card
       ))
     } catch (error) {
-      console.error('❌ Erreur mise à jour collection:', error)
       throw error
     }
   }
 
   const addToFavorites = async (card) => {
     try {
-      // Vérifier si déjà dans les favoris
       if (favorites.find(fav => fav.card_id === card.id)) {
         return
       }
-
-      // Appel API Supabase
       const result = await SupabaseCollectionService.addToFavorites(card)
-
-      // Mettre à jour l'état local
       setFavorites(prev => [...prev, result])
     } catch (error) {
-      console.error('❌ Erreur ajout favoris:', error)
       throw error
     }
   }
 
   const removeFromFavorites = async (cardId) => {
     try {
-      // Appel API Supabase
       await SupabaseCollectionService.removeFromFavorites(cardId)
-
-      // Mettre à jour l'état local - Filtrer par card_id, pas par id
       setFavorites(prev => prev.filter(card => card.card_id !== cardId))
     } catch (error) {
-      console.error('❌ Erreur suppression favoris:', error)
       throw error
     }
   }
 
   const addToWishlist = async (card) => {
     try {
-      // Vérifier si déjà dans la wishlist
       if (wishlist.find(wish => wish.card_id === card.id)) {
         return
       }
-
-      // Appel API Supabase
       const result = await SupabaseCollectionService.addToWishlist(card)
-
-      // Mettre à jour l'état local
       setWishlist(prev => [...prev, result])
     } catch (error) {
-      console.error('❌ Erreur ajout wishlist:', error)
       throw error
     }
   }
 
   const removeFromWishlist = async (cardId) => {
     try {
-      // Appel API Supabase
       await SupabaseCollectionService.removeFromWishlist(cardId)
-
-      // Mettre à jour l'état local - Filtrer par card_id, pas par id
       setWishlist(prev => prev.filter(card => card.card_id !== cardId))
     } catch (error) {
-      console.error('❌ Erreur suppression wishlist:', error)
       throw error
     }
   }
@@ -302,29 +267,26 @@ export function CollectionProvider({ children }) {
   }
 
   // Calculer les doublons avec useMemo pour performance (cartes avec quantité > 1 ou cartes identiques multiples)
+  // Algorithme optimisé O(n) au lieu de O(n²)
   const duplicates = useMemo(() => {
+    if (collection.length === 0) return []
+
+    const seen = new Set()
     const duplicatesList = []
     const cardCounts = {}
 
-    console.log('🔍 [useMemo duplicates] Recalcul des doublons -', collection.length, 'cartes')
+    // Ordre de priorité des conditions (pour garder le meilleur exemplaire)
+    const conditionOrder = {
+      'Neuf': 5,
+      'Proche du neuf': 4,
+      'Excellent': 3,
+      'Bon': 2,
+      'Acceptable': 1,
+      'Endommagé': 0
+    }
 
-    // Cartes avec quantité > 1
-    collection.forEach(card => {
-      if (card.quantity > 1) {
-        console.log('✅ [useMemo duplicates] Carte avec quantity > 1:', card.name, `(${card.version || 'Normale'})`, 'quantité:', card.quantity, 'id:', card.id)
-        duplicatesList.push({
-          ...card,
-          quantity: card.quantity
-        })
-      }
-    })
-
-    console.log('📊 [useMemo duplicates] Cartes avec quantity > 1:', duplicatesList.length)
-
-    // Cartes identiques multiples - utiliser card_id + version comme clé unique
-    // Le card_id contient déjà l'extension (ex: me1-1, sv3pt5-34)
-    // Si card_id est manquant, utiliser name + set + number comme fallback
-    collection.forEach(card => {
+    // PASSE UNIQUE: grouper les cartes et détecter les doublons en même temps
+    for (const card of collection) {
       const version = card.version || 'Normale'
 
       // Construire une clé robuste
@@ -332,80 +294,58 @@ export function CollectionProvider({ children }) {
       if (card.card_id) {
         cardKey = card.card_id
       } else {
-        // Fallback: construire une clé à partir de name + set + number
         const setId = card.set?.id || card.extension || 'unknown'
         const number = card.number || ''
         const name = card.name || 'unknown'
         cardKey = `${name.toLowerCase()}-${setId.toLowerCase()}-${number}`
       }
 
-      // Clé basée sur card_id + version (plus fiable que series/extension qui peuvent varier)
       const key = `${cardKey}-${version}`
-      if (cardCounts[key]) {
-        cardCounts[key].push(card)
-      } else {
-        cardCounts[key] = [card]
-      }
-    })
 
-    Object.values(cardCounts).forEach(cards => {
-      if (cards.length > 1) {
-        console.log('📦 [useMemo duplicates] Cartes identiques trouvées:', cards[0].name, `(${cards[0].version || 'Normale'})`, 'série:', cards[0].series, '(', cards.length, 'exemplaires)')
-        console.log('   → IDs des exemplaires:', cards.map(c => `${c.id} (qty:${c.quantity})`).join(', '))
-
-        // Prioriser les cartes en moins bon état pour les doublons
-        const sortedCards = cards.sort((a, b) => {
-          const conditionOrder = {
-            'Neuf': 5,
-            'Proche du neuf': 4,
-            'Excellent': 3,
-            'Bon': 2,
-            'Acceptable': 1,
-            'Endommagé': 0
-          }
-          return (conditionOrder[a.condition] || 0) - (conditionOrder[b.condition] || 0)
-        })
-
-        // Ajouter tous sauf le meilleur exemplaire
-        const duplicatesToAdd = sortedCards.slice(0, -1)
-        console.log('   → Ajout comme doublons (sauf le meilleur):', duplicatesToAdd.map(c => `${c.id} (${c.condition})`).join(', '))
-        duplicatesList.push(...duplicatesToAdd)
-      }
-    })
-
-    console.log('📊 [useMemo duplicates] Total doublons avant déduplication:', duplicatesList.length)
-
-    // Supprimer les doublons de la liste
-    const uniqueDuplicates = []
-    const seen = new Set()
-
-    duplicatesList.forEach(card => {
-      if (!seen.has(card.id)) {
+      // Cartes avec quantité > 1 sont des doublons
+      if (card.quantity > 1 && !seen.has(card.id)) {
         seen.add(card.id)
-        uniqueDuplicates.push(card)
-      }
-    })
-
-    // Trier par extension (plus récent en premier) puis par numéro de carte
-    const sortedDuplicates = uniqueDuplicates.sort((a, b) => {
-      // 1. Trier par date de sortie de l'extension (plus récent en premier)
-      // Les extensions sans date sont considérées comme récentes (new Date() au lieu de new Date(0))
-      const dateA = a.set?.releaseDate ? new Date(a.set.releaseDate) : new Date()
-      const dateB = b.set?.releaseDate ? new Date(b.set.releaseDate) : new Date()
-
-      if (dateB.getTime() !== dateA.getTime()) {
-        return dateB.getTime() - dateA.getTime()
+        duplicatesList.push(card)
       }
 
-      // 2. Si même extension, trier par numéro de carte
+      // Grouper pour détecter les cartes identiques multiples
+      if (!cardCounts[key]) {
+        cardCounts[key] = []
+      }
+      cardCounts[key].push(card)
+    }
+
+    // Traiter les groupes de cartes identiques
+    for (const cards of Object.values(cardCounts)) {
+      if (cards.length > 1) {
+        // Trier par condition (meilleur en dernier)
+        cards.sort((a, b) => (conditionOrder[a.condition] || 0) - (conditionOrder[b.condition] || 0))
+
+        // Ajouter tous sauf le meilleur (dernier après tri)
+        for (let i = 0; i < cards.length - 1; i++) {
+          const card = cards[i]
+          if (!seen.has(card.id)) {
+            seen.add(card.id)
+            duplicatesList.push(card)
+          }
+        }
+      }
+    }
+
+    // Trier par date d'extension (plus récent en premier) puis par numéro
+    duplicatesList.sort((a, b) => {
+      const dateA = a.set?.releaseDate ? new Date(a.set.releaseDate).getTime() : Date.now()
+      const dateB = b.set?.releaseDate ? new Date(b.set.releaseDate).getTime() : Date.now()
+
+      if (dateB !== dateA) return dateB - dateA
+
       const numA = parseInt(a.number) || 0
       const numB = parseInt(b.number) || 0
       return numA - numB
     })
 
-    console.log('✅ [useMemo duplicates] Doublons finaux (triés):', sortedDuplicates.length)
-    return sortedDuplicates
-  }, [collection]) // Recalculer uniquement quand collection change
+    return duplicatesList
+  }, [collection])
 
   // Gestion des lots de doublons
   const createDuplicateBatch = async (batchData) => {

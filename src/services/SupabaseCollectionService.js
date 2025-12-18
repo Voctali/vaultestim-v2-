@@ -34,8 +34,6 @@ export class SupabaseCollectionService {
       const pageSize = 1000
       let hasMore = true
 
-      console.log('🔄 [getUserCollection] Chargement de toutes les cartes avec pagination...')
-
       while (hasMore) {
         const { data, error } = await supabase
           .from('user_collection')
@@ -50,7 +48,6 @@ export class SupabaseCollectionService {
           hasMore = false
         } else {
           allCollectionData = allCollectionData.concat(data)
-          console.log(`📦 [getUserCollection] Page ${page + 1}: ${data.length} cartes (total: ${allCollectionData.length})`)
           page++
           if (data.length < pageSize) hasMore = false
         }
@@ -58,24 +55,18 @@ export class SupabaseCollectionService {
 
       const collectionData = allCollectionData
 
-      console.log(`✅ ${collectionData.length} cartes dans la collection (${page} pages)`)
-
-      // Si pas de cartes, retourner directement
       if (!collectionData || collectionData.length === 0) {
         return []
       }
 
       // Récupérer les IDs des cartes
       const cardIds = [...new Set(collectionData.map(card => card.card_id))]
-      console.log(`🔍 [getUserCollection] ${cardIds.length} card_id uniques à enrichir`)
 
       // Récupérer les données complètes depuis discovered_cards (avec prix ET infos extension)
-      // IMPORTANT: Supabase limite à 1000 résultats par défaut, on doit paginer si > 1000 cardIds
       let discoveredData = []
       let discoveredError = null
 
       if (cardIds.length <= 1000) {
-        // Requête simple si moins de 1000 IDs
         const { data, error } = await supabase
           .from('discovered_cards')
           .select('id, cardmarket, tcgplayer, set, number')
@@ -83,8 +74,7 @@ export class SupabaseCollectionService {
         discoveredData = data || []
         discoveredError = error
       } else {
-        // Pagination par batches de 500 IDs (pour éviter les limites URL)
-        console.log(`⚠️ [getUserCollection] ${cardIds.length} cardIds > 1000, pagination nécessaire`)
+        // Pagination par batches de 500 IDs
         for (let i = 0; i < cardIds.length; i += 500) {
           const batch = cardIds.slice(i, i + 500)
           const { data, error } = await supabase
@@ -99,36 +89,24 @@ export class SupabaseCollectionService {
         }
       }
 
-      console.log(`📦 [getUserCollection] discoveredData reçu: ${discoveredData?.length || 0} cartes`)
-
       if (discoveredError) {
-        console.warn('⚠️ Impossible de récupérer les prix depuis discovered_cards:', discoveredError)
+        console.warn('Impossible de récupérer les prix:', discoveredError.message)
       }
 
-      // Créer un map pour les données complètes (prix + extension + numéro)
+      // Créer un map pour les données complètes
       const dataMap = {}
       if (discoveredData) {
-        discoveredData.forEach(card => {
+        for (const card of discoveredData) {
           dataMap[card.id] = {
             cardmarket: card.cardmarket,
             tcgplayer: card.tcgplayer,
             set: card.set,
             number: card.number
           }
-        })
+        }
       }
 
-      console.log(`📦 [getUserCollection] ${Object.keys(dataMap).length} cartes trouvées dans discovered_cards`)
-
-      // Compter les cartes NON trouvées dans discovered_cards
-      const notFound = cardIds.filter(id => !dataMap[id])
-      if (notFound.length > 0) {
-        console.warn(`⚠️ [getUserCollection] ${notFound.length} card_id NON trouvés dans discovered_cards:`)
-        console.warn('   Exemples:', notFound.slice(0, 20))
-
-      }
-
-      // Enrichir les cartes de la collection avec les données complètes
+      // Enrichir les cartes de la collection
       const enrichedData = collectionData.map(card => {
         const extraData = dataMap[card.card_id]
         if (extraData) {
@@ -136,7 +114,6 @@ export class SupabaseCollectionService {
             ...card,
             cardmarket: extraData.cardmarket,
             tcgplayer: extraData.tcgplayer,
-            // Utiliser les données de discovered_cards en priorité (plus complètes)
             set: extraData.set || card.set,
             number: extraData.number || card.number
           }
@@ -144,10 +121,9 @@ export class SupabaseCollectionService {
         return card
       })
 
-      console.log(`💰 ${Object.keys(dataMap).length} cartes enrichies avec les données complètes`)
       return enrichedData
     } catch (error) {
-      console.error('❌ Erreur getUserCollection:', error)
+      console.error('Erreur getUserCollection:', error.message)
       return []
     }
   }
@@ -157,25 +133,19 @@ export class SupabaseCollectionService {
    */
   static async addToCollection(card) {
     try {
-      console.log('🔵 [Supabase Service] Tentative d\'ajout de carte:', card.name)
-      console.log('🔵 [Supabase Service] Données reçues:', card)
-
       const userId = await this.getCurrentUserId()
-      console.log('🔵 [Supabase Service] User ID:', userId)
 
-      // IMPORTANT: series doit contenir le nom de l'EXTENSION (ex: "Journey Together")
-      // et non pas la série (ex: "Scarlet & Violet")
-      // Priorité: card.set.name > card.extension > card.series
+      // series doit contenir le nom de l'EXTENSION (ex: "Journey Together")
       const extensionName = card.set?.name || card.extension || card.series
 
       const insertData = {
         user_id: userId,
         card_id: card.id,
         name: card.name,
-        number: card.number || null, // Numéro de carte (ex: "97") - REQUIS pour liens CardMarket
-        series: extensionName, // Nom de l'extension (pas de la série!)
-        extension: extensionName, // Redondance pour compatibilité
-        set: card.set || null, // Infos de l'extension (set.name, set.id) - REQUIS pour liens CardMarket
+        number: card.number || null,
+        series: extensionName,
+        extension: extensionName,
+        set: card.set || null,
         rarity: card.rarity,
         image: card.image,
         images: card.images,
@@ -193,24 +163,16 @@ export class SupabaseCollectionService {
         notes: card.notes || null
       }
 
-      console.log('🔵 [Supabase Service] Données formatées pour insertion:', insertData)
-
       const { data, error } = await supabase
         .from('user_collection')
         .insert(insertData)
         .select()
         .single()
 
-      if (error) {
-        console.error('❌ [Supabase Service] Erreur Supabase:', error)
-        throw error
-      }
+      if (error) throw error
 
-      console.log(`✅ [Supabase Service] Carte ajoutée avec succès: ${card.name}`)
-      console.log('✅ [Supabase Service] Données retournées:', data)
       return data
     } catch (error) {
-      console.error('❌ [Supabase Service] Erreur addToCollection:', error)
       throw error
     }
   }
@@ -220,14 +182,10 @@ export class SupabaseCollectionService {
    */
   static async updateCollectionCard(cardId, updates) {
     try {
-      console.log('🔵 [Supabase Service] Tentative de mise à jour carte:', cardId)
-      console.log('🔵 [Supabase Service] Données de mise à jour reçues:', updates)
-
       const userId = await this.getCurrentUserId()
 
-      // Mapper les propriétés camelCase vers snake_case pour Supabase
+      // Mapper les propriétés camelCase vers snake_case
       const mappedUpdates = {}
-
       if (updates.quantity !== undefined) mappedUpdates.quantity = updates.quantity
       if (updates.condition !== undefined) mappedUpdates.condition = updates.condition
       if (updates.version !== undefined) mappedUpdates.version = updates.version
@@ -239,8 +197,6 @@ export class SupabaseCollectionService {
       if (updates.marketPrice !== undefined) mappedUpdates.market_price = updates.marketPrice ? parseFloat(updates.marketPrice) : null
       if (updates.value !== undefined) mappedUpdates.value = updates.value ? parseFloat(updates.value) : null
 
-      console.log('🔵 [Supabase Service] Données mappées pour mise à jour:', mappedUpdates)
-
       const { data, error } = await supabase
         .from('user_collection')
         .update(mappedUpdates)
@@ -249,16 +205,10 @@ export class SupabaseCollectionService {
         .select()
         .single()
 
-      if (error) {
-        console.error('❌ [Supabase Service] Erreur Supabase:', error)
-        throw error
-      }
+      if (error) throw error
 
-      console.log(`✅ [Supabase Service] Carte mise à jour avec succès: ${cardId}`)
-      console.log('✅ [Supabase Service] Données retournées:', data)
       return data
     } catch (error) {
-      console.error('❌ [Supabase Service] Erreur updateCollectionCard:', error)
       throw error
     }
   }
@@ -277,11 +227,8 @@ export class SupabaseCollectionService {
         .eq('user_id', userId)
 
       if (error) throw error
-
-      console.log(`🗑️ Carte supprimée de la collection: ${cardId}`)
       return true
     } catch (error) {
-      console.error('❌ Erreur removeFromCollection:', error)
       throw error
     }
   }
@@ -305,8 +252,6 @@ export class SupabaseCollectionService {
         .order('created_at', { ascending: false })
 
       if (favoritesError) throw favoritesError
-
-      console.log(`✅ ${favoritesData.length} favoris`)
 
       if (!favoritesData || favoritesData.length === 0) {
         return []
@@ -345,10 +290,8 @@ export class SupabaseCollectionService {
         return card
       })
 
-      console.log(`💰 ${Object.keys(priceMap).length} favoris enrichis avec les prix`)
       return enrichedData
     } catch (error) {
-      console.error('❌ Erreur getUserFavorites:', error)
       return []
     }
   }
@@ -375,11 +318,8 @@ export class SupabaseCollectionService {
         .single()
 
       if (error) throw error
-
-      console.log(`✅ Carte ajoutée aux favoris: ${card.name}`)
       return data
     } catch (error) {
-      console.error('❌ Erreur addToFavorites:', error)
       throw error
     }
   }
@@ -398,11 +338,8 @@ export class SupabaseCollectionService {
         .eq('user_id', userId)
 
       if (error) throw error
-
-      console.log(`🗑️ Carte supprimée des favoris: ${cardId}`)
       return true
     } catch (error) {
-      console.error('❌ Erreur removeFromFavorites:', error)
       throw error
     }
   }
@@ -426,8 +363,6 @@ export class SupabaseCollectionService {
         .order('created_at', { ascending: false })
 
       if (wishlistError) throw wishlistError
-
-      console.log(`✅ ${wishlistData.length} items dans la wishlist`)
 
       if (!wishlistData || wishlistData.length === 0) {
         return []
@@ -466,10 +401,8 @@ export class SupabaseCollectionService {
         return card
       })
 
-      console.log(`💰 ${Object.keys(priceMap).length} items wishlist enrichis avec les prix`)
       return enrichedData
     } catch (error) {
-      console.error('❌ Erreur getUserWishlist:', error)
       return []
     }
   }
@@ -498,11 +431,8 @@ export class SupabaseCollectionService {
         .single()
 
       if (error) throw error
-
-      console.log(`✅ Carte ajoutée à la wishlist: ${card.name}`)
       return data
     } catch (error) {
-      console.error('❌ Erreur addToWishlist:', error)
       throw error
     }
   }
@@ -521,11 +451,8 @@ export class SupabaseCollectionService {
         .eq('user_id', userId)
 
       if (error) throw error
-
-      console.log(`🗑️ Carte supprimée de la wishlist: ${cardId}`)
       return true
     } catch (error) {
-      console.error('❌ Erreur removeFromWishlist:', error)
       throw error
     }
   }
@@ -548,11 +475,8 @@ export class SupabaseCollectionService {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-
-      console.log(`✅ ${data.length} lots de doublons`)
       return data
     } catch (error) {
-      console.error('❌ Erreur getDuplicateBatches:', error)
       return []
     }
   }
@@ -577,11 +501,8 @@ export class SupabaseCollectionService {
         .single()
 
       if (error) throw error
-
-      console.log(`✅ Lot de doublons créé: ${batch.name}`)
       return data
     } catch (error) {
-      console.error('❌ Erreur createDuplicateBatch:', error)
       throw error
     }
   }
@@ -607,11 +528,8 @@ export class SupabaseCollectionService {
         .single()
 
       if (error) throw error
-
-      console.log(`✅ Lot de doublons mis à jour: ${batchId}`)
       return data
     } catch (error) {
-      console.error('❌ Erreur updateDuplicateBatch:', error)
       throw error
     }
   }
@@ -630,11 +548,8 @@ export class SupabaseCollectionService {
         .eq('user_id', userId)
 
       if (error) throw error
-
-      console.log(`🗑️ Lot de doublons supprimé: ${batchId}`)
       return true
     } catch (error) {
-      console.error('❌ Erreur deleteDuplicateBatch:', error)
       throw error
     }
   }
@@ -657,11 +572,8 @@ export class SupabaseCollectionService {
         .order('sale_date', { ascending: false })
 
       if (error) throw error
-
-      console.log(`✅ ${data.length} ventes`)
       return data
     } catch (error) {
-      console.error('❌ Erreur getUserSales:', error)
       return []
     }
   }
@@ -701,11 +613,8 @@ export class SupabaseCollectionService {
         .single()
 
       if (error) throw error
-
-      console.log(`✅ Vente créée: ${sale.type}`)
       return data
     } catch (error) {
-      console.error('❌ Erreur createSale:', error)
       throw error
     }
   }
@@ -724,11 +633,8 @@ export class SupabaseCollectionService {
         .eq('user_id', userId)
 
       if (error) throw error
-
-      console.log(`🗑️ Vente supprimée: ${saleId}`)
       return true
     } catch (error) {
-      console.error('❌ Erreur deleteSale:', error)
       throw error
     }
   }
