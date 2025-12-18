@@ -1346,8 +1346,8 @@ export function Duplicates() {
 
       {/* Create/Edit Batch Modal */}
       <Dialog open={showCreateBatchModal} onOpenChange={setShowCreateBatchModal}>
-        <DialogContent className="max-w-4xl golden-border bg-background">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl golden-border bg-background max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="golden-glow">
               {editingBatch ? 'Modifier le lot' : 'Créer un nouveau lot'}
             </DialogTitle>
@@ -1355,8 +1355,8 @@ export function Duplicates() {
               {editingBatch ? 'Modifiez le nom et la sélection de cartes de ce lot.' : 'Créez un nouveau lot de doublons avec un nom personnalisé.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6">
-            <div>
+          <div className="flex-1 flex flex-col min-h-0 space-y-4">
+            <div className="flex-shrink-0">
               <Label htmlFor="batch-name">Nom du lot</Label>
               <Input
                 id="batch-name"
@@ -1367,15 +1367,15 @@ export function Duplicates() {
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="flex items-center justify-between mb-4 flex-shrink-0">
                 <Label>Sélectionner les cartes ({selectedCards.length})</Label>
                 <div className="text-lg font-bold text-green-500">
                   Total: {calculateBatchValue(selectedCards)}€
                 </div>
               </div>
 
-              <div className="max-h-[600px] overflow-y-auto space-y-6">
+              <div className="flex-1 overflow-y-auto space-y-6 min-h-0 max-h-[50vh] md:max-h-[60vh]">
                 {groupedModalCards.map((block, blockIndex) => (
                   <div key={blockIndex} className="space-y-4">
                     {/* Séparateur de bloc */}
@@ -1510,7 +1510,7 @@ export function Duplicates() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 flex-shrink-0 pt-4 border-t border-border/50">
               <Button variant="outline" onClick={() => {
                 setShowCreateBatchModal(false)
                 setEditingBatch(null)
