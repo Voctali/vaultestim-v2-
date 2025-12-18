@@ -163,6 +163,10 @@ const { data } = await supabase
 
 ## 🎯 Fonctionnalités Récentes
 
+### v1.28.28 (18/12/2025)
+- **Sticky navigation Doublons** : Les onglets "Doublons" et "Lots de doublons" restent visibles en haut lors du scroll
+- **Sticky navigation Explorer** : Dans les vues extensions et cartes, le breadcrumb + champ de recherche restent sticky en haut
+
 ### v1.28.26 (18/12/2025)
 - **Sélection multiple versions même carte dans lots** : Correction du bug empêchant de sélectionner plusieurs versions (Normale + Reverse) d'une même carte
   - Clé de sélection composée `card_id+version` au lieu de `card_id` seul
@@ -296,4 +300,4 @@ const { data } = await supabase
 
 ---
 
-**Dernière mise à jour** : 2025-12-18 (v1.28.26)
+**Dernière mise à jour** : 2025-12-18 (v1.28.28)
