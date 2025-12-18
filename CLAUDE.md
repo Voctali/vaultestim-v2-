@@ -163,6 +163,15 @@ const { data } = await supabase
 
 ## 🎯 Fonctionnalités Récentes
 
+### v1.28.26 (18/12/2025)
+- **Sélection multiple versions même carte dans lots** : Correction du bug empêchant de sélectionner plusieurs versions (Normale + Reverse) d'une même carte
+  - Clé de sélection composée `card_id+version` au lieu de `card_id` seul
+  - Affichage de tous les badges des versions sélectionnées sur la carte
+  - Modale pré-sélectionne automatiquement une version non encore choisie
+  - Bouton "Ajouter" vs "Modifier" selon si la version est déjà sélectionnée
+- **Traduction chalumeau** : Ajout `chalumeau` → `blowtorch` (carte Méga Évolution)
+- **Fix URLs CardMarket Méga Évolution** : 127 cartes corrigées (format `tcggo.com`)
+
 ### v1.28.24 (18/12/2025)
 - **Fix mapping raretés → versions** : Distinction correcte entre Double Rare et Ultra Rare
   - **Double Rare** → EX (★★ noires) - cartes EX standard
@@ -287,4 +296,4 @@ const { data } = await supabase
 
 ---
 
-**Dernière mise à jour** : 2025-12-18 (v1.28.24)
+**Dernière mise à jour** : 2025-12-18 (v1.28.26)

@@ -175,14 +175,6 @@ export function DuplicateVersionSelectModal({
   // Vérifier si la version actuellement sélectionnée est déjà dans la sélection
   const isCurrentVersionAlreadySelected = selectedVersion && selectedVersions.some(sv => sv.version === selectedVersion)
 
-  // DEBUG temporaire
-  console.log('[DEBUG Modal]', {
-    selectedVersion,
-    selectedVersions,
-    isCurrentVersionAlreadySelected,
-    duplicateVersions: duplicateVersions.map(v => v.version)
-  })
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto golden-border bg-background">
