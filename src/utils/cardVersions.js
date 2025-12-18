@@ -6,7 +6,7 @@
  * - Cartes Promo : Uniquement "Promo"
  * - Cartes ACE SPEC RARE : Uniquement "Normale"
  * - Cartes EX (★★ noires) : Uniquement "EX"
- * - Full Art (★★ grises) : Uniquement "Full Art"
+ * - Full Art (★★ argentées) : Uniquement "Full Art"
  * - AR (★ dorée) : Uniquement "AR"
  * - Alternative (★★ dorées) : Uniquement "Alternate Art"
  * - Gold (★★★ dorées) : Uniquement "Gold"
@@ -69,8 +69,14 @@ export function getAvailableVersions(card) {
     }
   }
 
-  // 0a. PRIORITÉ ABSOLUE : Cartes EX et Double Rare - Version unique
-  // Doit être vérifié AVANT les extensions spéciales
+  // 0a. Ultra Rare = Full Art (★★ argentées) - cartes EX en version illustration complète
+  // Doit être vérifié AVANT Double Rare car les Ultra Rare ont aussi "ex" dans le nom
+  if (rarity.includes('ultra rare')) {
+    return [{ value: 'Full Art', label: 'Full Art (★★ argentées)' }]
+  }
+
+  // 0b. Double Rare = EX standard (★★ noires) - cartes EX basiques
+  // Vérifie aussi le nom pour les cartes sans rareté correcte
   if (
     rarity.includes('double rare') ||
     name.includes(' ex') ||
@@ -240,7 +246,7 @@ export function getAvailableVersions(card) {
     ]
   }
 
-  // 8. Full Art (2 étoiles grises) - GX, V, VMAX, VSTAR
+  // 8. Full Art (2 étoiles argentées) - GX, V, VMAX, VSTAR
   if (
     rarity.includes('rare holo gx') ||
     rarity.includes('rare holo v') ||
@@ -257,7 +263,7 @@ export function getAvailableVersions(card) {
     name.includes(' vstar') ||
     name.includes('-vstar')
   ) {
-    return [{ value: 'Full Art', label: 'Full Art (★★ grises)' }]
+    return [{ value: 'Full Art', label: 'Full Art (★★ argentées)' }]
   }
 
   // Cartes normales : toutes les versions standard
