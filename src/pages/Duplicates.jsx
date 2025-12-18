@@ -37,12 +37,12 @@ import {
 
 /**
  * Composant DuplicateCard mémorisé pour éviter les re-renders inutiles
- * Chaque carte ne se re-rend que si ses props changent (isSelected, currentSelection)
+ * Chaque carte ne se re-rend que si ses props changent (isSelected, selectedVersions)
  */
 const DuplicateCard = memo(function DuplicateCard({
   card,
   isSelected,
-  currentSelection,
+  selectedVersions, // Array de { version, quantity } pour cette carte
   collection,
   onToggleSelection,
   onImageClick,
@@ -66,10 +66,21 @@ const DuplicateCard = memo(function DuplicateCard({
               x{card.consolidatedQuantity}
             </div>
           )}
-          {/* Badge sélection avec version */}
-          {isSelected && currentSelection && (
-            <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-              {currentSelection.quantity}x {currentSelection.version === 'Normale' ? 'N' : currentSelection.version.charAt(0)}
+          {/* Badges sélection avec versions - affiche toutes les versions sélectionnées */}
+          {isSelected && selectedVersions && selectedVersions.length > 0 && (
+            <div className="absolute top-2 left-2 flex flex-col gap-1">
+              {selectedVersions.map((sel, idx) => (
+                <div key={idx} className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                  {sel.quantity}x {sel.version === 'Normale' ? 'N' :
+                    sel.version === 'Reverse Holo' ? 'R' :
+                    sel.version === 'Reverse (Pokéball)' ? 'RPB' :
+                    sel.version === 'Reverse (Masterball)' ? 'RMB' :
+                    sel.version === 'Holo' ? 'H' :
+                    sel.version === 'Holo étoile' ? 'HE' :
+                    sel.version === 'Holo Cosmos' ? 'HC' :
+                    sel.version.charAt(0)}
+                </div>
+              ))}
             </div>
           )}
           <div className="absolute bottom-2 left-2 right-2 flex gap-1">
@@ -82,7 +93,7 @@ const DuplicateCard = memo(function DuplicateCard({
                 e.stopPropagation()
                 onToggleSelection(card)
               }}
-              title={isSelected ? 'Retirer du lot' : 'Ajouter au lot (version Normale)'}
+              title={isSelected ? 'Modifier la sélection' : 'Ajouter au lot'}
             >
               {isSelected ? '✓' : '+'}
             </Button>
@@ -547,6 +558,11 @@ export function Duplicates() {
     }
   }
 
+  // Générer une clé unique pour une sélection (card_id + version)
+  const getSelectionKey = useCallback((cardId, version) => {
+    return `${cardId}__${version || 'Normale'}`
+  }, [])
+
   // Sélection rapide avec le bouton "+" - utilise la première version en double disponible
   // Mémorisé avec useCallback pour éviter re-création à chaque render
   const toggleCardSelectionQuick = useCallback((card) => {
@@ -556,11 +572,14 @@ export function Duplicates() {
       ? card.duplicateVersions[0]
       : 'Normale'
 
+    const selectionKey = getSelectionKey(cardKey, defaultVersion)
+
     setSelectedCards(prev => {
-      const exists = prev.find(c => (c.card_id || c.id) === cardKey)
+      // Chercher si cette version spécifique est déjà sélectionnée
+      const exists = prev.find(c => getSelectionKey(c.card_id || c.id, c.version) === selectionKey)
       if (exists) {
-        // Retirer la carte - les autres états seront mis à jour après
-        return prev.filter(c => (c.card_id || c.id) !== cardKey)
+        // Retirer cette version spécifique
+        return prev.filter(c => getSelectionKey(c.card_id || c.id, c.version) !== selectionKey)
       } else {
         // Ajouter la carte avec la première version en double disponible
         return [...prev, { ...card, version: defaultVersion }]
@@ -569,27 +588,27 @@ export function Duplicates() {
 
     // Mettre à jour les sélections et quantités
     setCardSelections(prevSel => {
-      const exists = prevSel[cardKey]
+      const exists = prevSel[selectionKey]
       if (exists) {
         const newSel = { ...prevSel }
-        delete newSel[cardKey]
+        delete newSel[selectionKey]
         return newSel
       } else {
-        return { ...prevSel, [cardKey]: { version: defaultVersion, quantity: 1 } }
+        return { ...prevSel, [selectionKey]: { version: defaultVersion, quantity: 1 } }
       }
     })
 
     setCardQuantities(prevQty => {
-      const exists = prevQty[card.id]
+      const exists = prevQty[selectionKey]
       if (exists) {
         const newQty = { ...prevQty }
-        delete newQty[card.id]
+        delete newQty[selectionKey]
         return newQty
       } else {
-        return { ...prevQty, [card.id]: 1 }
+        return { ...prevQty, [selectionKey]: 1 }
       }
     })
-  }, [])
+  }, [getSelectionKey])
 
   // Sélection via la modale avec choix de version et quantité
   const handleVersionSelect = (selection) => {
@@ -598,46 +617,88 @@ export function Duplicates() {
     const cardKey = cardForVersionSelect.card_id || cardForVersionSelect.id
 
     if (selection === null) {
-      // Désélectionner la carte
+      // Désélectionner TOUTES les versions de cette carte
       setSelectedCards(prev => prev.filter(c => (c.card_id || c.id) !== cardKey))
       setCardSelections(prev => {
         const newSel = { ...prev }
-        delete newSel[cardKey]
+        // Supprimer toutes les clés qui commencent par ce cardKey
+        Object.keys(newSel).forEach(key => {
+          if (key.startsWith(`${cardKey}__`)) {
+            delete newSel[key]
+          }
+        })
         return newSel
       })
       setCardQuantities(prev => {
         const newQty = { ...prev }
-        delete newQty[cardForVersionSelect.id]
+        Object.keys(newQty).forEach(key => {
+          if (key.startsWith(`${cardKey}__`)) {
+            delete newQty[key]
+          }
+        })
         return newQty
       })
     } else {
       // Ajouter/modifier la sélection
       const { card: selectedCard, version, quantity } = selection
+      const selectionKey = getSelectionKey(cardKey, version)
 
       setSelectedCards(prev => {
-        const exists = prev.find(c => (c.card_id || c.id) === cardKey)
+        // Chercher si cette version spécifique existe déjà
+        const existsWithSameVersion = prev.find(c =>
+          getSelectionKey(c.card_id || c.id, c.version) === selectionKey
+        )
         const cardWithVersion = { ...selectedCard, version }
 
-        if (exists) {
-          // Mettre à jour la carte existante
-          return prev.map(c => (c.card_id || c.id) === cardKey ? cardWithVersion : c)
+        if (existsWithSameVersion) {
+          // Mettre à jour la carte existante (même version)
+          return prev.map(c =>
+            getSelectionKey(c.card_id || c.id, c.version) === selectionKey
+              ? cardWithVersion
+              : c
+          )
         } else {
-          // Ajouter la nouvelle carte
+          // Ajouter la nouvelle carte/version
           return [...prev, cardWithVersion]
         }
       })
 
       setCardSelections(prev => ({
         ...prev,
-        [cardKey]: { version, quantity }
+        [selectionKey]: { version, quantity }
       }))
 
       setCardQuantities(prev => ({
         ...prev,
-        [cardForVersionSelect.id]: quantity
+        [selectionKey]: quantity
       }))
     }
   }
+
+  // Retirer une version spécifique du lot (sans fermer la modale)
+  const handleRemoveVersionFromBatch = useCallback((versionToRemove) => {
+    if (!cardForVersionSelect) return
+
+    const cardKey = cardForVersionSelect.card_id || cardForVersionSelect.id
+    const selectionKey = getSelectionKey(cardKey, versionToRemove)
+
+    // Retirer cette version spécifique
+    setSelectedCards(prev => prev.filter(c =>
+      getSelectionKey(c.card_id || c.id, c.version) !== selectionKey
+    ))
+
+    setCardSelections(prev => {
+      const newSel = { ...prev }
+      delete newSel[selectionKey]
+      return newSel
+    })
+
+    setCardQuantities(prev => {
+      const newQty = { ...prev }
+      delete newQty[selectionKey]
+      return newQty
+    })
+  }, [cardForVersionSelect, getSelectionKey])
 
   // Ouvrir la modale de sélection de version (clic sur l'image) - mémorisé
   const handleCardImageClick = useCallback((card) => {
@@ -1181,15 +1242,24 @@ export function Duplicates() {
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                             {filteredCards.map((card) => {
                               const cardKey = card.card_id || card.id
-                              const isSelected = !!selectedCards.find(c => (c.card_id || c.id) === cardKey)
-                              const currentSelection = cardSelections[cardKey]
+                              // Trouver TOUTES les versions sélectionnées pour cette carte
+                              const selectedVersionsForCard = selectedCards
+                                .filter(c => (c.card_id || c.id) === cardKey)
+                                .map(c => {
+                                  const selKey = getSelectionKey(cardKey, c.version)
+                                  return {
+                                    version: c.version,
+                                    quantity: cardSelections[selKey]?.quantity || 1
+                                  }
+                                })
+                              const isSelected = selectedVersionsForCard.length > 0
 
                               return (
                                 <DuplicateCard
                                   key={card.id}
                                   card={card}
                                   isSelected={isSelected}
-                                  currentSelection={currentSelection}
+                                  selectedVersions={selectedVersionsForCard}
                                   collection={collection}
                                   onToggleSelection={toggleCardSelectionQuick}
                                   onImageClick={handleCardImageClick}
@@ -1571,8 +1641,21 @@ export function Duplicates() {
         card={cardForVersionSelect}
         collection={collection}
         onSelectForBatch={handleVersionSelect}
-        isAlreadySelected={cardForVersionSelect && selectedCards.some(c => (c.card_id || c.id) === (cardForVersionSelect.card_id || cardForVersionSelect.id))}
-        currentSelection={cardForVersionSelect && cardSelections[cardForVersionSelect.card_id || cardForVersionSelect.id]}
+        onRemoveVersionFromBatch={handleRemoveVersionFromBatch}
+        selectedVersions={
+          cardForVersionSelect
+            ? selectedCards
+                .filter(c => (c.card_id || c.id) === (cardForVersionSelect.card_id || cardForVersionSelect.id))
+                .map(c => {
+                  const cardKey = cardForVersionSelect.card_id || cardForVersionSelect.id
+                  const selKey = getSelectionKey(cardKey, c.version)
+                  return {
+                    version: c.version,
+                    quantity: cardSelections[selKey]?.quantity || 1
+                  }
+                })
+            : []
+        }
       />
 
       {/* Batch Detail Modal - Vue détaillée d'un lot */}

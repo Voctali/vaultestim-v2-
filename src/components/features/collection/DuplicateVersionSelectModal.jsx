@@ -9,13 +9,14 @@ import { CardMarketLink } from '@/components/features/collection/CardMarketLinks
 import { translateCardName } from '@/utils/cardTranslations'
 import { translateCardType } from '@/utils/typeTranslations'
 import { translateCondition } from '@/utils/cardConditions'
-import { X, Plus, Check, Package } from 'lucide-react'
+import { X, Plus, Check, Package, Trash2 } from 'lucide-react'
 
 /**
  * Modale combinée pour :
  * - Afficher les détails d'une carte en double
  * - Sélectionner la version à ajouter au lot
  * - Choisir la quantité
+ * - Gérer plusieurs versions sélectionnées pour la même carte
  */
 export function DuplicateVersionSelectModal({
   isOpen,
@@ -23,8 +24,8 @@ export function DuplicateVersionSelectModal({
   card,
   collection,
   onSelectForBatch,
-  isAlreadySelected = false,
-  currentSelection = null // { version, quantity } si déjà sélectionné
+  onRemoveVersionFromBatch, // Nouvelle prop pour retirer une version spécifique
+  selectedVersions = [] // Array de { version, quantity } déjà sélectionnées pour cette carte
 }) {
   const [selectedVersion, setSelectedVersion] = useState(null)
   const [selectedQuantity, setSelectedQuantity] = useState(1)
@@ -68,26 +69,55 @@ export function DuplicateVersionSelectModal({
       .sort((a, b) => a.version.localeCompare(b.version))
   }, [allCardInstances])
 
+  // Vérifier si une version est déjà sélectionnée
+  const isVersionAlreadySelected = (version) => {
+    return selectedVersions.some(sv => sv.version === version)
+  }
+
+  // Obtenir les versions disponibles (non encore sélectionnées ou avec des doublons restants)
+  const availableVersions = useMemo(() => {
+    return duplicateVersions.filter(vd => {
+      const alreadySelected = selectedVersions.find(sv => sv.version === vd.version)
+      if (!alreadySelected) return true
+      // Si déjà sélectionné, vérifier s'il reste des doublons disponibles
+      return vd.duplicateCount > alreadySelected.quantity
+    })
+  }, [duplicateVersions, selectedVersions])
+
   // Initialiser la sélection quand la modale s'ouvre
   useEffect(() => {
     if (isOpen && duplicateVersions.length > 0) {
-      if (currentSelection) {
-        // Si déjà sélectionné, restaurer la sélection
-        setSelectedVersion(currentSelection.version)
-        setSelectedQuantity(currentSelection.quantity)
-      } else {
-        // Sinon, sélectionner la première version par défaut
-        setSelectedVersion(duplicateVersions[0].version)
+      // Priorité 1: Version PAS DU TOUT sélectionnée (pour permettre d'ajouter facilement une nouvelle version)
+      const notSelectedAtAll = duplicateVersions.find(vd =>
+        !selectedVersions.some(sv => sv.version === vd.version)
+      )
+
+      if (notSelectedAtAll) {
+        setSelectedVersion(notSelectedAtAll.version)
         setSelectedQuantity(1)
+      } else {
+        // Priorité 2: Version avec des doublons restants
+        const withRemaining = availableVersions[0]
+        if (withRemaining) {
+          setSelectedVersion(withRemaining.version)
+          setSelectedQuantity(1)
+        } else if (duplicateVersions.length > 0) {
+          // Toutes les versions sont sélectionnées au max, on affiche la première
+          setSelectedVersion(duplicateVersions[0].version)
+          setSelectedQuantity(1)
+        }
       }
     }
-  }, [isOpen, duplicateVersions, currentSelection])
+  }, [isOpen, duplicateVersions, availableVersions, selectedVersions])
 
-  // Obtenir le max de quantité pour la version sélectionnée
+  // Obtenir le max de quantité pour la version sélectionnée (en tenant compte de ce qui est déjà sélectionné)
   const maxQuantity = useMemo(() => {
     const versionData = duplicateVersions.find(v => v.version === selectedVersion)
-    return versionData?.duplicateCount || 1
-  }, [duplicateVersions, selectedVersion])
+    if (!versionData) return 1
+    const alreadySelected = selectedVersions.find(sv => sv.version === selectedVersion)
+    const alreadySelectedQty = alreadySelected?.quantity || 0
+    return Math.max(1, versionData.duplicateCount - alreadySelectedQty)
+  }, [duplicateVersions, selectedVersion, selectedVersions])
 
   // Calculer le total de doublons
   const totalDuplicates = useMemo(() => {
@@ -129,12 +159,29 @@ export function DuplicateVersionSelectModal({
     onClose()
   }
 
-  const handleRemoveFromBatch = () => {
-    onSelectForBatch(null) // null = désélectionner
+  const handleRemoveVersionFromBatch = (versionToRemove) => {
+    if (onRemoveVersionFromBatch) {
+      onRemoveVersionFromBatch(versionToRemove)
+    }
+  }
+
+  const handleRemoveAllFromBatch = () => {
+    onSelectForBatch(null) // null = désélectionner toutes les versions
     onClose()
   }
 
   if (!card) return null
+
+  // Vérifier si la version actuellement sélectionnée est déjà dans la sélection
+  const isCurrentVersionAlreadySelected = selectedVersion && selectedVersions.some(sv => sv.version === selectedVersion)
+
+  // DEBUG temporaire
+  console.log('[DEBUG Modal]', {
+    selectedVersion,
+    selectedVersions,
+    isCurrentVersionAlreadySelected,
+    duplicateVersions: duplicateVersions.map(v => v.version)
+  })
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -143,10 +190,16 @@ export function DuplicateVersionSelectModal({
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="golden-glow">
-                {isAlreadySelected ? 'Modifier la sélection' : 'Ajouter au lot'}
+                {selectedVersions.length > 0
+                  ? (isCurrentVersionAlreadySelected ? 'Modifier la sélection' : 'Ajouter une version')
+                  : 'Ajouter au lot'
+                }
               </DialogTitle>
               <DialogDescription>
-                Choisissez la version et la quantité à ajouter
+                {isCurrentVersionAlreadySelected
+                  ? 'Modifier la quantité de cette version'
+                  : 'Choisissez la version et la quantité à ajouter'
+                }
               </DialogDescription>
             </div>
             <Button
@@ -229,6 +282,34 @@ export function DuplicateVersionSelectModal({
                 </Badge>
               </div>
 
+              {/* Versions déjà sélectionnées */}
+              {selectedVersions.length > 0 && (
+                <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <Label className="text-sm font-medium text-green-500 mb-2 block">
+                    Versions déjà dans le lot :
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedVersions.map((sv, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 bg-green-500/20 px-3 py-1.5 rounded-full"
+                      >
+                        <span className="text-sm font-medium">
+                          {sv.quantity}x {sv.version}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveVersionFromBatch(sv.version)}
+                          className="text-red-400 hover:text-red-500 transition-colors"
+                          title={`Retirer ${sv.version} du lot`}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {duplicateVersions.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">
                   Aucun doublon disponible pour cette carte
@@ -237,29 +318,49 @@ export function DuplicateVersionSelectModal({
                 <div className="space-y-4">
                   {/* Sélection de la version */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Version</Label>
+                    <Label className="text-sm font-medium">
+                      {selectedVersions.length > 0 ? 'Ajouter une autre version' : 'Choisir une version'}
+                    </Label>
                     <div className="grid grid-cols-2 gap-2">
-                      {duplicateVersions.map((versionData) => (
-                        <button
-                          key={versionData.version}
-                          onClick={() => handleVersionChange(versionData.version)}
-                          className={`p-3 rounded-lg border-2 transition-all text-left ${
-                            selectedVersion === versionData.version
-                              ? 'border-green-500 bg-green-500/10'
-                              : 'border-primary/20 hover:border-primary/40 bg-primary/5'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm">{versionData.version}</span>
-                            {selectedVersion === versionData.version && (
-                              <Check className="w-4 h-4 text-green-500" />
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {versionData.duplicateCount} en double
-                          </div>
-                        </button>
-                      ))}
+                      {duplicateVersions.map((versionData) => {
+                        const alreadySelected = selectedVersions.find(sv => sv.version === versionData.version)
+                        const alreadySelectedQty = alreadySelected?.quantity || 0
+                        const remaining = versionData.duplicateCount - alreadySelectedQty
+                        const isFullySelected = remaining <= 0
+
+                        return (
+                          <button
+                            key={versionData.version}
+                            onClick={() => !isFullySelected && handleVersionChange(versionData.version)}
+                            disabled={isFullySelected}
+                            className={`p-3 rounded-lg border-2 transition-all text-left ${
+                              isFullySelected
+                                ? 'border-gray-500/30 bg-gray-500/10 opacity-50 cursor-not-allowed'
+                                : selectedVersion === versionData.version
+                                  ? 'border-green-500 bg-green-500/10'
+                                  : 'border-primary/20 hover:border-primary/40 bg-primary/5'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-sm">{versionData.version}</span>
+                              {selectedVersion === versionData.version && !isFullySelected && (
+                                <Check className="w-4 h-4 text-green-500" />
+                              )}
+                              {alreadySelected && (
+                                <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-500">
+                                  {alreadySelectedQty}x déjà
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {isFullySelected
+                                ? 'Tous sélectionnés'
+                                : `${remaining} disponible${remaining > 1 ? 's' : ''}`
+                              }
+                            </div>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
 
@@ -356,30 +457,30 @@ export function DuplicateVersionSelectModal({
 
             {/* Boutons d'action */}
             <div className="flex gap-3 pt-4 border-t border-primary/20">
-              {isAlreadySelected && (
+              {selectedVersions.length > 0 && (
                 <Button
                   variant="outline"
-                  onClick={handleRemoveFromBatch}
-                  className="flex-1 border-red-500/50 text-red-500 hover:bg-red-500/10"
+                  onClick={handleRemoveAllFromBatch}
+                  className="border-red-500/50 text-red-500 hover:bg-red-500/10"
                 >
-                  <X className="w-4 h-4 mr-2" />
-                  Retirer du lot
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Tout retirer
                 </Button>
               )}
               <Button
                 onClick={handleAddToBatch}
-                disabled={!selectedVersion || duplicateVersions.length === 0}
+                disabled={!selectedVersion || duplicateVersions.length === 0 || maxQuantity <= 0}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
-                {isAlreadySelected ? (
+                {isCurrentVersionAlreadySelected ? (
                   <>
                     <Check className="w-4 h-4 mr-2" />
-                    Modifier la sélection
+                    Modifier ({selectedQuantity}x {selectedVersion})
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4 mr-2" />
-                    Ajouter au lot ({selectedQuantity}x {selectedVersion})
+                    Ajouter {selectedQuantity}x {selectedVersion}
                   </>
                 )}
               </Button>

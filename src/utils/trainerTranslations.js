@@ -6,7 +6,7 @@
  */
 
 // Version du dictionnaire - Incrémenter à chaque ajout/modification pour invalider le cache
-export const TRAINER_TRANSLATIONS_VERSION = '1.9.122' // Dernière mise à jour: 2025-11-18 - Ajout "ignition energy"
+export const TRAINER_TRANSLATIONS_VERSION = '1.9.123' // Dernière mise à jour: 2025-12-18 - Ajout "chalumeau" (blowtorch)
 
 const TRAINER_TRANSLATIONS = {
   // ========================================
@@ -411,6 +411,7 @@ const TRAINER_TRANSLATIONS = {
   'chariot echange': 'switch cart', // Variante sans accent
   'chariot précieux': 'precious trolley', // Objet
   'chariot precieux': 'precious trolley', // Variante sans accent
+  'chalumeau': 'blowtorch', // Objet Dresseur - Mega Evolution
   'chaussures de randonnée': 'trekking shoes', // Objet Dresseur
   'chaussures de randonnee': 'trekking shoes', // Variante sans accent
   'clairon de la team yell': 'yell horn', // Objet Dresseur - Galar
