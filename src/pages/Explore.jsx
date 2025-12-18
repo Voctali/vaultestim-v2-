@@ -530,6 +530,8 @@ export function Explore() {
         </div>
       </div>
 
+      {/* Navigation et Recherche - Sticky quand on est dans un bloc ou une extension */}
+      <div className={`${(currentView === 'extensions' || currentView === 'cards') ? 'sticky top-0 z-20 bg-background pb-4 -mx-6 px-6 pt-2' : ''}`}>
       {/* Navigation et Bouton Ajouter - Responsive : vertical sur mobile, horizontal sur desktop */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         {/* Navigation Breadcrumb */}
@@ -639,6 +641,7 @@ export function Explore() {
             </Button>
           )}
         </div>
+      </div>
       </div>
 
       {/* Content Area */}

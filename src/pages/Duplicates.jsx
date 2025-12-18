@@ -1079,8 +1079,8 @@ export function Duplicates() {
         />
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-4 border-b border-border">
+      {/* Tabs - Sticky pour rester visible au scroll */}
+      <div className="flex space-x-4 border-b border-border sticky top-0 z-20 bg-background py-2 -mx-6 px-6">
         <button
           onClick={() => setCurrentTab('duplicates')}
           className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
