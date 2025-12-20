@@ -2,19 +2,25 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { NAVIGATION_ITEMS, COLLECTION_QUICK_ITEMS } from '@/constants/navigation'
+import { NAVIGATION_ITEMS } from '@/constants/navigation'
 import { getUserLevel } from '@/constants/userLevels'
 import { useAuth } from '@/hooks/useAuth'
+import { useCollection } from '@/hooks/useCollection'
 import { ChevronDown, ChevronRight, LogOut, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function Sidebar({ isOpen, onToggle }) {
   const [expandedItems, setExpandedItems] = useState({ collection: true })
   const { user, isAuthenticated, isAdmin, isPremium, logout } = useAuth()
+  const { getStats, getSessionStats } = useCollection()
   const location = useLocation()
   const navigate = useNavigate()
 
   const userLevel = user ? getUserLevel(user.cardCount || 0) : null
+
+  // Stats réelles de la collection
+  const collectionStats = isAuthenticated ? getStats() : null
+  const sessionStats = isAuthenticated ? getSessionStats() : null
 
   const filteredNavItems = NAVIGATION_ITEMS.filter(item => {
     if (item.requiresAuth && !isAuthenticated) return false
@@ -186,34 +192,84 @@ export function Sidebar({ isOpen, onToggle }) {
             </ul>
           </div>
 
-          {/* Collection rapide */}
-          {isAuthenticated && (
+          {/* Collection rapide - Stats réelles */}
+          {isAuthenticated && collectionStats && (
             <div className="mb-4">
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                COLLECTION RAPIDE
+                MA COLLECTION
               </h3>
               <div className="space-y-2">
-                {COLLECTION_QUICK_ITEMS.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div
-                        className="w-4 h-4 rounded flex items-center justify-center mr-2 text-xs"
-                        style={{ backgroundColor: item.color + '20', color: item.color }}
-                      >
-                        {item.icon}
-                      </div>
-                      <span className="text-xs text-muted-foreground">{item.label}</span>
+                {/* Total Cartes */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded flex items-center justify-center mr-2 text-xs" style={{ backgroundColor: '#3B82F620', color: '#3B82F6' }}>
+                      📚
                     </div>
-                    {item.isPremium ? (
-                      <Button size="sm" className="h-6 text-xs bg-yellow-500 hover:bg-yellow-600">
-                        <span className="mr-1">👑</span>
-                        Premium
-                      </Button>
-                    ) : (
-                      <span className="text-xs font-medium text-foreground">{item.value}</span>
-                    )}
+                    <span className="text-xs text-muted-foreground">Total Cartes</span>
                   </div>
-                ))}
+                  <span className="text-xs font-medium text-foreground">{collectionStats.totalCards}</span>
+                </div>
+                {/* Valeur Marché */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded flex items-center justify-center mr-2 text-xs" style={{ backgroundColor: '#10B98120', color: '#10B981' }}>
+                      💎
+                    </div>
+                    <span className="text-xs text-muted-foreground">Valeur Marché</span>
+                  </div>
+                  <span className="text-xs font-medium text-foreground">{collectionStats.totalValue}€</span>
+                </div>
+                {/* Cartes Rares */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded flex items-center justify-center mr-2 text-xs" style={{ backgroundColor: '#F59E0B20', color: '#F59E0B' }}>
+                      ⭐
+                    </div>
+                    <span className="text-xs text-muted-foreground">Cartes Rares</span>
+                  </div>
+                  <span className="text-xs font-medium text-foreground">{collectionStats.rareCards}</span>
+                </div>
+                {/* Favoris */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded flex items-center justify-center mr-2 text-xs" style={{ backgroundColor: '#EC489920', color: '#EC4899' }}>
+                      ❤️
+                    </div>
+                    <span className="text-xs text-muted-foreground">Favoris</span>
+                  </div>
+                  <span className="text-xs font-medium text-foreground">{collectionStats.favoriteCards}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Stats de session */}
+          {isAuthenticated && sessionStats && (
+            <div className="mb-4">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                SESSION EN COURS
+              </h3>
+              <div className="space-y-2">
+                {/* Cartes ajoutées */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded flex items-center justify-center mr-2 text-xs" style={{ backgroundColor: '#8B5CF620', color: '#8B5CF6' }}>
+                      ➕
+                    </div>
+                    <span className="text-xs text-muted-foreground">Cartes ajoutées</span>
+                  </div>
+                  <span className="text-xs font-medium text-foreground">{sessionStats.cardsAdded}</span>
+                </div>
+                {/* Valeur ajoutée */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded flex items-center justify-center mr-2 text-xs" style={{ backgroundColor: '#06B6D420', color: '#06B6D4' }}>
+                      💰
+                    </div>
+                    <span className="text-xs text-muted-foreground">Valeur ajoutée</span>
+                  </div>
+                  <span className="text-xs font-medium text-foreground">{sessionStats.valueAdded}€</span>
+                </div>
               </div>
             </div>
           )}

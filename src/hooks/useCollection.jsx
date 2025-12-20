@@ -16,6 +16,13 @@ export function CollectionProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
   const [authInitialized, setAuthInitialized] = useState(false)
 
+  // Stats de session (se réinitialisent à chaque fermeture de l'app)
+  const [sessionStats, setSessionStats] = useState({
+    cardsAdded: 0,
+    cardsAddedList: [], // Liste des cartes ajoutées pour calculer la valeur
+    sessionStartTime: new Date().toISOString()
+  })
+
   // Vérifier l'authentification
   useEffect(() => {
     const checkAuth = async () => {
@@ -119,6 +126,13 @@ export function CollectionProvider({ children }) {
         const updated = [result, ...prev].slice(0, 10)
         return updated
       })
+
+      // Mettre à jour les stats de session
+      setSessionStats(prev => ({
+        ...prev,
+        cardsAdded: prev.cardsAdded + parseInt(result.quantity || 1),
+        cardsAddedList: [...prev.cardsAddedList, result]
+      }))
 
       return result
     } catch (error) {
@@ -555,6 +569,21 @@ export function CollectionProvider({ children }) {
     return sales.slice(0, limit)
   }
 
+  // Obtenir les stats de la session en cours
+  const getSessionStats = () => {
+    const valueAdded = sessionStats.cardsAddedList.reduce((sum, card) => {
+      const marketPrice = getNumericPrice(card)
+      const quantity = parseInt(card.quantity || 1)
+      return sum + (marketPrice * quantity)
+    }, 0)
+
+    return {
+      cardsAdded: sessionStats.cardsAdded,
+      valueAdded: valueAdded.toFixed(2),
+      sessionStartTime: sessionStats.sessionStartTime
+    }
+  }
+
   const value = {
     collection,
     favorites,
@@ -582,7 +611,8 @@ export function CollectionProvider({ children }) {
     deleteSale,
     cancelSale,
     getSalesStats,
-    getRecentSales
+    getRecentSales,
+    getSessionStats
   }
 
   return (
