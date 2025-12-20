@@ -57,7 +57,7 @@ export function Sidebar({ isOpen, onToggle }) {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-background border-r border-border h-full flex flex-col transition-transform duration-300",
+        "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-background border-r border-border h-full flex flex-col transition-transform duration-300 font-inter",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
       {/* Header avec bouton fermer (mobile uniquement) */}

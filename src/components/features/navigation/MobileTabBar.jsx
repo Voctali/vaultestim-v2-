@@ -110,7 +110,7 @@ export function MobileTabBar() {
   return (
     <>
       {/* Tab Bar principale */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border pb-safe">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border pb-safe font-inter">
         <div className="flex items-center justify-around px-2 py-2">
           {/* Items principaux */}
           {mainItems.map((item) => {

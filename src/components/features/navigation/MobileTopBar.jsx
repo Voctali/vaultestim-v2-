@@ -39,7 +39,7 @@ export function MobileTopBar({ onMenuOpen }) {
   return (
     <>
       {/* Top Bar Mobile */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border font-inter">
         <div className="flex items-center justify-between px-4 py-3">
           {/* Bouton Menu à gauche */}
           <Button

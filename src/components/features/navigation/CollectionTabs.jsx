@@ -10,7 +10,7 @@ export function CollectionTabs() {
   const subItems = collectionItem?.subItems || []
 
   return (
-    <div className="lg:hidden flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <div className="lg:hidden flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide font-inter">
       {subItems.map((subItem) => {
         const SubIcon = subItem.icon
         const isActive = location.pathname === subItem.path

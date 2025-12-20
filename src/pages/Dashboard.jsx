@@ -201,7 +201,7 @@ export function Dashboard() {
                 {mostValuedCards.length > 0 ? (
                   mostValuedCards.map((card, index) => (
                     <div key={card.id} className="flex items-center space-x-3 p-2 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-100 to-orange-100 flex items-center justify-center flex-shrink-0 font-bold text-sm">
+                      <div className="w-8 h-8 rounded-full bg-black border border-primary/50 flex items-center justify-center flex-shrink-0 font-bold text-sm text-primary">
                         {index + 1}
                       </div>
                       <div className="w-10 h-14 bg-gradient-to-br from-yellow-100 to-orange-100 rounded overflow-hidden flex-shrink-0">
@@ -257,7 +257,7 @@ export function Dashboard() {
                 {mostValuedSealedProducts.length > 0 ? (
                   mostValuedSealedProducts.map((product, index) => (
                     <div key={product.id} className="flex items-center space-x-3 p-2 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center flex-shrink-0 font-bold text-sm">
+                      <div className="w-8 h-8 rounded-full bg-black border border-primary/50 flex items-center justify-center flex-shrink-0 font-bold text-sm text-primary">
                         {index + 1}
                       </div>
                       <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded overflow-hidden flex-shrink-0">
