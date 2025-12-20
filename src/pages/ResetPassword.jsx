@@ -1,47 +1,74 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { PasswordResetService } from '@/services/PasswordResetService'
+import { supabase } from '@/lib/supabaseClient'
 import { Lock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 
 export function ResetPassword() {
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const token = searchParams.get('token')
 
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isVerifying, setIsVerifying] = useState(true)
-  const [tokenValid, setTokenValid] = useState(false)
-  const [tokenError, setTokenError] = useState('')
+  const [sessionValid, setSessionValid] = useState(false)
+  const [sessionError, setSessionError] = useState('')
   const [message, setMessage] = useState({ type: '', text: '' })
   const [email, setEmail] = useState('')
 
   useEffect(() => {
-    verifyToken()
-  }, [token])
+    // Supabase gère automatiquement le token via le hash de l'URL
+    // On vérifie si une session de récupération est active
+    const checkSession = async () => {
+      try {
+        // Attendre un peu pour que Supabase traite le hash
+        await new Promise(resolve => setTimeout(resolve, 500))
 
-  const verifyToken = async () => {
-    if (!token) {
-      setTokenError('Token manquant')
-      setIsVerifying(false)
-      return
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (error) {
+          console.error('Erreur session:', error)
+          setSessionError('Erreur lors de la vérification du lien')
+          setIsVerifying(false)
+          return
+        }
+
+        if (session?.user) {
+          setSessionValid(true)
+          setEmail(session.user.email)
+          console.log('✅ Session de récupération valide pour:', session.user.email)
+        } else {
+          setSessionError('Lien invalide ou expiré. Veuillez demander un nouveau lien de réinitialisation.')
+        }
+      } catch (error) {
+        console.error('Erreur vérification session:', error)
+        setSessionError('Erreur lors de la vérification du lien')
+      } finally {
+        setIsVerifying(false)
+      }
     }
 
-    try {
-      const result = await PasswordResetService.verifyResetToken(token)
-      setTokenValid(true)
-      setEmail(result.email)
-    } catch (error) {
-      setTokenError(error.message || 'Token invalide')
-    } finally {
-      setIsVerifying(false)
+    // Écouter les événements de récupération de mot de passe
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event)
+
+      if (event === 'PASSWORD_RECOVERY') {
+        setSessionValid(true)
+        setEmail(session?.user?.email || '')
+        setIsVerifying(false)
+        console.log('✅ Mode récupération de mot de passe activé')
+      }
+    })
+
+    checkSession()
+
+    return () => {
+      subscription?.unsubscribe()
     }
-  }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -67,16 +94,24 @@ export function ResetPassword() {
     setIsLoading(true)
 
     try {
-      await PasswordResetService.resetPassword(token, newPassword)
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      })
+
+      if (error) throw error
+
       setMessage({
         type: 'success',
         text: 'Mot de passe réinitialisé avec succès ! Redirection...'
       })
 
-      setTimeout(() => {
+      // Déconnecter et rediriger vers login
+      setTimeout(async () => {
+        await supabase.auth.signOut()
         navigate('/login')
       }, 2000)
     } catch (error) {
+      console.error('Erreur réinitialisation:', error)
       setMessage({
         type: 'error',
         text: error.message || 'Erreur lors de la réinitialisation'
@@ -99,7 +134,7 @@ export function ResetPassword() {
     )
   }
 
-  if (!tokenValid) {
+  if (!sessionValid) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-800 p-4">
         <Card className="w-full max-w-md golden-border">
@@ -118,7 +153,7 @@ export function ResetPassword() {
               <AlertDescription className="text-red-500">
                 <strong>Lien invalide ou expiré</strong>
                 <br />
-                {tokenError}
+                {sessionError}
               </AlertDescription>
             </Alert>
 

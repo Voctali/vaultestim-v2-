@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/useAuth'
-import { PasswordResetService } from '@/services/PasswordResetService'
+import { SupabaseAuthService } from '@/services/SupabaseAuthService'
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react'
 
 export function Login() {
@@ -51,16 +51,16 @@ export function Login() {
     setResetMessage({ type: '', text: '' })
 
     try {
-      const result = await PasswordResetService.requestPasswordReset(resetEmail)
+      await SupabaseAuthService.resetPassword(resetEmail)
       setResetMessage({
         type: 'success',
-        text: `Un email de réinitialisation a été envoyé à ${resetEmail}. Veuillez vérifier votre boîte de réception.`
+        text: `Un email de réinitialisation a été envoyé à ${resetEmail}. Veuillez vérifier votre boîte de réception (et les spams).`
       })
       setTimeout(() => {
         setIsForgotPasswordOpen(false)
         setResetEmail('')
         setResetMessage({ type: '', text: '' })
-      }, 3000)
+      }, 5000)
     } catch (error) {
       setResetMessage({
         type: 'error',
