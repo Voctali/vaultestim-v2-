@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, Mail } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
 export function Register() {
@@ -14,6 +14,7 @@ export function Register() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [registrationSuccess, setRegistrationSuccess] = useState(false)
   const { register, isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
@@ -42,12 +43,70 @@ export function Register() {
     setIsLoading(true)
     try {
       await register(email, password, name)
-      navigate('/')
+      // Afficher le message de confirmation au lieu de rediriger
+      setRegistrationSuccess(true)
     } catch (err) {
       setError(err.message || 'Une erreur est survenue lors de l\'inscription')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Afficher l'écran de succès avec instructions
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-800 p-4">
+        <Card className="w-full max-w-md golden-border">
+          <CardHeader className="text-center pb-2">
+            <div className="flex justify-center mb-4">
+              <img
+                src="/logo.png"
+                alt="VaultEstim"
+                className="h-24 w-auto object-contain"
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert className="border-green-500/50 bg-green-500/10">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <AlertDescription className="text-green-500">
+                <strong>Inscription réussie !</strong>
+              </AlertDescription>
+            </Alert>
+
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
+                <Mail className="w-8 h-8 text-primary" />
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Vérifiez votre boîte mail
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Un email de confirmation a été envoyé à <strong className="text-foreground">{email}</strong>
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Cliquez sur le lien dans l'email pour activer votre compte.
+                </p>
+              </div>
+
+              <div className="pt-4 space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Vous n'avez pas reçu l'email ? Vérifiez vos spams.
+                </p>
+                <Button
+                  onClick={() => navigate('/login')}
+                  className="w-full"
+                >
+                  Aller à la connexion
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
