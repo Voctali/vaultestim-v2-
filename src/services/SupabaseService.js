@@ -538,21 +538,40 @@ export class SupabaseService {
   }
 
   /**
-   * Charger la base de données des séries
+   * Charger la base de données des séries (BASE COMMUNE - toutes les séries de tous les utilisateurs)
+   * Les séries sont dédupliquées par ID pour créer une base de données partagée
    */
   static async loadSeriesDatabase() {
     try {
-      const userId = await this.getCurrentUserId()
+      console.log('🌍 Chargement de la base de données COMMUNE des séries...')
 
       const { data, error } = await supabase
         .from('series_database')
         .select('*')
-        .eq('user_id', userId)
+        .order('id', { ascending: true })
 
       if (error) throw error
 
-      console.log(`📚 ${data.length} séries chargées`)
-      return data
+      // Dédupliquer les séries par ID (garder la plus complète)
+      const uniqueSeriesMap = new Map()
+
+      data.forEach(serie => {
+        const existingSerie = uniqueSeriesMap.get(serie.id)
+        if (!existingSerie) {
+          uniqueSeriesMap.set(serie.id, serie)
+        } else {
+          // Garder la série la plus complète (plus de champs renseignés)
+          const existingScore = Object.values(existingSerie).filter(v => v !== null && v !== undefined).length
+          const newScore = Object.values(serie).filter(v => v !== null && v !== undefined).length
+          if (newScore > existingScore) {
+            uniqueSeriesMap.set(serie.id, serie)
+          }
+        }
+      })
+
+      const uniqueSeries = Array.from(uniqueSeriesMap.values())
+      console.log(`📚 ${uniqueSeries.length} séries chargées (dédupliquées depuis ${data.length})`)
+      return uniqueSeries
     } catch (error) {
       console.error('❌ Erreur loadSeriesDatabase:', error)
       return []
