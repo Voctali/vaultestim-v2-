@@ -9,7 +9,8 @@ Guide de référence pour Claude Code lors du travail avec le code de ce dépôt
 ## Aperçu du Projet
 
 VaultEstim v2 - Application de gestion de collections de cartes Pokémon avec React + Vite.
-- **Thème** : Sombre avec accents dorés et police Cinzel
+- **Thème** : Sombre avec accents dorés
+- **Polices** : Inter (titres/navigation) + Poppins (texte général)
 - **Stack** : React 18, Vite, Tailwind CSS, shadcn/ui, Supabase
 - **Port** : 5174
 
@@ -115,6 +116,25 @@ git add . && git commit -m "Description" && git push github main
 | Prix N/A | Vérifier colonnes JSONB Supabase |
 | IndexedDB closing | Retry automatique intégré |
 
+## 🔐 Gestion des Utilisateurs
+
+### Réinitialisation de Mot de Passe
+Les emails Supabase ne fonctionnent pas de manière fiable. Utiliser le script admin :
+
+```bash
+# 1. Récupérer la clé service_role dans Supabase > Settings > API
+# 2. L'ajouter temporairement dans reset-password.cjs
+# 3. Exécuter :
+node reset-password.cjs "email@example.com" "nouveauMotDePasse"
+# 4. Retirer la clé du script après usage
+```
+
+### Confirmation Manuelle des Utilisateurs
+Si un utilisateur reste bloqué en "waiting for verification" :
+```sql
+UPDATE auth.users SET email_confirmed_at = NOW() WHERE email = 'email@example.com';
+```
+
 ---
 
 ## 🛠️ Correction URLs CardMarket (29/11/2025)
@@ -162,6 +182,17 @@ const { data } = await supabase
 ---
 
 ## 🎯 Fonctionnalités Récentes
+
+### v1.29.0 (21/12/2025)
+- **Polices modernisées** : Remplacement Cinzel par Inter (titres/navigation) + Poppins (texte général)
+- **Fix RLS nouveaux utilisateurs** : Les nouveaux comptes voient maintenant les blocs/extensions partagés dans "Explorer les séries"
+  - Politique RLS modifiée : accès en lecture pour tous les utilisateurs authentifiés
+  - `loadSeriesDatabase()` ne filtre plus par `user_id`
+- **Écran confirmation inscription** : Après inscription, affiche un message demandant de vérifier l'email
+- **Stats session en temps réel** : Section "Session en cours" dans la sidebar avec cartes ajoutées et valeur ajoutée (reset à la fermeture)
+- **Stats collection dynamiques** : Section "Ma Collection" dans la sidebar avec stats réelles (total cartes, valeur, rares, favoris)
+- **Badges Dashboard Top 5** : Fond noir avec texte doré pour meilleure lisibilité
+- **Script réinitialisation mot de passe** : `reset-password.cjs` pour réinitialiser les mots de passe via API admin Supabase
 
 ### v1.28.28 (18/12/2025)
 - **Sticky navigation Doublons** : Les onglets "Doublons" et "Lots de doublons" restent visibles en haut lors du scroll
@@ -300,4 +331,4 @@ const { data } = await supabase
 
 ---
 
-**Dernière mise à jour** : 2025-12-18 (v1.28.28)
+**Dernière mise à jour** : 2025-12-21 (v1.29.0)
