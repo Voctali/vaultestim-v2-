@@ -183,6 +183,13 @@ const { data } = await supabase
 
 ## 🎯 Fonctionnalités Récentes
 
+### v1.31.2 (27/12/2025)
+- **Fix définitif upsert cardmarket_prices** : Correction des erreurs 409 et "column id does not exist"
+  - Remplacé l'upsert (qui ne fonctionne pas) par le pattern SELECT + UPDATE/INSERT
+  - La table `cardmarket_prices` utilise une clé composite `(id_product, id_language)` sans colonne `id`
+  - Corrigé dans 3 fonctions : `updateCatalogProductPrice`, `upsertSealedProductsFromRapidAPI`, `_importInBatches`
+  - Nouvelle fonction `_importPricesInBatches` pour l'import en batch avec gestion des race conditions
+
 ### v1.29.0 (21/12/2025)
 - **Polices modernisées** : Remplacement Cinzel par Inter (titres/navigation) + Poppins (texte général)
 - **Fix RLS nouveaux utilisateurs** : Les nouveaux comptes voient maintenant les blocs/extensions partagés dans "Explorer les séries"
@@ -331,4 +338,4 @@ const { data } = await supabase
 
 ---
 
-**Dernière mise à jour** : 2025-12-21 (v1.29.0)
+**Dernière mise à jour** : 2025-12-27 (v1.31.2)
