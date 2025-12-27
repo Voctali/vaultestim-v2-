@@ -179,8 +179,8 @@ export class CardMarketSupabaseService {
   static async _importInBatches(tableName, data, batchSize, onProgress = null) {
     const total = data.length
 
-    // Cas spécial pour cardmarket_prices: la table a une PK 'id' différente de la contrainte UNIQUE
-    // On doit utiliser SELECT + UPDATE/INSERT au lieu d'upsert
+    // Cas spécial pour cardmarket_prices: l'upsert avec onConflict ne fonctionne pas bien
+    // On utilise SELECT + UPDATE/INSERT pour éviter les conflits
     if (tableName === 'cardmarket_prices') {
       await this._importPricesInBatches(data, batchSize, onProgress)
       return
@@ -218,7 +218,7 @@ export class CardMarketSupabaseService {
 
   /**
    * Import spécial pour cardmarket_prices avec SELECT + UPDATE/INSERT
-   * Car la table a une PK 'id' différente de la contrainte UNIQUE (id_product, id_language)
+   * Évite les conflits d'upsert sur la clé composite (id_product, id_language)
    */
   static async _importPricesInBatches(data, batchSize, onProgress = null) {
     const total = data.length
@@ -811,7 +811,7 @@ export class CardMarketSupabaseService {
         console.log(`✅ ${upsertedProducts?.length || products.length} produits sauvegardés dans cardmarket_nonsingles`)
 
         // Sauvegarder les prix dans cardmarket_prices
-        // Pattern SELECT + UPDATE/INSERT car PK 'id' != contrainte UNIQUE (id_product, id_language)
+        // Pattern SELECT + UPDATE/INSERT pour éviter les conflits d'upsert
         const languageId = 2 // Français par défaut
         const pricesToSave = products
           .filter(p => p.price || p.priceDetails)
@@ -1056,14 +1056,13 @@ export class CardMarketSupabaseService {
       const updatedAt = new Date().toISOString()
       const languageId = 2 // Français
 
-      // Pattern SELECT + UPDATE/INSERT pour éviter le conflit entre
-      // la clé primaire 'id' et la contrainte UNIQUE (id_product, id_language)
-      // L'upsert avec onConflict ne fonctionne pas quand la PK est différente
+      // Pattern SELECT + UPDATE/INSERT pour éviter les conflits d'upsert
+      // La table utilise (id_product, id_language) comme clé composite
 
       // 1. Vérifier si l'enregistrement existe
       const { data: existing, error: selectError } = await supabase
         .from('cardmarket_prices')
-        .select('id')
+        .select('id_product')
         .eq('id_product', idProduct)
         .eq('id_language', languageId)
         .maybeSingle()
